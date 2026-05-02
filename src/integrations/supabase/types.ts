@@ -14,7 +14,168 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      products: {
+        Row: {
+          barcode: string
+          brand: string | null
+          created_at: string
+          default_price_cents: number | null
+          image_url: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          barcode: string
+          brand?: string | null
+          created_at?: string
+          default_price_cents?: number | null
+          image_url?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          barcode?: string
+          brand?: string | null
+          created_at?: string
+          default_price_cents?: number | null
+          image_url?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stores: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trip_items: {
+        Row: {
+          barcode: string | null
+          id: string
+          name_snapshot: string
+          price_cents: number
+          qty: number
+          scanned_at: string
+          store_id: string | null
+          store_name_snapshot: string | null
+          trip_id: string
+        }
+        Insert: {
+          barcode?: string | null
+          id?: string
+          name_snapshot: string
+          price_cents?: number
+          qty?: number
+          scanned_at?: string
+          store_id?: string | null
+          store_name_snapshot?: string | null
+          trip_id: string
+        }
+        Update: {
+          barcode?: string | null
+          id?: string
+          name_snapshot?: string
+          price_cents?: number
+          qty?: number
+          scanned_at?: string
+          store_id?: string | null
+          store_name_snapshot?: string | null
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_items_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_items_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trips: {
+        Row: {
+          ended_at: string | null
+          id: string
+          note: string | null
+          started_at: string
+          status: Database["public"]["Enums"]["trip_status"]
+          total_cents: number
+          user_id: string
+        }
+        Insert: {
+          ended_at?: string | null
+          id?: string
+          note?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["trip_status"]
+          total_cents?: number
+          user_id: string
+        }
+        Update: {
+          ended_at?: string | null
+          id?: string
+          note?: string | null
+          started_at?: string
+          status?: Database["public"]["Enums"]["trip_status"]
+          total_cents?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +184,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      trip_status: "active" | "saved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +311,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      trip_status: ["active", "saved"],
+    },
   },
 } as const
