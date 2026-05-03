@@ -12,6 +12,7 @@ type Row = { id: string; started_at: string; total_cents: number; stores: string
 export default function History() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  useCurrency();
   const [rows, setRows] = useState<Row[]>([]);
 
   useEffect(() => {
