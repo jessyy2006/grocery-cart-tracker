@@ -75,7 +75,22 @@ export default function Home() {
     if (!user) return;
     setCreating(true);
     try {
-      const { data, error } = await supabase
+      // End any lingering active trips so we always start fresh
+      await supabase
+        .from("trips")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("status", "active");
+
+      // Reset the chosen list so nothing is pre-checked
+      if (listId) {
+        await supabase
+          .from("shopping_list_items")
+          .update({ checked_at: null, price_cents: null })
+          .eq("list_id", listId);
+      }
+
+      const { error } = await supabase
         .from("trips")
         .insert({ user_id: user.id, list_id: listId })
         .select("id")
