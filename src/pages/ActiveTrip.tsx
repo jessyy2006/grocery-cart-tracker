@@ -325,9 +325,6 @@ export default function ActiveTrip() {
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setPickStoreOpen(true)}>
-            Switch
-          </Button>
           {extras.length > 0 && (
             <button
               onClick={() => setExtrasOpen((o) => !o)}
@@ -337,6 +334,9 @@ export default function ActiveTrip() {
               {extras.length}
             </button>
           )}
+          <Button variant="ghost" size="sm" onClick={exitTrip}>
+            <X className="mr-1 h-4 w-4" /> Exit
+          </Button>
         </div>
       </header>
 
