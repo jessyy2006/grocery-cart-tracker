@@ -275,6 +275,12 @@ export default function ListDetail() {
             aria-label="Quantity"
           />
         </div>
+        <Input
+          placeholder="Notes (e.g. 500 ml) — optional"
+          value={notes}
+          maxLength={25}
+          onChange={(e) => setNotes(e.target.value)}
+        />
         <div className="flex gap-2">
           <Select
             value={category}
