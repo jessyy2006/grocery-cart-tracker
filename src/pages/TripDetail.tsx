@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin } from "lucide-react";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 
 type Item = { id: string; name_snapshot: string; price_cents: number; qty: number; store_name_snapshot: string | null };
