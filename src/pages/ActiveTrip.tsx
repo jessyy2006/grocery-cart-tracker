@@ -91,7 +91,7 @@ export default function ActiveTrip() {
         .order("created_at", { ascending: true });
       setListItems((data ?? []) as ListItem[]);
     })();
-  }, [user, navigate]);
+  }, [listId]);
 
   // Load items + stores
   useEffect(() => {
