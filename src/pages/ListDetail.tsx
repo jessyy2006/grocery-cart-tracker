@@ -173,6 +173,7 @@ export default function ListDetail() {
                       <Card className="flex items-center gap-3 p-3">
                         <Checkbox
                           checked={!!it.checked_at}
+                          disabled={!runActive}
                           onCheckedChange={() => toggle(it)}
                           aria-label="Toggle item"
                         />
