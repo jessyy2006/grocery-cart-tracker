@@ -283,9 +283,8 @@ export default function ActiveTrip() {
     setExtras((c) => c.filter((i) => i.id !== id));
     setItems((c) => c.filter((i) => i.id !== id));
     await supabase.from("trip_items").delete().eq("id", id);
-    const emojis = ["🎉", "✨", "🥳", "🎊", "💚"];
-    setConfetti({ id: Date.now(), emoji: emojis[Math.floor(Math.random() * emojis.length)] });
-    setTimeout(() => setConfetti(null), 900);
+    setConfetti({ id: Date.now(), emoji: "🎉" });
+    setTimeout(() => setConfetti(null), 2000);
   };
 
   const saveTrip = async () => {
