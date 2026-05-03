@@ -398,10 +398,19 @@ export default function ActiveTrip() {
                           >
                             {it.name}
                           </p>
-                          {it.qty > 1 && (
-                            <p className="text-xs text-muted-foreground">Qty {it.qty}</p>
+                          {(it.qty > 1 || it.notes) && (
+                            <p className="truncate text-xs text-muted-foreground">
+                              {it.qty > 1 ? `Qty ${it.qty}` : ""}
+                              {it.qty > 1 && it.notes ? " · " : ""}
+                              {it.notes ?? ""}
+                            </p>
                           )}
                         </div>
+                        {it.price_cents != null && (
+                          <span className="shrink-0 text-right text-sm font-semibold text-primary">
+                            {formatMoney(it.price_cents)}
+                          </span>
+                        )}
                       </Card>
                     </li>
                   ))}
