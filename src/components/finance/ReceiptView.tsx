@@ -168,6 +168,7 @@ export default function ReceiptView(props: Props) {
   const [torn, setTorn] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const remaining = budgetCents - monthSpend;
   const over = budgetCents > 0 && remaining < 0;
