@@ -41,6 +41,8 @@ const App = () => (
               <Route path="/trip/:id" element={<TripDetail />} />
               <Route path="/history" element={<History />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/lists" element={<Lists />} />
+              <Route path="/lists/:id" element={<ListDetail />} />
             </Route>
             <Route path="/index" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
