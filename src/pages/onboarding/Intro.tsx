@@ -20,9 +20,9 @@ export default function OnboardingIntro() {
       </div>
 
       <div className="relative mt-8 flex-1">
-        <div className="absolute inset-x-0 bottom-0 animate-in slide-in-from-bottom-12 duration-700 ease-out">
-          <div className="space-y-3 px-2">
-            <Card className="p-4 shadow-elevated">
+        <div className="absolute inset-x-0 bottom-0 px-2">
+          <div className="relative">
+            <Card className="animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out p-4 shadow-elevated" style={{ animationDelay: "100ms", animationFillMode: "backwards" }}>
               <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
                 <ReceiptIcon className="h-3.5 w-3.5" /> This month
               </div>
@@ -35,7 +35,10 @@ export default function OnboardingIntro() {
               </div>
             </Card>
 
-            <Card className="p-4 shadow-elevated">
+            <Card
+              className="animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out relative -mt-6 -ml-4 mr-2 p-4 shadow-elevated"
+              style={{ animationDelay: "320ms", animationFillMode: "backwards" }}
+            >
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Today's list</p>
               <ul className="mt-2 space-y-2 text-sm">
                 {[
@@ -61,7 +64,7 @@ export default function OnboardingIntro() {
       </div>
 
       <Button size="lg" className="relative z-10 mt-6 w-full" onClick={next}>
-        Continue
+        Start saving
       </Button>
     </div>
   );

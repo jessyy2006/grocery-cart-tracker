@@ -8,7 +8,7 @@ import { OnboardingProvider } from "@/hooks/useOnboarding";
 import { RequireAuth } from "@/components/RequireAuth";
 import { RequireOnboarding } from "@/components/RequireOnboarding";
 import { AppLayout } from "@/components/AppLayout";
-import AuthPage from "./pages/Auth";
+
 import Home from "./pages/Home";
 import StartTrip from "./pages/StartTrip";
 import ActiveTrip from "./pages/ActiveTrip";
@@ -38,7 +38,7 @@ const App = () => (
         <AuthProvider>
           <OnboardingProvider>
             <Routes>
-              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/auth" element={<Navigate to="/onboarding/signup" replace />} />
               <Route path="/onboarding" element={<OnboardingIntro />} />
               <Route path="/onboarding/signup" element={<OnboardingSignup />} />
               <Route

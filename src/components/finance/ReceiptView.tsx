@@ -402,14 +402,14 @@ export default function ReceiptView(props: Props) {
     dxRef.current = 0;
   };
 
-  // Stub transform — visible barcode piece below perforation.
+  // Stub transform — falls straight off-screen when torn; eases back when dialog closes.
   const stubTransform = torn
-    ? `translate(${tearDir * 160}%, 120%) rotate(${tearDir * 14}deg)`
+    ? `translate(${tearDir * 20}%, 160%) rotate(${tearDir * 8}deg)`
     : `translateX(${dragDx}px) rotate(${dragDx * 0.02}deg)`;
   const stubTransition = torn
-    ? "transform 520ms cubic-bezier(.4,.1,.6,1), opacity 520ms ease-in"
+    ? "transform 480ms cubic-bezier(.4,.1,.6,1), opacity 480ms ease-in"
     : pointerIdRef.current === null
-      ? "transform 220ms ease"
+      ? "transform 360ms ease, opacity 360ms ease"
       : "none";
   const stubOpacity = torn ? 0 : 1;
   const stubContainerHeight = torn ? 0 : "auto";
