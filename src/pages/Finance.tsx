@@ -17,7 +17,9 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { guessCategory, getCategory, tokens } from "@/lib/categories";
-import { Pencil, ArrowDown, ArrowUp, Sparkles } from "lucide-react";
+import { Pencil, ArrowDown, ArrowUp, Sparkles, LayoutGrid, Receipt as ReceiptIcon } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import ReceiptView from "@/components/finance/ReceiptView";
 import {
   BarChart,
   Bar,
@@ -52,7 +54,7 @@ const monthLabel = (d: Date) => d.toLocaleString(undefined, { month: "short" });
 
 export default function Finance() {
   const { user } = useAuth();
-  useCurrency();
+  // currency hook called below
   const [loading, setLoading] = useState(true);
   const [budgetCents, setBudgetCents] = useState<number | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -62,6 +64,15 @@ export default function Finance() {
   const [budgetInput, setBudgetInput] = useState("");
   const [insights, setInsights] = useState<Insight[] | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [view, setView] = useState<"card" | "receipt">(() => {
+    if (typeof window === "undefined") return "card";
+    return (localStorage.getItem("finance:view") as "card" | "receipt") || "card";
+  });
+  const setViewPersist = (v: "card" | "receipt") => {
+    setView(v);
+    try { localStorage.setItem("finance:view", v); } catch { /* noop */ }
+  };
+  const currency = useCurrency();
 
   useEffect(() => {
     if (!user) return;
@@ -289,10 +300,103 @@ export default function Finance() {
     <div className="space-y-5 p-4 pb-24">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Finance</h1>
-        <Button size="icon" variant="ghost" onClick={openEditBudget} aria-label="Edit budget">
-          <Pencil className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <ToggleGroup
+            type="single"
+            value={view}
+            onValueChange={(v) => v && setViewPersist(v as "card" | "receipt")}
+            size="sm"
+            variant="outline"
+          >
+            <ToggleGroupItem value="card" aria-label="Card view">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="receipt" aria-label="Receipt view">
+              <ReceiptIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+          <Button size="icon" variant="ghost" onClick={openEditBudget} aria-label="Edit budget">
+            <Pencil className="h-5 w-5" />
+          </Button>
+        </div>
       </header>
+
+      {view === "receipt" ? (
+        <ReceiptView
+          budgetCents={budgetCents ?? 0}
+          monthSpend={derived.monthSpend}
+          tripCount={derived.monthTrips}
+          avgTripCents={derived.avgTrip}
+          extrasCents={derived.extrasNow.cents}
+          extrasCount={derived.extrasNow.count}
+          extrasPctOfSpend={extrasPctOfSpend}
+          momDelta={derived.prevSpend > 0 ? derived.momDelta : null}
+          prevSpend={derived.prevSpend}
+          monthStart={new Date(new Date().getFullYear(), new Date().getMonth(), 1)}
+          monthEnd={new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)}
+          currency={currency}
+        />
+      ) : (
+        <FinanceCardView
+          hasBudget={hasBudget}
+          budgetCents={budgetCents}
+          derived={derived}
+          remaining={remaining}
+          over={over}
+          pctUsed={pctUsed}
+          openEditBudget={openEditBudget}
+          extrasPctOfSpend={extrasPctOfSpend}
+          extrasDelta={extrasDelta}
+          maxBar={maxBar}
+          insights={insights}
+          insightsLoading={insightsLoading}
+        />
+      )}
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Monthly budget</DialogTitle>
+            <DialogDescription>Set how much you want to spend on groceries each month.</DialogDescription>
+          </DialogHeader>
+          <Input
+            type="number"
+            inputMode="decimal"
+            placeholder="0.00"
+            value={budgetInput}
+            onChange={(e) => setBudgetInput(e.target.value)}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={saveBudget}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function FinanceCardView(props: any) {
+  const {
+    hasBudget,
+    budgetCents,
+    derived,
+    remaining,
+    over,
+    pctUsed,
+    openEditBudget,
+    extrasPctOfSpend,
+    extrasDelta,
+    maxBar,
+    insights,
+    insightsLoading,
+  } = props;
+  return (
+    <>
 
       {/* Budget card */}
       <Card className="p-5">
@@ -479,7 +583,7 @@ export default function Finance() {
         </div>
       )}
 
-      {!trips.length && (
+      {!derived.series.some((s: { cents: number }) => s.cents > 0) && (
         <Card className="p-6 text-center">
           <div className="text-sm font-medium">No trips yet</div>
           <div className="mt-1 text-sm text-muted-foreground">
@@ -490,30 +594,7 @@ export default function Finance() {
           </Button>
         </Card>
       )}
-
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Monthly budget</DialogTitle>
-            <DialogDescription>How much do you want to spend on groceries each month?</DialogDescription>
-          </DialogHeader>
-          <Input
-            type="number"
-            inputMode="decimal"
-            placeholder="0.00"
-            value={budgetInput}
-            onChange={(e) => setBudgetInput(e.target.value)}
-            autoFocus
-          />
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={saveBudget}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+    </>
   );
 }
 
