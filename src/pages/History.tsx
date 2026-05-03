@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 
 type Row = { id: string; started_at: string; total_cents: number; stores: string[]; itemCount: number };
