@@ -45,10 +45,14 @@ const KEYWORDS: Record<CategorySlug, string[]> = {
   other: [],
 };
 
+// Order matters: more specific categories checked before broader ones.
+const GUESS_ORDER: CategorySlug[] = [
+  "frozen", "beverages", "snacks", "household", "dairy", "meat", "produce", "bakery", "pantry",
+];
+
 export function guessCategory(name: string): CategorySlug {
   const n = name.toLowerCase();
-  for (const slug of CATEGORY_ORDER) {
-    if (slug === "other") continue;
+  for (const slug of GUESS_ORDER) {
     for (const k of KEYWORDS[slug]) {
       if (n.includes(k)) return slug;
     }
