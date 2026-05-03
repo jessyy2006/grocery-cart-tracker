@@ -1,5 +1,5 @@
 export const formatMoney = (cents: number) =>
-  (cents / 100).toLocaleString(undefined, { style: "currency", currency: "USD" });
+  (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
 export const parsePriceToCents = (input: string): number | null => {
   const cleaned = input.replace(/[^\d.,-]/g, "").replace(",", ".");
