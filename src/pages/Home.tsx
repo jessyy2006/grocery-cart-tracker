@@ -90,14 +90,9 @@ export default function Home() {
           .eq("list_id", listId);
       }
 
-      const { error } = await supabase
-        .from("trips")
-        .insert({ user_id: user.id, list_id: listId })
-        .select("id")
-        .single();
-      if (error) throw error;
+      sessionStorage.setItem("pendingTrip:listId", listId ?? "none");
       setStartOpen(false);
-      navigate("/trip", { replace: true });
+      navigate("/trip/new");
     } catch (e: any) {
       toast.error(e.message ?? "Failed to start trip");
     } finally {
