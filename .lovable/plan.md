@@ -1,53 +1,32 @@
-I understand the current receipt is close visually, but there’s still a right-side white sliver and the tear interaction isn’t producing the expected share/save flow. I’ll keep the receipt design intact and focus this pass on the artifact, reliable gesture completion, a real tear-off animation, and a modal with Save / Share actions.
+I understand: the barcode stub is still behaving like a draggable piece that often snaps back instead of tearing. I inspected `src/components/finance/ReceiptView.tsx`; the core issue is that the gesture is still gated by pointer capture + direction locking + a 35% `window.innerWidth` threshold, and it only listens on the moving stub itself, so the interaction can be lost/cancelled before completion.
 
-## Plan
+Plan:
 
-### 1. Remove the right-side white rectangle
-- Update `src/components/finance/ReceiptView.tsx` so the exported receipt wrapper clips its own content cleanly.
-- Remove/adjust the current `drop-shadow(...)` filter if it is contributing to a rendered edge artifact, replacing it with a normal shadow wrapper that doesn’t create a vertical white strip.
-- Ensure jagged SVG edges use the exact same width behavior as the body and don’t leave transparent/filled overflow at the right edge.
+1. Simplify the tear gesture contract
+   - Change the tear threshold from 35% to 20% of the viewport width.
+   - Count horizontal distance from wherever the thumb starts on the barcode: middle, left edge, or right edge.
+   - Allow diagonal movement by making horizontal displacement the primary success condition instead of requiring a strict horizontal lock.
+   - Trigger completion immediately during `pointermove` once `abs(dx) >= window.innerWidth * 0.2`.
 
-### 2. Make the barcode stub tear off visibly
-- Split the bottom barcode section into a dedicated “stub” element below the perforation line.
-- On a completed horizontal swipe, animate only that stub away from the receipt:
-  - translate horizontally in the swipe direction
-  - slightly rotate
-  - fade out and drop down a bit to read as “falling off”
-- Keep the main receipt body stationary so it feels like the perforated barcode piece is tearing away.
+2. Make completion reliable
+   - Add a `tearCompletedRef` guard so once the threshold is crossed, the stub cannot bounce back or be reset by a later pointer-up/cancel event.
+   - Ensure `finishSwipe(true)` sets the torn state, clears pointer tracking, fires haptics, animates the stub falling away, and opens the share/save dialog every time.
+   - Prevent `onPointerCancel` from resetting the stub after completion has started.
 
-### 3. Fix swipe completion reliability
-- Replace the current percent-only pointer logic with a more robust swipe state:
-  - track `pointerId`, `startX`, `startY`, latest `dx`, and swipe direction in refs
-  - compute completion from absolute pixel distance, with a realistic threshold for a 390–414px phone viewport
-  - support both left-to-right and right-to-left swipes
-  - keep vertical scrolling working when the user starts moving mostly vertically
-- Expand the active hit target to the full perforation + barcode area.
-- Add `onTouchStart/onTouchMove/onTouchEnd` fallback if needed so iOS Safari doesn’t silently miss pointer-event capture.
+3. Make the touch target more forgiving
+   - Keep the whole barcode stub as the interactive zone.
+   - Set the interactive stub to `touch-action: none` while dragging so the browser’s scroll handling does not cancel horizontal swipes.
+   - Keep the movement visual subtle during drag, but make the automatic tear animation decisive once triggered.
 
-### 4. Add post-swipe action pop-up
-- Add a receipt export dialog in `ReceiptView.tsx` using the existing `src/components/ui/dialog.tsx` and `src/components/ui/button.tsx` components.
-- When the swipe reaches completion:
-  - play the stub tear animation
-  - then open a dialog with two buttons:
-    - `Save image`: generate the PNG and download it
-    - `Share`: generate the PNG and call `navigator.share({ files: [...] })` when supported
-- If the browser/device does not support file sharing, show a clear toast and keep Save available.
+4. Preserve current export/share behavior
+   - Do not change the receipt-only PNG export path.
+   - Keep the dialog with Save image and Share buttons.
+   - Keep haptics using the Web Vibration API where supported; note that iOS Safari does not support vibration, but Android/compatible browsers will buzz.
 
-### 5. Export clean receipt image
-- Capture the full receipt body and jagged edges, excluding:
-  - helper text below the receipt
-  - drag/progress overlay
-  - modal UI
-- For export, temporarily render/capture the barcode stub in its original attached position even if the visible stub has torn away, so the saved/shared PNG is a clean full receipt.
+Files to update:
+- `src/components/finance/ReceiptView.tsx`
 
-### 6. Test in mobile preview
-- Verify at the current mobile viewport:
-  - no right-side white sliver
-  - swipe across the barcode area progresses and completes
-  - barcode stub visibly tears/falls away
-  - dialog appears after completion
-  - Save triggers a PNG download fallback
-  - Share attempts native file share when supported
-
-## Important limitation
-Showing the true iOS share sheet is only possible on iOS Safari / compatible mobile browsers using the Web Share API with files. The desktop/preview browser may not show the iOS sheet, so I’ll implement the correct API path plus a Save fallback and user-facing message when native sharing is unavailable.
+Risks / checks:
+- `touch-action: none` on the barcode means dragging on the barcode prioritizes tearing over page scroll, which is desired here.
+- The threshold on the current 402px viewport becomes ~80px, so a short thumb movement should be enough to tear automatically.
+- I’ll keep the code minimal and localized to the receipt gesture handlers to avoid regressions elsewhere.

@@ -161,7 +161,7 @@ export default function ReceiptView(props: Props) {
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const dxRef = useRef(0);
-  const lockedHorizontalRef = useRef<boolean | null>(null);
+  const tearCompletedRef = useRef(false);
 
   const [dragDx, setDragDx] = useState(0);
   const [tearDir, setTearDir] = useState<1 | -1>(1);
@@ -273,44 +273,32 @@ export default function ReceiptView(props: Props) {
         setTorn(false);
         setDragDx(0);
         dxRef.current = 0;
+        tearCompletedRef.current = false;
       }, 250);
       return () => clearTimeout(t);
     }
   }, [dialogOpen, torn]);
 
+  const TEAR_RATIO = 0.2;
+
   const onPointerDown = (e: React.PointerEvent) => {
-    if (torn || busy) return;
+    if (torn || busy || tearCompletedRef.current) return;
     pointerIdRef.current = e.pointerId;
     startXRef.current = e.clientX;
     startYRef.current = e.clientY;
     dxRef.current = 0;
-    lockedHorizontalRef.current = null;
     try {
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     } catch { /* noop */ }
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
-    if (pointerIdRef.current !== e.pointerId) return;
+    if (pointerIdRef.current !== e.pointerId || tearCompletedRef.current) return;
     const dx = e.clientX - startXRef.current;
-    const dy = e.clientY - startYRef.current;
-
-    if (lockedHorizontalRef.current === null) {
-      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-      // Be generous: only lock to vertical if movement is clearly vertical (dy > 2x dx).
-      // Diagonal drags count as horizontal.
-      if (Math.abs(dy) > Math.abs(dx) * 2) {
-        lockedHorizontalRef.current = false;
-        pointerIdRef.current = null;
-        return;
-      }
-      lockedHorizontalRef.current = true;
-    }
     e.preventDefault();
     dxRef.current = dx;
     setDragDx(dx);
-    // Auto-complete as soon as the thumb has moved 35% of the screen width.
-    const threshold = window.innerWidth * 0.35;
+    const threshold = window.innerWidth * TEAR_RATIO;
     if (Math.abs(dx) >= threshold) {
       finishSwipe(true);
     }
@@ -319,18 +307,18 @@ export default function ReceiptView(props: Props) {
   const triggerTearHaptics = () => {
     const n = navigator as Navigator & { vibrate?: (p: number | number[]) => boolean };
     if (typeof n.vibrate === "function") {
-      // buzz buzz buzz
       n.vibrate([40, 60, 40, 60, 40]);
     }
   };
 
   const finishSwipe = (forceComplete = false) => {
+    if (tearCompletedRef.current) return;
     const dx = dxRef.current;
-    const threshold = window.innerWidth * 0.35;
+    const threshold = window.innerWidth * TEAR_RATIO;
     const completed = forceComplete || Math.abs(dx) >= threshold;
     pointerIdRef.current = null;
-    lockedHorizontalRef.current = null;
     if (completed) {
+      tearCompletedRef.current = true;
       triggerTearHaptics();
       setTearDir(dx >= 0 ? 1 : -1);
       setTorn(true);
@@ -347,8 +335,8 @@ export default function ReceiptView(props: Props) {
   };
   const onPointerCancel = (e: React.PointerEvent) => {
     if (pointerIdRef.current !== e.pointerId) return;
+    if (tearCompletedRef.current) return;
     pointerIdRef.current = null;
-    lockedHorizontalRef.current = null;
     setDragDx(0);
     dxRef.current = 0;
   };
@@ -450,7 +438,7 @@ export default function ReceiptView(props: Props) {
             className="absolute inset-x-0 top-0 select-none"
             style={{
               backgroundColor: PAPER,
-              touchAction: "pan-y",
+              touchAction: "none",
               cursor: torn ? "default" : "grab",
               transform: stubTransform,
               transition: stubTransition,
