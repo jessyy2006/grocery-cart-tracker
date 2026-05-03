@@ -276,7 +276,7 @@ export default function ActiveTrip() {
       store_name_snapshot: activeStore.name,
       barcode: pending.barcode,
       name_snapshot: pending.name.trim(),
-      price_cents,
+      price_cents: price_cents as number,
       qty: pending.qty,
     };
     const { data, error } = await supabase.from("trip_items").insert(insert).select("*").single();
