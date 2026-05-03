@@ -190,31 +190,40 @@ export default function ReceiptView(props: Props) {
 
   const generatePng = async (): Promise<{ dataUrl: string; blob: Blob; file: File } | null> => {
     if (!exportRef.current) return null;
-    const node = exportRef.current;
-    // Switch to "exporting" state so the receipt re-mounts as a clean, untorn version
-    // for capture, regardless of current torn/drag state.
-    setExporting(true);
-    // Wait two frames to ensure styles are applied.
-    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+    // Clone offscreen so the saved PNG is the receipt only, in clean untorn state.
+    const source = exportRef.current;
+    const clone = source.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('[data-export="hide"]').forEach((el) => el.remove());
+    // Reset any inline styles that came from the tear/drag animation.
+    clone.querySelectorAll<HTMLElement>("[style]").forEach((el) => {
+      if (el.style.height === "0px") el.style.height = "auto";
+      if (el.style.transform) el.style.transform = "none";
+      if (el.style.opacity === "0") el.style.opacity = "1";
+      el.style.transition = "none";
+      el.style.pointerEvents = "auto";
+    });
+    clone.style.transform = "none";
+    clone.style.filter = "none";
+
+    const width = source.offsetWidth || 384;
+    const wrap = document.createElement("div");
+    wrap.style.cssText = `position:fixed;left:-100000px;top:0;width:${width}px;background:#ffffff;z-index:-1;`;
+    wrap.appendChild(clone);
+    document.body.appendChild(wrap);
     try {
-      const dataUrl = await toPng(node, {
+      const dataUrl = await toPng(clone, {
         pixelRatio: 3,
         cacheBust: true,
         backgroundColor: "#ffffff",
-        width: node.offsetWidth,
-        height: node.offsetHeight,
-        filter: (el) => {
-          if (!(el instanceof HTMLElement)) return true;
-          return el.dataset.export !== "hide";
-        },
       });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], "grocery-receipt.png", { type: "image/png" });
       return { dataUrl, blob, file };
     } finally {
-      setExporting(false);
+      wrap.remove();
     }
   };
+
 
   const handleSave = async () => {
     if (busy) return;
