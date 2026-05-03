@@ -594,30 +594,7 @@ function FinanceCardView(props: any) {
           </Button>
         </Card>
       )}
-
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Monthly budget</DialogTitle>
-            <DialogDescription>How much do you want to spend on groceries each month?</DialogDescription>
-          </DialogHeader>
-          <Input
-            type="number"
-            inputMode="decimal"
-            placeholder="0.00"
-            value={budgetInput}
-            onChange={(e) => setBudgetInput(e.target.value)}
-            autoFocus
-          />
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={saveBudget}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+    </>
   );
 }
 
