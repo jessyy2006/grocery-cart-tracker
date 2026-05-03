@@ -108,12 +108,15 @@ export default function StartTrip() {
           storeId = created!.id;
         }
       }
+      const pendingList = sessionStorage.getItem("pendingTrip:listId");
+      const listId = pendingList && pendingList !== "none" ? pendingList : null;
       const { data: trip, error: tErr } = await supabase
         .from("trips")
-        .insert({ user_id: user.id })
+        .insert({ user_id: user.id, list_id: listId })
         .select("id")
         .single();
       if (tErr) throw tErr;
+      sessionStorage.removeItem("pendingTrip:listId");
       sessionStorage.setItem(`trip:${trip!.id}:store`, storeId!);
       navigate("/trip", { replace: true });
     } catch (e: any) {
