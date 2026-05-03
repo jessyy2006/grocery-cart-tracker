@@ -37,4 +37,5 @@ export const BottomNav = () => {
       ))}
     </ul>
   </nav>
-);
+  );
+};
