@@ -184,12 +184,18 @@ export default function ActiveTrip() {
 
     if (matchId) {
       const checked_at = new Date().toISOString();
+      const newName = productName;
+      const newPrice = tripItem.price_cents;
       setListItems((c) =>
-        c.map((i) => (i.id === matchId ? { ...i, checked_at, barcode: i.barcode ?? code } : i))
+        c.map((i) =>
+          i.id === matchId
+            ? { ...i, checked_at, barcode: i.barcode ?? code, name: newName, price_cents: newPrice }
+            : i
+        )
       );
       await supabase
         .from("shopping_list_items")
-        .update({ checked_at, barcode: code ?? undefined })
+        .update({ checked_at, barcode: code ?? undefined, name: newName, price_cents: newPrice })
         .eq("id", matchId);
       toast.success(`Checked off: ${productName}`);
     } else {
