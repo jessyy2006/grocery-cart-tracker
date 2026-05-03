@@ -583,7 +583,7 @@ function FinanceCardView(props: any) {
         </div>
       )}
 
-      {!trips.length && (
+      {!derived.series.some((s: { cents: number }) => s.cents > 0) && (
         <Card className="p-6 text-center">
           <div className="text-sm font-medium">No trips yet</div>
           <div className="mt-1 text-sm text-muted-foreground">
