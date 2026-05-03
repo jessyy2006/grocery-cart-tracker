@@ -33,9 +33,10 @@ export default function ListDetail() {
   const [listName, setListName] = useState("");
   const [items, setItems] = useState<Item[]>([]);
   const [name, setName] = useState("");
-  const [qty, setQty] = useState(1);
+  const [qtyText, setQtyText] = useState("1");
   const [category, setCategory] = useState<CategorySlug>("other");
   const [autoCat, setAutoCat] = useState(true);
+  const [runActive, setRunActive] = useState(false);
 
   useEffect(() => {
     if (!id || !user) return;
@@ -48,6 +49,13 @@ export default function ListDetail() {
         .eq("list_id", id)
         .order("created_at", { ascending: true });
       setItems((data ?? []) as Item[]);
+      const { data: trips } = await supabase
+        .from("trips")
+        .select("id")
+        .eq("list_id", id)
+        .eq("status", "active")
+        .limit(1);
+      setRunActive(!!trips?.[0]);
     })();
   }, [id, user]);
 
