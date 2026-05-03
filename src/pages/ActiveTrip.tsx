@@ -141,9 +141,14 @@ export default function ActiveTrip() {
   }, [listItems]);
 
   const toggleListItem = async (it: ListItem) => {
-    const checked_at = it.checked_at ? null : new Date().toISOString();
-    setListItems((c) => c.map((i) => (i.id === it.id ? { ...i, checked_at } : i)));
-    await supabase.from("shopping_list_items").update({ checked_at }).eq("id", it.id);
+    const nowChecking = !it.checked_at;
+    const checked_at = nowChecking ? new Date().toISOString() : null;
+    const price_cents = nowChecking ? it.price_cents : null;
+    setListItems((c) => c.map((i) => (i.id === it.id ? { ...i, checked_at, price_cents } : i)));
+    await supabase
+      .from("shopping_list_items")
+      .update({ checked_at, price_cents })
+      .eq("id", it.id);
   };
 
   const aiMatch = async (scannedName: string): Promise<string | null> => {
