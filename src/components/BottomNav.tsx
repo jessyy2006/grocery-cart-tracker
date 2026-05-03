@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { Home, ListChecks, ShoppingCart, History, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
