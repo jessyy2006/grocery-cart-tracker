@@ -395,12 +395,15 @@ export default function ReceiptView(props: Props) {
 
         {/* Stub container — positioned so the stub can animate away */}
         <div className="relative" style={{ height: torn ? 0 : "auto", transition: "height 380ms ease" }}>
-          {/* Hidden export-only stub: renders the barcode in place inside the captured PNG */}
+          {/* Export-only stub: shown while capturing so the saved PNG includes the barcode */}
           <div
             data-export="hide-inverse"
             aria-hidden
-            className="pointer-events-none invisible"
-            style={{ backgroundColor: PAPER }}
+            className="pointer-events-none"
+            style={{
+              backgroundColor: PAPER,
+              visibility: exporting ? "visible" : "hidden",
+            }}
           >
             <div className="px-6 pt-3 pb-4">
               <Barcode seed={barcodeSeed} />
