@@ -40,7 +40,6 @@ export default function OnboardingProfile() {
       step={1}
       title="Tell us a bit about you"
       subtitle="Just the basics — everything else is optional."
-      skipTo="/onboarding/goals"
       primaryLabel="Continue"
       primaryDisabled={!canContinue}
       onPrimary={() => navigate("/onboarding/goals")}

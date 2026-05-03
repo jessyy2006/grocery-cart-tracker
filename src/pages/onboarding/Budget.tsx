@@ -20,17 +20,11 @@ export default function OnboardingBudget() {
     navigate("/onboarding/behavior");
   };
 
-  const skip = () => {
-    update({ budgetCents: null });
-    navigate("/onboarding/behavior");
-  };
-
   return (
     <OnboardingLayout
       step={3}
       title="Set your monthly grocery budget"
       subtitle={`We'll track your spending against this goal in ${currency}.`}
-      onSkip={skip}
       primaryLabel="Continue"
       primaryDisabled={!value.trim()}
       onPrimary={submit}
@@ -48,7 +42,7 @@ export default function OnboardingBudget() {
             onChange={(e) => setValue(e.target.value)}
           />
         </div>
-        <p className="text-xs text-muted-foreground">Skip and we'll use {currency} 400 as a starting point.</p>
+        <p className="text-xs text-muted-foreground">Don't worry, you can change this later.</p>
       </div>
     </OnboardingLayout>
   );
