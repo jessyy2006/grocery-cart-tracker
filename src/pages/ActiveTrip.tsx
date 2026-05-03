@@ -312,6 +312,13 @@ export default function ActiveTrip() {
     setPickStoreOpen(false);
   };
 
+  const exitTrip = async () => {
+    if (!tripId) return;
+    await supabase.from("trips").delete().eq("id", tripId);
+    sessionStorage.removeItem(`trip:${tripId}:store`);
+    navigate("/", { replace: true });
+  };
+
   if (!tripId) return null;
 
   return (
