@@ -477,7 +477,7 @@ export default function ReceiptView(props: Props) {
           className="relative"
           style={{
             height: stubContainerHeight,
-            transition: exporting ? "none" : "height 520ms ease",
+            transition: "height 520ms ease",
           }}
         >
           {/* Visible interactive stub */}
