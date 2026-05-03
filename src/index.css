@@ -68,11 +68,11 @@
     --popover: 150 18% 11%;
     --popover-foreground: 60 20% 96%;
 
-    --primary: 150 55% 55%;
-    --primary-foreground: 150 25% 8%;
-    --primary-glow: 150 60% 65%;
+    --primary: 130 55% 65%;
+    --primary-foreground: 150 35% 10%;
+    --primary-glow: 130 60% 75%;
 
-    --accent: 24 90% 60%;
+    --accent: 145 50% 40%;
     --accent-foreground: 0 0% 100%;
 
     --secondary: 150 15% 18%;
