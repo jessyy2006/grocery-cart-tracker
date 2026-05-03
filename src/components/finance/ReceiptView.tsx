@@ -168,7 +168,7 @@ export default function ReceiptView(props: Props) {
   const [torn, setTorn] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  
 
   const remaining = budgetCents - monthSpend;
   const over = budgetCents > 0 && remaining < 0;
@@ -183,23 +183,36 @@ export default function ReceiptView(props: Props) {
 
   const generatePng = async (): Promise<{ dataUrl: string; blob: Blob; file: File } | null> => {
     if (!exportRef.current) return null;
-    setExporting(true);
-    // Wait two frames for the export-only stub to become visible
-    await new Promise<void>((r) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => r())),
-    );
+    // Clone offscreen so the saved PNG is a clean receipt regardless of torn/drag state.
+    const clone = exportRef.current.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('[data-export="hide"]').forEach((el) => el.remove());
+    clone.querySelectorAll<HTMLElement>('[data-export="hide-inverse"]').forEach((el) => {
+      el.style.visibility = "visible";
+    });
+    clone.querySelectorAll<HTMLElement>("[style]").forEach((el) => {
+      if (el.style.height === "0px") el.style.height = "auto";
+      if (el.style.transform) el.style.transform = "none";
+      if (el.style.opacity === "0") el.style.opacity = "1";
+    });
+    clone.style.transform = "none";
+    clone.style.filter = "none";
+
+    const wrap = document.createElement("div");
+    wrap.style.cssText =
+      "position:fixed;left:-100000px;top:0;width:384px;background:#ffffff;z-index:-1;";
+    wrap.appendChild(clone);
+    document.body.appendChild(wrap);
     try {
-      const dataUrl = await toPng(exportRef.current, {
+      const dataUrl = await toPng(clone, {
         pixelRatio: 3,
         cacheBust: true,
         backgroundColor: "#ffffff",
-        filter: (node) => !(node instanceof HTMLElement && node.dataset.export === "hide"),
       });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], "grocery-receipt.png", { type: "image/png" });
       return { dataUrl, blob, file };
     } finally {
-      setExporting(false);
+      wrap.remove();
     }
   };
 
@@ -283,23 +296,33 @@ export default function ReceiptView(props: Props) {
     const dy = e.clientY - startYRef.current;
 
     if (lockedHorizontalRef.current === null) {
-      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-      lockedHorizontalRef.current = Math.abs(dx) > Math.abs(dy);
-      if (!lockedHorizontalRef.current) {
-        // Vertical scroll — release tracking
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      // Be generous: only lock to vertical if movement is clearly vertical (dy > 2x dx).
+      // Diagonal drags count as horizontal.
+      if (Math.abs(dy) > Math.abs(dx) * 2) {
+        lockedHorizontalRef.current = false;
         pointerIdRef.current = null;
         return;
       }
+      lockedHorizontalRef.current = true;
     }
     e.preventDefault();
     dxRef.current = dx;
     setDragDx(dx);
+    // Auto-complete as soon as 35% threshold is crossed mid-drag.
+    const w = swipeZoneRef.current?.offsetWidth ?? window.innerWidth;
+    if (Math.abs(dx) >= w * 0.35) {
+      finishSwipe();
+    }
   };
 
   const finishSwipe = () => {
+    if (pointerIdRef.current === null && !torn) {
+      // already released
+    }
     const dx = dxRef.current;
-    const w = swipeZoneRef.current?.offsetWidth ?? 320;
-    const completed = Math.abs(dx) > Math.max(120, w * 0.45);
+    const w = swipeZoneRef.current?.offsetWidth ?? window.innerWidth;
+    const completed = Math.abs(dx) >= w * 0.35;
     pointerIdRef.current = null;
     lockedHorizontalRef.current = null;
     if (completed) {
@@ -402,7 +425,7 @@ export default function ReceiptView(props: Props) {
             className="pointer-events-none"
             style={{
               backgroundColor: PAPER,
-              visibility: exporting ? "visible" : "hidden",
+              visibility: "hidden",
             }}
           >
             <div className="px-6 pt-3 pb-4">
