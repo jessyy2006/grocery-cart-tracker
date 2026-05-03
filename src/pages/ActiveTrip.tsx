@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Scanner } from "@/components/Scanner";
-import { ScanLine, Plus, MapPin, Trash2, Check } from "lucide-react";
+import { ScanLine, Plus, MapPin, Trash2, Check, X } from "lucide-react";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
 import { findListMatch, getCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
@@ -312,6 +312,13 @@ export default function ActiveTrip() {
     setPickStoreOpen(false);
   };
 
+  const exitTrip = async () => {
+    if (!tripId) return;
+    await supabase.from("trips").delete().eq("id", tripId);
+    sessionStorage.removeItem(`trip:${tripId}:store`);
+    navigate("/", { replace: true });
+  };
+
   if (!tripId) return null;
 
   return (
@@ -325,9 +332,6 @@ export default function ActiveTrip() {
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setPickStoreOpen(true)}>
-            Switch
-          </Button>
           {extras.length > 0 && (
             <button
               onClick={() => setExtrasOpen((o) => !o)}
@@ -337,6 +341,9 @@ export default function ActiveTrip() {
               {extras.length}
             </button>
           )}
+          <Button variant="ghost" size="sm" onClick={exitTrip}>
+            <X className="mr-1 h-4 w-4" /> Exit
+          </Button>
         </div>
       </header>
 
