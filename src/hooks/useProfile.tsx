@@ -15,7 +15,7 @@ export const useProfile = () => {
     }
     let cancel = false;
     (async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("user_onboarding")
         .select("first_name")
         .eq("user_id", user.id)

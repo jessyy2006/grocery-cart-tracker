@@ -16,7 +16,7 @@ export const RequireOnboarding = ({ children }: { children: JSX.Element }) => {
       return;
     }
     (async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("user_onboarding")
         .select("completed_at")
         .eq("user_id", user.id)
