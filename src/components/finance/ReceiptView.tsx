@@ -283,23 +283,33 @@ export default function ReceiptView(props: Props) {
     const dy = e.clientY - startYRef.current;
 
     if (lockedHorizontalRef.current === null) {
-      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-      lockedHorizontalRef.current = Math.abs(dx) > Math.abs(dy);
-      if (!lockedHorizontalRef.current) {
-        // Vertical scroll — release tracking
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      // Be generous: only lock to vertical if movement is clearly vertical (dy > 2x dx).
+      // Diagonal drags count as horizontal.
+      if (Math.abs(dy) > Math.abs(dx) * 2) {
+        lockedHorizontalRef.current = false;
         pointerIdRef.current = null;
         return;
       }
+      lockedHorizontalRef.current = true;
     }
     e.preventDefault();
     dxRef.current = dx;
     setDragDx(dx);
+    // Auto-complete as soon as 35% threshold is crossed mid-drag.
+    const w = swipeZoneRef.current?.offsetWidth ?? window.innerWidth;
+    if (Math.abs(dx) >= w * 0.35) {
+      finishSwipe();
+    }
   };
 
   const finishSwipe = () => {
+    if (pointerIdRef.current === null && !torn) {
+      // already released
+    }
     const dx = dxRef.current;
-    const w = swipeZoneRef.current?.offsetWidth ?? 320;
-    const completed = Math.abs(dx) > Math.max(120, w * 0.45);
+    const w = swipeZoneRef.current?.offsetWidth ?? window.innerWidth;
+    const completed = Math.abs(dx) >= w * 0.35;
     pointerIdRef.current = null;
     lockedHorizontalRef.current = null;
     if (completed) {
