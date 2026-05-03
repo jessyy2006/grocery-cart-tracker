@@ -158,6 +158,21 @@ export default function ActiveTrip() {
     return Array.from(m.values());
   }, [items]);
 
+  const tryCheckOffList = async (code: string, productName: string | undefined) => {
+    if (!listId || listItems.length === 0) return;
+    const match = findListMatch(listItems, { barcode: code, name: productName });
+    if (!match) return;
+    const checked_at = new Date().toISOString();
+    setListItems((c) =>
+      c.map((i) => (i.id === match.id ? { ...i, checked_at, barcode: i.barcode ?? code } : i))
+    );
+    await supabase
+      .from("shopping_list_items")
+      .update({ checked_at, barcode: match.barcode ?? code })
+      .eq("id", match.id);
+    toast.success(`Checked off: ${match.name}`);
+  };
+
   const onScanned = async (code: string) => {
     setScanning(false);
     if (!activeStore) {
@@ -172,9 +187,11 @@ export default function ActiveTrip() {
       .eq("barcode", code)
       .maybeSingle();
     if (cached) {
+      const fullName = cached.brand ? `${cached.brand} — ${cached.name}` : cached.name;
+      await tryCheckOffList(code, fullName);
       setPending({
         barcode: code,
-        name: cached.brand ? `${cached.brand} — ${cached.name}` : cached.name,
+        name: fullName,
         price: cached.default_price_cents != null ? (cached.default_price_cents / 100).toFixed(2) : "",
         qty: 1,
         image_url: cached.image_url ?? undefined,
@@ -182,9 +199,11 @@ export default function ActiveTrip() {
       return;
     }
     const off = await lookupBarcode(code);
+    const fullName = off ? (off.brand ? `${off.brand} — ${off.name}` : off.name) : "";
+    await tryCheckOffList(code, fullName || undefined);
     setPending({
       barcode: code,
-      name: off ? (off.brand ? `${off.brand} — ${off.name}` : off.name) : "",
+      name: fullName,
       price: "",
       qty: 1,
       image_url: off?.image_url,
