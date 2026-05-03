@@ -26,6 +26,8 @@ type Item = {
   category: string;
   barcode: string | null;
   checked_at: string | null;
+  notes: string | null;
+  price_cents: number | null;
 };
 
 export default function ListDetail() {
