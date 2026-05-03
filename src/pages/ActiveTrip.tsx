@@ -34,6 +34,8 @@ type ListItem = {
   category: string;
   barcode: string | null;
   checked_at: string | null;
+  price_cents: number | null;
+  notes: string | null;
 };
 
 export default function ActiveTrip() {
