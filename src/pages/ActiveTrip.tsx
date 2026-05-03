@@ -38,6 +38,7 @@ type ListItem = {
 export default function ActiveTrip() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  useCurrency();
   const [tripId, setTripId] = useState<string | null>(null);
   const [listId, setListId] = useState<string | null>(null);
   const [listName, setListName] = useState<string>("");
