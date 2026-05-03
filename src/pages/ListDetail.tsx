@@ -308,6 +308,40 @@ export default function ListDetail() {
           <ShoppingBasket className="mr-2 h-5 w-5" /> Start grocery run
         </Button>
       </footer>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit item</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Name" />
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={editQtyText}
+                onChange={(e) => setEditQtyText(e.target.value.replace(/[^\d]/g, ""))}
+                className="w-20"
+                aria-label="Quantity"
+              />
+              <Input
+                value={editNotes}
+                maxLength={25}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Notes (e.g. 500 ml)"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button onClick={saveEdit}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
