@@ -279,6 +279,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_onboarding: {
+        Row: {
+          age_range: string | null
+          completed_at: string | null
+          created_at: string
+          first_name: string | null
+          gender: string | null
+          goals: string[]
+          last_name: string | null
+          shopping_behavior: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age_range?: string | null
+          completed_at?: string | null
+          created_at?: string
+          first_name?: string | null
+          gender?: string | null
+          goals?: string[]
+          last_name?: string | null
+          shopping_behavior?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age_range?: string | null
+          completed_at?: string | null
+          created_at?: string
+          first_name?: string | null
+          gender?: string | null
+          goals?: string[]
+          last_name?: string | null
+          shopping_behavior?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
