@@ -1,64 +1,58 @@
-## Grocery Tracker — Mobile PWA
+## Problem
 
-A phone-first installable web app for tracking grocery runs in real time. Scan barcodes as you shop, watch your cart total update live, save the trip when you check out, and browse past trips with store, items, and prices.
+On **Start new trip**, the "Near you" list spins forever and never shows stores. Three root causes are likely, and the current code masks all of them:
 
-### Core user flow
+1. **Geolocation never resolves in the preview iframe.** Lovable's preview iframe doesn't always grant `geolocation` permission. In Safari/Chrome, when permission is blocked at the iframe level, `getCurrentPosition` can hang past our 10s timeout without firing either callback.
+2. **Overpass API is slow or rate-limited.** `https://overpass-api.de/api/interpreter` regularly takes 10–30s and sometimes returns 429/504. Our `fetch` has no timeout, so a slow response keeps the spinner up indefinitely.
+3. **Errors are swallowed.** `StartTrip.tsx` wraps the whole flow in `try { … } catch {}` with an empty handler, so the user has no idea what failed and no way to recover. (The `finally` does set `loading=false`, so a true infinite spinner only happens when geolocation/fetch never settle — see #1 and #2.)
 
-1. Sign up / log in (email + password, Google sign-in).
-2. Tap **Start new trip** → app auto-detects your location and suggests nearby grocery stores; pick one (or add a custom name).
-3. Scan barcodes with the phone camera. Each scanned item appears in the live cart with name, quantity, and price. Running total updates instantly.
-4. Add a second store mid-trip → items get tagged to that store; cart shows a per-store breakdown plus a grand total.
-5. Tap **Save trip** at checkout → trip is archived with date, store(s), items, and totals.
-6. **History** tab → list of past trips, tap any to see exact items, prices, and stores.
+## Fix
 
-### Screens
+### 1. Add real timeouts and split the two phases
+`src/lib/device/geolocation.ts`
+- `getCurrentPosition`: keep the GPS timeout but also wrap in a hard `Promise.race` (12s) so a misbehaving iframe permission still rejects.
+- `findNearbyStores`: pass an `AbortController` with a 12s timeout to `fetch`. Fall back to the mirror `https://overpass.kumi.systems/api/interpreter` on first failure. Throw typed errors (`GeoPermissionError`, `GeoTimeoutError`, `StoreSearchError`) so the UI can render specific messages.
+- Add a `searchStoresByName(query)` helper that hits Nominatim (`https://nominatim.openstreetmap.org/search?q=…&format=json&limit=10`) for a manual text/address fallback — no GPS needed.
 
-- **Auth** — login / signup
-- **Home** — "Start new trip" button, list of recent saved trips, lifetime spend summary
-- **Active trip** — current store header (with switch-store action), scrollable list of scanned items grouped by store, live total footer, big **Scan** button, **Save trip** button
-- **Scanner** — full-screen camera with barcode overlay; on detection slides up a sheet with product info + price field + qty
-- **Trip detail** — read-only view of a past trip
-- **Item lookup fallback** — when a barcode isn't in Open Food Facts or has no remembered price, a quick form to enter name + price (saved for next time)
-- **Profile / settings** — sign out, manage saved stores
+### 2. Make `StartTrip.tsx` show state, not spin
+- Track three independent states: `gpsState` (`idle|loading|denied|timeout|ok`), `nearbyState` (`idle|loading|error|ok`), and `savedStores`.
+- Render saved stores and the "type a name" input **immediately**, before GPS resolves, so the user is never blocked.
+- For the "Near you" section, show:
+  - spinner while `nearbyState === "loading"`,
+  - friendly error + **Retry** button on `error`/`timeout`,
+  - "Location blocked — search by name instead" on `denied`, with a Nominatim-backed search box.
+- Replace the silent `catch {}` with `console.error` + `toast.error` for unexpected failures.
 
-### Data model
+### 3. Cache the last successful position
+Store the latest coords in `sessionStorage` so a retry doesn't re-prompt for GPS, and so navigating back to `StartTrip` skips the slow geolocation call when fresh (<5 min).
 
-- `profiles` (id, display_name)
-- `products` (barcode PK, name, brand, image_url, default_price, last_user_price) — shared lookup cache, populated from Open Food Facts + your past entries
-- `stores` (id, user_id, name, address, lat, lng) — your personal store list, auto-populated as you shop
-- `trips` (id, user_id, started_at, ended_at, status: active/saved, total_cents)
-- `trip_items` (id, trip_id, store_id, barcode, name_snapshot, price_cents, qty, scanned_at) — snapshots so historical trips don't change if a price later updates
+## Tests
 
-All tables protected with RLS so each user only sees their own data.
+Add Vitest specs (jsdom env already configured in `vitest.config.ts`):
 
-### Key features
+- `src/lib/device/geolocation.test.ts`
+  - `getCurrentPosition` resolves with mocked `navigator.geolocation`.
+  - `getCurrentPosition` rejects with `GeoPermissionError` when the error code is `1`.
+  - `getCurrentPosition` rejects with `GeoTimeoutError` after 12s when the browser callback never fires (use fake timers).
+  - `findNearbyStores` returns parsed `{name, address, lat, lng}` from a mocked Overpass response.
+  - `findNearbyStores` falls back to the kumi mirror when the primary endpoint 5xxs.
+  - `findNearbyStores` rejects with `StoreSearchError` when both endpoints fail or the request aborts.
+  - `searchStoresByName` parses Nominatim results into the same shape.
+- `src/pages/StartTrip.test.tsx` (React Testing Library)
+  - Renders saved stores immediately even while GPS is still pending.
+  - Shows a "Location blocked" hint when geolocation rejects with permission error.
+  - Shows a Retry button on Overpass failure and re-fires the lookup when clicked.
+  - Manual Nominatim search renders results and starting a trip from one creates a store + trip (Supabase client mocked).
 
-- **Barcode scanning** in-browser via the phone camera (`BarcodeDetector` API with a JS fallback for iOS Safari).
-- **Open Food Facts lookup** for product name/brand/image. No prices — first time you scan an item you type the price; we remember it and pre-fill next time (editable per scan).
-- **GPS + nearby store search** when starting a trip (uses browser geolocation + a free reverse-geocoding/places lookup). You can override or type a custom name. Stores are saved to your personal list for one-tap reuse.
-- **Multi-store trip** — switch active store mid-trip; items keep tagging to whatever store was active when scanned. Trip detail and totals break down by store.
-- **Live totals** — cart subtotal recomputes on every add/edit/remove.
-- **Offline-friendly scanning** — scans queue locally and sync when back online.
-- **Trip history** with search by store and date.
+## Files touched
 
-### Look & feel
+- `src/lib/device/geolocation.ts` — timeouts, typed errors, mirror fallback, `searchStoresByName`.
+- `src/pages/StartTrip.tsx` — granular state, error UI, retry, manual-search box, sessionStorage cache.
+- `src/lib/device/geolocation.test.ts` *(new)*
+- `src/pages/StartTrip.test.tsx` *(new)*
 
-- Mobile-first single-column layout sized for one-handed use.
-- Clean, calm palette (off-white background, deep green accent for grocery vibe), large tap targets, big sticky **Scan** FAB on the active-trip screen.
-- Bottom tab bar: Home · Active Trip · History · Profile.
+No DB or schema changes. No new dependencies.
 
-### Technical notes
+## Note on the preview iframe
 
-- Built as a PWA (installable to home screen, works offline for viewing past trips). Structured so a later **Capacitor wrap** for native iOS/Android is a drop-in: all device APIs (camera, geolocation) accessed through a thin abstraction layer (`src/lib/device/`) so we can swap browser APIs for Capacitor plugins (`@capacitor/camera`, `@capacitor/geolocation`) without touching feature code. Auth, DB calls, and UI stay identical.
-- **Lovable Cloud** for auth + Postgres + RLS.
-- **Open Food Facts** public API for product lookups (no key required).
-- **Geolocation**: browser `navigator.geolocation` + Nominatim (OpenStreetMap) for free reverse geocoding and nearby-store search. If results are weak, we can swap in Google Places later (would need an API key).
-- Barcode scanning via native `BarcodeDetector` where available, falling back to `@zxing/browser`.
-- React + Vite + Tailwind + shadcn (existing stack). React Query for data, Zod for validation.
-
-### What's deferred (ask later if you want them)
-
-- Sharing a trip / household sync
-- Budgets and category analytics
-- Receipt photo OCR
-- Price comparison across stores
+Even after this fix, GPS may stay "denied" inside Lovable's preview because the iframe's `allow="geolocation"` policy isn't always present. The new UI degrades cleanly: saved stores + manual name/address search will still work, and once the PWA is installed (or opened in a full browser tab via the preview URL), GPS will work normally.
