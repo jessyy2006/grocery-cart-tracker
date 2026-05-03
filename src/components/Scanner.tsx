@@ -1,10 +1,18 @@
 import { useEffect, useRef } from "react";
 import { startBarcodeScan, ScannerHandle } from "@/lib/device/scanner";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Keyboard } from "lucide-react";
 import { toast } from "sonner";
 
-export const Scanner = ({ onCode, onClose }: { onCode: (code: string) => void; onClose: () => void }) => {
+export const Scanner = ({
+  onCode,
+  onClose,
+  onManualEntry,
+}: {
+  onCode: (code: string) => void;
+  onClose: () => void;
+  onManualEntry?: () => void;
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const handleRef = useRef<ScannerHandle | null>(null);
 
