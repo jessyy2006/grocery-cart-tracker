@@ -161,7 +161,7 @@ export default function ReceiptView(props: Props) {
   const startXRef = useRef(0);
   const startYRef = useRef(0);
   const dxRef = useRef(0);
-  const lockedHorizontalRef = useRef<boolean | null>(null);
+  const tearCompletedRef = useRef(false);
 
   const [dragDx, setDragDx] = useState(0);
   const [tearDir, setTearDir] = useState<1 | -1>(1);
