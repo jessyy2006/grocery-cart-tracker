@@ -54,7 +54,7 @@ const monthLabel = (d: Date) => d.toLocaleString(undefined, { month: "short" });
 
 export default function Finance() {
   const { user } = useAuth();
-  useCurrency();
+  // currency hook called below
   const [loading, setLoading] = useState(true);
   const [budgetCents, setBudgetCents] = useState<number | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
