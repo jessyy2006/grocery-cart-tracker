@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ShoppingBasket, Plus, MapPin, ListChecks } from "lucide-react";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
