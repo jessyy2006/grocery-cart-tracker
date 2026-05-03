@@ -85,21 +85,26 @@ export default function ListDetail() {
   const addItem = async () => {
     if (!id || !name.trim()) return;
     const slug = autoCat ? guessCategory(name) : category;
+    const parsedQty = Math.max(1, parseInt(qtyText, 10) || 1);
     const insert = {
       list_id: id,
       name: name.trim(),
-      qty: Math.max(1, qty),
+      qty: parsedQty,
       category: slug,
     };
     const { data, error } = await supabase.from("shopping_list_items").insert(insert).select("*").single();
     if (error) return toast.error(error.message);
     setItems((c) => [...c, data as Item]);
     setName("");
-    setQty(1);
+    setQtyText("1");
     setAutoCat(true);
   };
 
   const toggle = async (it: Item) => {
+    if (!runActive) {
+      toast.error("Start the grocery run to check items off");
+      return;
+    }
     const checked_at = it.checked_at ? null : new Date().toISOString();
     setItems((c) => c.map((i) => (i.id === it.id ? { ...i, checked_at } : i)));
     await supabase.from("shopping_list_items").update({ checked_at }).eq("id", it.id);
