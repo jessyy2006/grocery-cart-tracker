@@ -32,6 +32,7 @@ export default function OnboardingBudget() {
       subtitle={`We'll track your spending against this goal in ${currency}.`}
       onSkip={skip}
       primaryLabel="Continue"
+      primaryDisabled={!value.trim()}
       onPrimary={submit}
     >
       <div className="space-y-2">
