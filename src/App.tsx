@@ -15,6 +15,7 @@ import TripDetail from "./pages/TripDetail";
 import Profile from "./pages/Profile";
 import Lists from "./pages/Lists";
 import ListDetail from "./pages/ListDetail";
+import Finance from "./pages/Finance";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
