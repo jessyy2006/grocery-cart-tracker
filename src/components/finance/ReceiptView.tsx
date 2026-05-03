@@ -163,6 +163,7 @@ export default function ReceiptView(props: Props) {
   const startYRef = useRef(0);
   const dxRef = useRef(0);
   const tearCompletedRef = useRef(false);
+  const dialogShownRef = useRef(false);
 
   const [dragDx, setDragDx] = useState(0);
   const [tearDir, setTearDir] = useState<1 | -1>(1);
@@ -327,14 +328,15 @@ export default function ReceiptView(props: Props) {
     }
   };
 
-  // Reset tear when dialog closes
+  // Reset tear only AFTER the share dialog has been opened and then closed.
   useEffect(() => {
-    if (!dialogOpen && torn && !previewOpen) {
+    if (!dialogOpen && torn && dialogShownRef.current && !previewOpen) {
       const t = setTimeout(() => {
         setTorn(false);
         setDragDx(0);
         dxRef.current = 0;
         tearCompletedRef.current = false;
+        dialogShownRef.current = false;
       }, 250);
       return () => clearTimeout(t);
     }
@@ -383,7 +385,10 @@ export default function ReceiptView(props: Props) {
       triggerTearHaptics();
       setTearDir(dx >= 0 ? 1 : -1);
       setTorn(true);
-      window.setTimeout(() => setDialogOpen(true), 380);
+      window.setTimeout(() => {
+        dialogShownRef.current = true;
+        setDialogOpen(true);
+      }, 380);
     } else {
       setDragDx(0);
       dxRef.current = 0;

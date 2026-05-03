@@ -38,7 +38,6 @@ const App = () => (
         <AuthProvider>
           <OnboardingProvider>
             <Routes>
-              <Route path="/auth" element={<Navigate to="/onboarding/signup" replace />} />
               <Route path="/onboarding" element={<OnboardingIntro />} />
               <Route path="/onboarding/signup" element={<OnboardingSignup />} />
               <Route
