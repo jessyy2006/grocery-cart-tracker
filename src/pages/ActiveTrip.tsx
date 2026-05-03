@@ -61,7 +61,7 @@ export default function ActiveTrip() {
     (async () => {
       const { data } = await supabase
         .from("trips")
-        .select("id")
+        .select("id, list_id")
         .eq("status", "active")
         .order("started_at", { ascending: false })
         .limit(1);
@@ -70,6 +70,26 @@ export default function ActiveTrip() {
         return;
       }
       setTripId(data[0].id);
+      setListId((data[0] as any).list_id ?? null);
+    })();
+  }, [user, navigate]);
+
+  // Load shopping list (if linked)
+  useEffect(() => {
+    if (!listId) {
+      setListItems([]);
+      setListName("");
+      return;
+    }
+    (async () => {
+      const { data: l } = await supabase.from("shopping_lists").select("name").eq("id", listId).maybeSingle();
+      if (l) setListName(l.name);
+      const { data } = await supabase
+        .from("shopping_list_items")
+        .select("*")
+        .eq("list_id", listId)
+        .order("created_at", { ascending: true });
+      setListItems((data ?? []) as ListItem[]);
     })();
   }, [user, navigate]);
 
