@@ -1,91 +1,63 @@
-# Shopping Lists + Barcode Check-off
+# Active Trip page overhaul
 
-Add a "Shopping Lists" feature: build a categorized list of items before a grocery run, then during an active trip scan barcodes to auto-cross items off. Also retheme the app to dark green / neutral white with a light green accent.
+Reshape `/trip` so the shopping list is the page, scanned items auto-check matching list entries (verified by AI), and unmatched scans land in a hidden "Extras" tray.
 
-## User flow
+## 1. Hide the bottom nav on the trip page
 
-1. From Home or new "Lists" tab → create a list (e.g. "Weekly groceries").
-2. Add items to the list. Each item has a name, quantity, and a category (auto-suggested from a built-in dictionary, editable). Items are grouped by category in the UI (Dairy, Produce, Bakery, Meat & Seafood, Pantry, Frozen, Snacks, Other).
-3. Swipe / tap trash to delete an item.
-4. Tap "Start grocery run" on a list → creates an active trip linked to that list and navigates to ActiveTrip.
-5. In ActiveTrip, the linked list is shown above the cart with items grouped by category. Scanning a barcode that matches a list item (by barcode OR fuzzy name match against the OFF product name) auto-checks it off AND adds it to the cart as today. Manual tap on the checkbox also toggles it.
-6. Items already checked are visually struck through and sink to the bottom of their category. Progress indicator shows "7 / 12 picked up".
+In `src/components/BottomNav.tsx`, read the current route via `useLocation()` and return `null` when `pathname === "/trip"`. This keeps `AppLayout` untouched and the trip screen full-height.
 
-## Data model (new tables)
+## 2. Full-screen shopping list (replaces the empty-cart placeholder)
 
-```text
-shopping_lists
-  id uuid pk, user_id uuid, name text, created_at, updated_at
+Rewrite the body of `src/pages/ActiveTrip.tsx`:
 
-shopping_list_items
-  id uuid pk
-  list_id uuid -> shopping_lists.id (cascade)
-  name text
-  qty int default 1
-  category text          -- one of the canonical category slugs
-  barcode text null      -- optional, set when matched/scanned
-  checked_at timestamptz null
-  position int           -- for ordering within category
-  created_at
+- Remove the "Cart is empty / Tap Scan to add your first item" block and the small list summary card.
+- The main scrollable area becomes the **shopping list itself**, grouped by category (reuse the existing `CATEGORY_ORDER` / `getCategory` rendering already in the file).
+- Each list item row gets a `Checkbox` (like `ListDetail.tsx`) so the user can manually tick items off. Toggling updates `shopping_list_items.checked_at` in Supabase and local state. Checked items are greyed + struck-through and sorted to the bottom of their category.
+- Delete the per-store "cart items" section from the visible list — keep that data only for the cart total in the footer (which already sums `trip_items`). Cart total + Save trip + Scan barcode footer stays as-is.
 
-trips
-  + list_id uuid null    -- new column linking a run to its list
-```
+## 3. Extras tray + red badge
 
-RLS: owner-only via `user_id` on lists; items via `EXISTS` join on parent list (mirrors trip_items pattern).
+State: `const [extras, setExtras] = useState<TripItem[]>([])` and `const [extrasOpen, setExtrasOpen] = useState(false)`.
 
-## Category dictionary
+Header (right side, replacing/next to "Switch"):
 
-Static map in `src/lib/categories.ts`:
+- A circular red badge button shown only when `extras.length > 0`. White number, `bg-destructive` (or `bg-red-500`), `rounded-full`, ~22px. Clicking toggles `extrasOpen`.
+- Keep the "Switch" text button to its left.
 
-- Slugs: `produce`, `dairy`, `bakery`, `meat`, `pantry`, `frozen`, `beverages`, `snacks`, `household`, `other`.
-- Each has label, emoji/icon, and a keyword list for auto-categorization (e.g. "milk|yogurt|cheese|butter" → dairy).
-- Helper `guessCategory(name: string): CategorySlug` used when adding items manually and when ingesting an OFF product.
+Extras module:
 
-## Barcode → list match
+- Rendered ABOVE the shopping list inside the scroll area, only when `extrasOpen` is true.
+- Light-red accent card titled "Extras", listing each unmatched scanned item (name, qty, price). Each row has a trash icon to remove (also deletes the `trip_items` row).
+- When an extra is removed, celebration emoji confetti animation is enlarged on the screen for a brief moment. keep this animation simple and quick. 
 
-In ActiveTrip's `onScanned`:
+## 4. Scan → AI match → check off OR add to extras
 
-1. After OFF/product-cache lookup (existing logic), if there is a linked list with unchecked items:
-  - Match by `barcode` first.
-  - Else fuzzy-match the resolved product name against unchecked item names (lowercase token overlap, threshold ≥ 1 strong token).
-2. If matched, mark `checked_at = now()` and persist the scanned `barcode` back onto the list item so future scans are exact.
-3. Toast: "Checked off: Milk".
-4. Cart insert proceeds as today.
+Replace `tryCheckOffList` with a new flow used inside `onScanned` and `confirmAdd`:
 
-## Screens / components
+1. After the user confirms an item in the existing add dialog (`confirmAdd`), insert into `trip_items` as today.
+2. Then call a new edge function `match-list-item` with `{ scannedName, listItems: openItems.map(i => ({id, name})) }`.
+3. The function returns `{ matchId: string | null }`. If non-null, mark that `shopping_list_items` row as `checked_at = now()` and update local `listItems`.
+4. If null, push the trip item onto `extras` and (if not already open) flash a subtle toast "Added to Extras".
 
-- `src/pages/Lists.tsx` — list of shopping lists with "New list" button.
-- `src/pages/ListDetail.tsx` — items grouped by category; add-item input with category picker; delete; "Start grocery run" CTA.
-- `src/components/ListItemRow.tsx` — checkbox, name, qty, category chip, trash.
-- Update `src/pages/ActiveTrip.tsx` — show linked list panel above cart, wire scan-to-checkoff.
-- Update `src/pages/StartTrip.tsx` — optional "Use a list" selector.
-- Update `src/components/BottomNav.tsx` — replace "History" with "Lists" (History stays accessible from Profile/Home), or add a 5th tab. Recommend 5 tabs: Home, Lists, Trip, History, Profile.
-- Update `src/App.tsx` routes: `/lists`, `/lists/:id`.
+Local fallback: if the edge call fails, fall back to the existing `findListMatch` token logic so the feature still works offline.
 
-## Theme refresh (dark green + white + light green accent)
+## 5. New edge function: `supabase/functions/match-list-item/index.ts`
 
-Update `src/index.css` tokens:
+- Calls Lovable AI Gateway (`google/gemini-3-flash-preview`) using tool calling for structured output.
+- System prompt: "You decide whether a scanned grocery product matches any item on a shopping list. A match means at least one meaningful word in the scanned product name corresponds to a word/concept in a list item (e.g. '2% Whole Milk' matches 'milk', 'Boneless chicken thighs' matches 'chicken'). Pick the single best match or none."
+- Tool schema returns `{ match_id: string | null }` chosen from the provided list IDs.
+- Handles 429/402 and returns `{ matchId: null, error }` so the client can fall back.
+- CORS headers + `verify_jwt = true` (default).
 
-- `--background: 0 0% 99%` (neutral white)
-- `--foreground: 150 35% 12%` (deep green text)
-- `--primary: 150 50% 20%` (dark forest green)
-- `--primary-glow: 145 55% 32%`
-- `--accent: 130 55% 65%` (light green)
-- `--secondary: 140 25% 95%`
-- `--border: 140 15% 88%`
-- Dark mode: invert with `--background: 150 30% 8%`, `--primary: 130 55% 65%` (light green), `--accent: 145 50% 45%`.
-- Replace the orange-derived utilities and any hardcoded oranges in components.
+## 6. Data flow notes
 
-## Tests
+- The existing list-load effect in `ActiveTrip` already fetches `listItems`; reuse it.
+- "Extras" is derived from `trip_items` whose name didn't match — track this client-side via the `extras` state set during scanning. (No schema change needed.) On page refresh extras reset to empty; this is acceptable for the active session.
+- Manual checkbox toggling in the list updates Supabase the same way `ListDetail.tsx` does.
 
-- `src/lib/categories.test.ts` — `guessCategory` returns correct slug for representative items (milk→dairy, apple→produce, bread→bakery, frozen pizza→frozen, etc.) and falls back to `other`.
-- `src/lib/listMatch.test.ts` — fuzzy match: barcode hit, name token hit, no-match returns null, already-checked items skipped.
-- `src/pages/ListDetail.test.tsx` (RTL) — adding an item assigns category; deleting removes it; checking moves it to bottom of section.
-- Manual QA via browser tool: create list → start run → scan known barcode → item crossed off and added to cart.
+## Files
 
-## Out of scope
-
-- Sharing lists with other users.
-- Voice / image add (icon shown in inspiration but not requested).
-- Recipe templates / "Often purchased".
+- edit `src/components/BottomNav.tsx` — hide on `/trip`
+- edit `src/pages/ActiveTrip.tsx` — full-screen list, checkboxes, extras tray, red badge, AI match call
+- new `supabase/functions/match-list-item/index.ts` — Gemini-backed matcher
+- (no DB migration, no `config.toml` changes needed)
