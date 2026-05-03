@@ -8,7 +8,7 @@ import { OnboardingProvider } from "@/hooks/useOnboarding";
 import { RequireAuth } from "@/components/RequireAuth";
 import { RequireOnboarding } from "@/components/RequireOnboarding";
 import { AppLayout } from "@/components/AppLayout";
-import AuthPage from "./pages/Auth";
+
 import Home from "./pages/Home";
 import StartTrip from "./pages/StartTrip";
 import ActiveTrip from "./pages/ActiveTrip";
