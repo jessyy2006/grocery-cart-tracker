@@ -38,7 +38,7 @@ export default function History() {
   }, [user]);
 
   return (
-    <div className="space-y-4 px-5 pb-4 pt-4">
+    <div className="space-y-4 px-5 pb-6 pt-6">
       <h1 className="text-3xl font-bold tracking-tight">History</h1>
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">No saved trips yet.</p>
