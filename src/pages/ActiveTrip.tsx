@@ -418,7 +418,7 @@ export default function ActiveTrip() {
                         {!it.checked_at && (
                           <Checkbox
                             checked={false}
-                            onCheckedChange={() => toggleListItem(it)}
+                            onCheckedChange={() => openManualCheck(it)}
                             aria-label="Toggle item"
                           />
                         )}
