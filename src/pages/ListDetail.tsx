@@ -217,9 +217,12 @@ export default function ListDetail() {
           <Input
             type="number"
             min={1}
-            value={qty}
-            onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
+            inputMode="numeric"
+            value={qtyText}
+            onChange={(e) => setQtyText(e.target.value.replace(/[^\d]/g, ""))}
+            onBlur={() => setQtyText((v) => String(Math.max(1, parseInt(v, 10) || 1)))}
             className="w-16"
+            aria-label="Quantity"
           />
         </div>
         <div className="flex gap-2">
