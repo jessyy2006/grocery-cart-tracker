@@ -328,14 +328,15 @@ export default function ReceiptView(props: Props) {
     }
   };
 
-  // Reset tear when dialog closes
+  // Reset tear only AFTER the share dialog has been opened and then closed.
   useEffect(() => {
-    if (!dialogOpen && torn && !previewOpen) {
+    if (!dialogOpen && torn && dialogShownRef.current && !previewOpen) {
       const t = setTimeout(() => {
         setTorn(false);
         setDragDx(0);
         dxRef.current = 0;
         tearCompletedRef.current = false;
+        dialogShownRef.current = false;
       }, 250);
       return () => clearTimeout(t);
     }
