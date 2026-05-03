@@ -349,14 +349,17 @@ export default function ActiveTrip() {
 
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
         {extrasOpen && extras.length > 0 && (
-          <section className="rounded-2xl border border-accent bg-accent/30 p-3">
+          <section className="rounded-2xl border-2 border-red-500 bg-red-500/15 p-3">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Extras</h3>
-              <span className="text-xs text-muted-foreground">{extras.length}</span>
+              <h3 className="text-sm font-semibold text-red-700">Extras</h3>
+              <span className="text-xs font-medium text-red-700">{extras.length}</span>
             </div>
             <ul className="space-y-2">
               {extras.map((ex) => (
-                <li key={ex.id} className="flex items-center justify-between rounded-xl bg-card p-2">
+                <li
+                  key={ex.id}
+                  className="flex items-center justify-between rounded-xl border border-red-500 bg-card p-2"
+                >
                   <div className="min-w-0 flex-1 pr-2">
                     <p className="truncate text-sm font-medium">{ex.name_snapshot}</p>
                     <p className="text-xs text-muted-foreground">
