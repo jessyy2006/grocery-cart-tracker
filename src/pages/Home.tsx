@@ -15,6 +15,10 @@ import { ShoppingBasket, Plus, MapPin, ListChecks, ShoppingCart } from "lucide-r
 import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useProfile } from "@/hooks/useProfile";
+import FeatureIntroDialog from "@/components/FeatureIntroDialog";
+import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
+import { useSearchParams } from "react-router-dom";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
 type ShortList = { id: string; name: string };
