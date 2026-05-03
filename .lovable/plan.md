@@ -1,92 +1,97 @@
-# Finance Tab
+# Finance Receipt View
 
-Replace the bottom-nav **Trip** entry with a **Finance** entry. The active trip stays reachable from the Home page (existing "Continue trip" / "Start a new trip" surfaces). The `/trip` route itself is unchanged.
+Add a secondary **Receipt View** to the Finance tab, toggled from a control in the top-right of the page header. Card view stays the default and is unchanged.
 
-## 1. Schema
+## 1. Toggle
 
-New table `user_budgets` for the single global monthly budget.
+Top-right of `src/pages/Finance.tsx` header, next to the existing edit-budget icon button:
 
-```sql
--- UP
-create table public.user_budgets (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  monthly_cents integer not null default 0 check (monthly_cents >= 0),
-  updated_at timestamptz not null default now()
-);
-alter table public.user_budgets enable row level security;
-create policy "budgets own read"   on public.user_budgets for select using (auth.uid() = user_id);
-create policy "budgets own write"  on public.user_budgets for insert with check (auth.uid() = user_id);
-create policy "budgets own update" on public.user_budgets for update using (auth.uid() = user_id);
--- DOWN
-drop table public.user_budgets;
+- Two-icon segmented control (`ToggleGroup` from `src/components/ui/toggle-group.tsx`).
+  - `LayoutGrid` icon → Card view (default).
+  - `Receipt` icon → Receipt view.
+- Persist preference to `localStorage` key `finance:view` (`"card" | "receipt"`). Read synchronously on mount so there's no flash.
+- Switching is instant — both views read the same state already loaded by the page; no refetch.
+
+## 2. Receipt view component
+
+New file `src/components/finance/ReceiptView.tsx`. Props: the already-derived figures from `Finance.tsx` (`budgetCents`, `monthSpend`, `tripCount`, `avgTrip`, `extrasCents`, `extrasCount`, `momDelta`, current month start/end, currency).
+
+### Visual structure
+
+```text
+        ┌─jagged─top─┐         (SVG, straight L/R sides)
+        │  paper     │
+        │  content   │
+        │ ── perforation ── │  (dashed line, draggable)
+        │  tear stub        │
+        └─jagged─bot─┘
 ```
 
-No other schema changes — extras, trip totals, and categories are derived from existing tables (`trips`, `trip_items`, `shopping_list_items`, `stores`).
+- Wrapper is **not** a `Card`. A `<div>` with:
+  - `bg-[#fdfaf1]` (off-white paper), subtle CSS noise via inline `background-image` data-URI (tiny SVG turbulence) at low opacity.
+  - Straight vertical edges (no border-radius).
+  - Top + bottom jagged edges rendered as inline SVGs (zig-zag path) using the same paper fill — full width, ~10px tall.
+  - Soft drop shadow underneath for depth.
+- Inner padding `px-6 py-5`, **font-mono** (Tailwind built-in), `text-sm leading-tight`, `tracking-tight`.
 
-## 2. Navigation swap
+### Content (exact order)
 
-**`src/components/BottomNav.tsx`**: replace the `{ to: "/trip", label: "Trip", icon: ShoppingCart }` entry with `{ to: "/finance", label: "Finance", icon: BarChart3 }`. The hide-on-`/trip` rule stays so the in-trip footer is uninterrupted.
+```text
+   MONTHLY GROCERY SUMMARY
+        May 1 – May 31
+   ----------------------------
 
-**`src/App.tsx`**: register `<Route path="/finance" element={<Finance />} />` inside the authed layout.
+   BUDGET                $600.00
+   SPENT                 $482.15
+   ----------------------------
+   REMAINING             $117.85
+        (or)
+   OVER BUDGET            $42.10
 
-## 3. New page `src/pages/Finance.tsx`
+   ----------------------------
+   TRIPS                       7
+   AVG / TRIP             $68.88
+   EXTRAS                 $82.40
+   EXTRA ITEMS                14
+   VS LAST MONTH         -$48.20    (omit if no prior data)
+   ----------------------------
 
-Single screen, top → bottom, matching existing card / spacing / typography tokens (`Card`, `bg-card`, `rounded-2xl`, `text-muted-foreground`, etc.). All currency rendered via `formatMoney` so the user's currency setting carries over.
+   * 18% of spending was unplanned *
 
-### 3a. Data fetching (one effect, parallel queries)
-- `user_budgets` row for current user (insert default 0 on first save).
-- `trips` for current user where `status = 'saved'` and `started_at >= now() - 6 months` — pull `id, started_at, total_cents, list_id`.
-- `trip_items` for those trip ids (`trip_id, name_snapshot, price_cents, qty, store_id, store_name_snapshot, barcode`).
-- `shopping_list_items` for the trips that had a `list_id`, used to classify extras (item is an extra when no `list_id` match by `barcode` or normalized name within the trip's list).
-- Categorize each `trip_item` via existing `src/lib/categories.ts` helper (already used elsewhere in the app).
+   Generated May 3, 2026
+```
 
-Derived state (memoized):
-- `monthSpend` = sum of `total_cents` for trips in current calendar month.
-- `remaining` = `budget - monthSpend` (negative = over).
-- `pctUsed` = `monthSpend / budget`.
-- `extras` (current month, list-trips only): `count`, `cents`, `pctOfSpend`; plus prior-month extras for the up/down delta.
-- `avgTrip` = `monthSpend / monthTripCount`.
-- `momDelta` = `monthSpend − previousMonthSpend`.
-- `monthlySeries` = last 6 months of totals (filled with 0).
-- `byCategory`, `byStore` = grouped sums for current month, sorted desc.
+- Labels left, values right via `flex justify-between` per row + monospace for column alignment.
+- Insight: single line, derived locally (no AI call) — pick the strongest of: extras % of spend, MoM % change, over/under budget %. Falls back to "Keep tracking to unlock insights." when the month has <2 trips.
+- Currency rendered through existing `formatMoney`.
 
-### 3b. UI sections
+### Perforation + tear-to-export
 
-1. **Header** — "Finance" title + small edit-budget icon button.
-2. **Budget card** — large `$X left` or `$X over`, subtext `of $Y monthly`, full-width progress bar (green `bg-accent` under, red `bg-red-500` over), `pctUsed` chip. Tap opens a `Dialog` (reuses existing dialog styling) with a single price input bound to `formatMoney`/`parsePriceToCents`, saves to `user_budgets`.
-3. **Behavior signals row** — 3 small cards in a horizontal scroll on narrow widths:
-   - *Unplanned spending*: `$X on extras`, `N items • P% of total`, ↑/↓ vs last month.
-   - *Avg trip cost*: `$X avg per trip`, `N trips this month` subtext.
-   - *MoM*: `↓/↑ $X vs last month`, neutral when delta = 0.
-4. **Monthly chart** — Recharts `BarChart` (already in deps via `src/components/ui/chart.tsx`). 6 bars, x-axis short month labels, neutral fill, red fill when bar > budget, `ReferenceLine` at budget. Tap shows tooltip with exact value. Subtle initial animation (Recharts default).
-5. **Breakdown** — `Tabs` (`Categories | Stores`). Categories view shows each category row with name, amount, and a thin progress bar (share of monthly spend). Stores view shows store name + amount, sorted desc.
-6. **Insights** — up to 2 cards rendered from a single edge-function call (see §4). Skeleton while loading; hidden if call fails or returns empty.
+- Below content: a 28px-tall row representing the perforated strip. have small text below the receipt, prompting the user to tear to export.
+  - Dashed horizontal line (`border-t border-dashed border-neutral-400`) above a thin "stub" area with smaller text `← swipe to share →`.
+- Pointer interaction (touch + mouse), implemented inline with `pointerdown/move/up`:
+  - Track horizontal drag distance on the strip; show progress as the strip translates/rotates slightly and a width-bound highlight bar fills left→right.
+  - At ≥70% width drag, commit the tear: animate the lower stub off-screen (`translateY` + slight rotate, 250ms), then trigger export popup.
+- Export:
+  - Add `html-to-image` dependency (~10kb, no canvas polyfills required, works on iOS Safari) and call `toPng(receiptRef.current, { pixelRatio: 3, cacheBust: true })`.
+  - The toggle, page chrome, and tear-strip are excluded by passing a ref that wraps **only** the receipt body (perforation strip is hidden during capture via a `data-export="hide"` attribute and a `filter` callback).
+  - Use `navigator.share({ files: [pngFile] })` when available; otherwise fall back to a download via an `<a download>` link.
+  - Reset the tear animation after the share sheet closes (or immediately on fallback) so the user can swipe again.
 
-### 3c. Empty states
-- No budget set → budget card shows "Set your monthly budget" + primary CTA opening the same dialog. Behavior signals + chart still render with the data we have; insights section hidden.
-- No trips this month → chart + breakdown show "Start tracking trips to see your spending insights" with a CTA linking to Home.
+## 3. Files touched
 
-## 4. AI insights edge function
+- **edit** `src/pages/Finance.tsx` — add view state, top-right toggle, conditional render of `ReceiptView` vs the existing card stack. Lift the already-computed derived values so both views read the same memo.
+- **new** `src/components/finance/ReceiptView.tsx` — paper styling, jagged edges SVG, content rows, tear interaction, export handler.
+- **package** add `html-to-image` to `dependencies`.
 
-`supabase/functions/finance-insights/index.ts`:
-- Validates JWT, loads the caller's last-2-months aggregates (reuses the same SQL the page computes; cheaper than sending raw items).
-- Calls Lovable AI Gateway, model `google/gemini-3-flash-preview`, **non-streaming**, with a tool-call schema returning `{ insights: [{ title, body }], max 2 }`.
-- Surfaces 429/402 back to the client as JSON errors so the page can hide the section gracefully.
-- `LOVABLE_API_KEY` already provisioned; no new secrets.
+## 4. Out of scope
 
-Client calls via `supabase.functions.invoke('finance-insights')` once per page load (no caching for v1).
+- No charts, breakdowns, or AI insights inside the receipt (PRD §6).
+- No edits to backend, schema, or the existing card view contents.
+- No printing flow — share/download only.
 
-## 5. Files touched
+## 5. Risks
 
-- **new** `supabase/migrations/<ts>_user_budgets.sql`
-- **new** `src/pages/Finance.tsx`
-- **new** `supabase/functions/finance-insights/index.ts`
-- **edit** `src/components/BottomNav.tsx` (Trip → Finance)
-- **edit** `src/App.tsx` (route registration)
-
-## 6. Risks / notes
-
-- Extras classification depends on list match quality. Using `barcode` first, then normalized lowercased name; trips with `list_id = null` are excluded from extras (per your decision) but still count toward total spend, avg trip, and MoM.
-- Budget is a single row per user; editing is immediate (optimistic update).
-- Recharts is already bundled — no new deps.
-- AI insights are best-effort: failures never block the rest of the page.
+- iOS Safari `navigator.share` with files works on 16.4+; older devices fall back to download. Acceptable.
+- `html-to-image` can miss web fonts; we use the system monospace stack so capture is faithful.
+- Drag gesture conflicts with vertical page scroll — the strip uses `touch-action: pan-y` off and `pan-x` on, scoped to the 28px strip only, so the rest of the page scrolls normally.
