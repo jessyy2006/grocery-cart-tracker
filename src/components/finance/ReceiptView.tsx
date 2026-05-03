@@ -438,7 +438,7 @@ export default function ReceiptView(props: Props) {
             className="absolute inset-x-0 top-0 select-none"
             style={{
               backgroundColor: PAPER,
-              touchAction: "pan-y",
+              touchAction: "none",
               cursor: torn ? "default" : "grab",
               transform: stubTransform,
               transition: stubTransition,
