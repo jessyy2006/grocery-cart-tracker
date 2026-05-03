@@ -405,29 +405,19 @@ export default function ReceiptView(props: Props) {
           </div>
         </div>
 
-        {/* Perforation line — stays attached to receipt */}
+        {/* Perforation line — same dotted weight as the dividers above */}
         <div style={{ backgroundColor: PAPER }}>
-          <div className="border-t-2 border-dashed border-neutral-400/80" />
+          <div className="border-t border-dashed border-neutral-500/60" />
         </div>
 
-        {/* Stub container — positioned so the stub can animate away */}
-        <div className="relative" style={{ height: torn ? 0 : "auto", transition: "height 380ms ease" }}>
-          {/* Export-only stub: shown while capturing so the saved PNG includes the barcode */}
-          <div
-            data-export="hide-inverse"
-            aria-hidden
-            className="pointer-events-none"
-            style={{
-              backgroundColor: PAPER,
-              visibility: "hidden",
-            }}
-          >
-            <div className="px-6 pt-3 pb-4">
-              <Barcode seed={barcodeSeed} />
-            </div>
-            <JaggedEdge position="bottom" />
-          </div>
-
+        {/* Stub container — collapses height when torn so the receipt above settles, but doesn't clip the flying stub */}
+        <div
+          className="relative"
+          style={{
+            height: stubContainerHeight,
+            transition: exporting ? "none" : "height 520ms ease",
+          }}
+        >
           {/* Visible interactive stub */}
           <div
             ref={swipeZoneRef}
@@ -435,7 +425,6 @@ export default function ReceiptView(props: Props) {
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
-            data-export="hide"
             className="absolute inset-x-0 top-0 select-none"
             style={{
               backgroundColor: PAPER,
@@ -443,8 +432,9 @@ export default function ReceiptView(props: Props) {
               cursor: torn ? "default" : "grab",
               transform: stubTransform,
               transition: stubTransition,
-              opacity: torn ? 0 : 1,
+              opacity: stubOpacity,
               willChange: "transform, opacity",
+              pointerEvents: torn || exporting ? "none" : "auto",
             }}
           >
             <div className="px-6 pt-3 pb-4">
@@ -453,6 +443,7 @@ export default function ReceiptView(props: Props) {
             <JaggedEdge position="bottom" />
           </div>
         </div>
+      </div>
       </div>
 
       <p data-export="hide" className="mt-3 text-center text-xs text-muted-foreground">
