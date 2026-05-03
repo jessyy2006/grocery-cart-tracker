@@ -444,7 +444,6 @@ export default function ReceiptView(props: Props) {
           </div>
         </div>
       </div>
-      </div>
 
       <p data-export="hide" className="mt-3 text-center text-xs text-muted-foreground">
         Swipe across the barcode to tear &amp; share
