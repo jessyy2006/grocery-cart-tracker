@@ -168,8 +168,14 @@ export default function ReceiptView(props: Props) {
   const [torn, setTorn] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  
+
+  // Pre-generated PNG so Save/Share fire inside the user gesture (required for
+  // navigator.share on iOS PWAs).
+  const [exportFile, setExportFile] = useState<File | null>(null);
+  const [exportDataUrl, setExportDataUrl] = useState<string | null>(null);
+  const [preparingExport, setPreparingExport] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
 
   const remaining = budgetCents - monthSpend;
   const over = budgetCents > 0 && remaining < 0;
