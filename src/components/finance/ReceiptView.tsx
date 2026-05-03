@@ -496,7 +496,7 @@ export default function ReceiptView(props: Props) {
               transition: stubTransition,
               opacity: stubOpacity,
               willChange: "transform, opacity",
-              pointerEvents: torn || exporting ? "none" : "auto",
+              pointerEvents: torn ? "none" : "auto",
             }}
           >
             <div className="px-6 pt-3 pb-4">
