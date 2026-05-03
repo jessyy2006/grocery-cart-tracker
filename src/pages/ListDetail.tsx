@@ -100,13 +100,38 @@ export default function ListDetail() {
       name: name.trim(),
       qty: parsedQty,
       category: slug,
+      notes: notes.trim() ? notes.trim().slice(0, 25) : null,
     };
     const { data, error } = await supabase.from("shopping_list_items").insert(insert).select("*").single();
     if (error) return toast.error(error.message);
     setItems((c) => [...c, data as Item]);
     setName("");
     setQtyText("1");
+    setNotes("");
     setAutoCat(true);
+  };
+
+  const openEdit = (it: Item) => {
+    setEditing(it);
+    setEditName(it.name);
+    setEditQtyText(String(it.qty));
+    setEditNotes(it.notes ?? "");
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    const newName = editName.trim();
+    if (!newName) return toast.error("Name can't be empty");
+    const newQty = Math.max(1, parseInt(editQtyText, 10) || 1);
+    const newNotes = editNotes.trim() ? editNotes.trim().slice(0, 25) : null;
+    setItems((c) =>
+      c.map((i) => (i.id === editing.id ? { ...i, name: newName, qty: newQty, notes: newNotes } : i))
+    );
+    await supabase
+      .from("shopping_list_items")
+      .update({ name: newName, qty: newQty, notes: newNotes })
+      .eq("id", editing.id);
+    setEditing(null);
   };
 
   const toggle = async (it: Item) => {
