@@ -451,7 +451,7 @@ export default function ActiveTrip() {
                     : "bg-muted text-muted-foreground";
                 return (
                   <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>
-                    {checked}/{denom}
+                    {numer}/{denom}
                   </span>
                 );
               })()}
