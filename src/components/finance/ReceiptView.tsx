@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { formatMoney, type Currency } from "@/lib/format";
 import { toast } from "sonner";
@@ -18,6 +18,8 @@ type Props = {
   currency: Currency;
 };
 
+const PAPER = "#fdfaf1";
+
 const fmtRange = (a: Date, b: Date) => {
   const m = a.toLocaleString(undefined, { month: "long" });
   return `${m} ${a.getDate()} – ${m} ${b.getDate()}`;
@@ -32,21 +34,46 @@ const Row = ({ label, value, strong }: { label: string; value: string; strong?: 
 
 const Divider = () => <div className="my-2 border-t border-dashed border-neutral-500/60" />;
 
-// Jagged edge SVG (top or bottom)
-const JaggedEdge = ({ flip }: { flip?: boolean }) => (
-  <svg
-    viewBox="0 0 400 12"
-    preserveAspectRatio="none"
-    className="block w-full"
-    style={{ height: 12, transform: flip ? "scaleY(-1)" : undefined }}
-    aria-hidden
-  >
-    <path
-      d="M0,0 L0,12 L8,4 L16,11 L24,3 L32,10 L40,4 L48,11 L56,3 L64,10 L72,4 L80,11 L88,3 L96,10 L104,4 L112,11 L120,3 L128,10 L136,4 L144,11 L152,3 L160,10 L168,4 L176,11 L184,3 L192,10 L200,4 L208,11 L216,3 L224,10 L232,4 L240,11 L248,3 L256,10 L264,4 L272,11 L280,3 L288,10 L296,4 L304,11 L312,3 L320,10 L328,4 L336,11 L344,3 L352,10 L360,4 L368,11 L376,3 L384,10 L392,4 L400,11 L400,0 Z"
-      fill="#fdfaf1"
-    />
-  </svg>
-);
+/**
+ * True torn-paper edges. The fill polygon covers the bottom (or top) of the SVG
+ * with a zig-zag boundary; the rest is transparent so the page background shows.
+ */
+const JaggedEdge = ({ position }: { position: "top" | "bottom" }) => {
+  // 40 teeth across the width
+  const teeth = 40;
+  const step = 400 / teeth;
+  const peak = 2;
+  const valley = 10;
+  const points: string[] = [];
+  if (position === "top") {
+    points.push("0,12");
+    for (let i = 0; i <= teeth; i++) {
+      const x = i * step;
+      const y = i % 2 === 0 ? valley : peak;
+      points.push(`${x},${y}`);
+    }
+    points.push("400,12");
+  } else {
+    points.push("0,0");
+    for (let i = 0; i <= teeth; i++) {
+      const x = i * step;
+      const y = i % 2 === 0 ? 12 - valley : 12 - peak;
+      points.push(`${x},${y}`);
+    }
+    points.push("400,0");
+  }
+  return (
+    <svg
+      viewBox="0 0 400 12"
+      preserveAspectRatio="none"
+      className="block w-full"
+      style={{ height: 10 }}
+      aria-hidden
+    >
+      <polygon points={points.join(" ")} fill={PAPER} />
+    </svg>
+  );
+};
 
 const NOISE_BG =
   "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
@@ -76,6 +103,39 @@ function buildInsight(
   return "Steady spending — keep it up.";
 }
 
+/** Generate a random Code-128-looking barcode pattern (visual only, not scannable). */
+function useBarcodePattern(seed: string) {
+  return useMemo(() => {
+    // Deterministic PRNG from seed so it doesn't flicker on rerender
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+    const rand = () => {
+      h = (h * 1103515245 + 12345) & 0x7fffffff;
+      return h / 0x7fffffff;
+    };
+    const bars: { w: number; gap: number }[] = [];
+    for (let i = 0; i < 55; i++) {
+      const w = 1 + Math.floor(rand() * 4); // 1-4
+      const gap = 1 + Math.floor(rand() * 3); // 1-3
+      bars.push({ w, gap });
+    }
+    return bars;
+  }, [seed]);
+}
+
+const Barcode = ({ seed }: { seed: string }) => {
+  const bars = useBarcodePattern(seed);
+  return (
+    <div className="flex h-16 w-full items-stretch justify-center gap-0">
+      {bars.map((b, i) => (
+        <div key={i} className="flex items-stretch" style={{ marginRight: `${b.gap}px` }}>
+          <div style={{ width: `${b.w}px`, backgroundColor: "#111" }} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export default function ReceiptView(props: Props) {
   const {
     budgetCents,
@@ -92,11 +152,15 @@ export default function ReceiptView(props: Props) {
     currency,
   } = props;
 
-  const receiptRef = useRef<HTMLDivElement>(null);
-  const stripRef = useRef<HTMLDivElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
+  const swipeZoneRef = useRef<HTMLDivElement>(null);
+  const startX = useRef<number | null>(null);
+  const startY = useRef<number | null>(null);
+  const latestPct = useRef(0);
+  const horizontal = useRef(false);
   const [dragPct, setDragPct] = useState(0);
   const [torn, setTorn] = useState(false);
-  const startX = useRef<number | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const remaining = budgetCents - monthSpend;
   const over = budgetCents > 0 && remaining < 0;
@@ -107,12 +171,17 @@ export default function ReceiptView(props: Props) {
     day: "numeric",
   });
 
+  // Stable-per-month seed so barcode doesn't change while the user interacts
+  const barcodeSeed = `${monthStart.getFullYear()}-${monthStart.getMonth()}-${monthSpend}-${tripCount}`;
+
   const doExport = async () => {
-    if (!receiptRef.current) return;
+    if (!exportRef.current || exporting) return;
+    setExporting(true);
     try {
-      const dataUrl = await toPng(receiptRef.current, {
+      const dataUrl = await toPng(exportRef.current, {
         pixelRatio: 3,
         cacheBust: true,
+        backgroundColor: "#ffffff",
         filter: (node) =>
           !(node instanceof HTMLElement && node.dataset.export === "hide"),
       });
@@ -129,49 +198,77 @@ export default function ReceiptView(props: Props) {
       }
     } catch (e) {
       toast.error("Couldn't export receipt");
+      // eslint-disable-next-line no-console
       console.error(e);
     } finally {
+      setExporting(false);
       setTimeout(() => {
         setTorn(false);
         setDragPct(0);
-      }, 600);
+        latestPct.current = 0;
+      }, 500);
     }
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (torn) return;
+    if (torn || exporting) return;
     startX.current = e.clientX;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    startY.current = e.clientY;
+    horizontal.current = false;
+    latestPct.current = 0;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent) => {
-    if (startX.current === null || !stripRef.current) return;
-    const w = stripRef.current.offsetWidth;
-    const pct = Math.max(0, Math.min(1, (e.clientX - startX.current) / w));
+    if (startX.current === null || startY.current === null || !swipeZoneRef.current) return;
+    const dx = e.clientX - startX.current;
+    const dy = e.clientY - startY.current;
+    if (!horizontal.current) {
+      // Lock direction once the user clearly moves
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      horizontal.current = Math.abs(dx) > Math.abs(dy);
+      if (!horizontal.current) {
+        // Vertical scroll — release tracking so page can scroll
+        startX.current = null;
+        startY.current = null;
+        return;
+      }
+    }
+    e.preventDefault();
+    const w = swipeZoneRef.current.offsetWidth;
+    const pct = Math.min(1, Math.abs(dx) / w);
+    latestPct.current = pct;
     setDragPct(pct);
   };
   const onPointerUp = () => {
-    if (startX.current === null) return;
+    const pct = latestPct.current;
     startX.current = null;
-    if (dragPct >= 0.7) {
+    startY.current = null;
+    horizontal.current = false;
+    if (pct >= 0.55) {
       setTorn(true);
-      doExport();
+      setDragPct(1);
+      void doExport();
     } else {
       setDragPct(0);
+      latestPct.current = 0;
     }
   };
 
   return (
     <div className="flex flex-col items-center">
+      {/* Capture area: full receipt with jagged top + body + perforation + barcode + jagged bottom */}
       <div
-        className="relative w-full max-w-sm shadow-elevated"
+        ref={exportRef}
+        className="relative w-full max-w-sm"
         style={{ filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.18))" }}
       >
-        <JaggedEdge />
+        <JaggedEdge position="top" />
+
+        {/* Receipt body */}
         <div
-          ref={receiptRef}
           className="px-6 py-5 font-mono text-[13px] leading-snug text-neutral-900"
           style={{
-            backgroundColor: "#fdfaf1",
+            backgroundColor: PAPER,
             backgroundImage: NOISE_BG,
             backgroundBlendMode: "multiply",
           }}
@@ -184,11 +281,7 @@ export default function ReceiptView(props: Props) {
           </div>
 
           <Divider />
-
-          <Row
-            label="Budget"
-            value={budgetCents > 0 ? formatMoney(budgetCents, currency) : "—"}
-          />
+          <Row label="Budget" value={budgetCents > 0 ? formatMoney(budgetCents, currency) : "—"} />
           <Row label="Spent" value={formatMoney(monthSpend, currency)} />
           <Divider />
           {budgetCents > 0 ? (
@@ -200,9 +293,7 @@ export default function ReceiptView(props: Props) {
           ) : (
             <Row label="Remaining" value="—" strong />
           )}
-
           <Divider />
-
           <Row label="Trips" value={String(tripCount)} />
           <Row label="Avg / Trip" value={formatMoney(avgTripCents, currency)} />
           <Row label="Extras" value={formatMoney(extrasCents, currency)} />
@@ -213,50 +304,61 @@ export default function ReceiptView(props: Props) {
               value={`${momDelta < 0 ? "-" : "+"}${formatMoney(Math.abs(momDelta), currency)}`}
             />
           )}
-
           <Divider />
-
           <div className="my-2 text-center text-xs italic text-neutral-700">* {insight} *</div>
-
-          <div className="mt-4 text-center text-[10px] uppercase tracking-widest text-neutral-500">
+          <div className="mt-3 text-center text-[10px] uppercase tracking-widest text-neutral-500">
             Generated {generated}
           </div>
         </div>
 
-        {/* Perforation strip + tear stub */}
-        <div data-export="hide" className="relative" style={{ backgroundColor: "#fdfaf1" }}>
-          <div className="border-t-2 border-dashed border-neutral-400" />
-          <div
-            ref={stripRef}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onPointerCancel={onPointerUp}
-            className="relative h-8 cursor-grab select-none overflow-hidden active:cursor-grabbing"
-            style={{
-              backgroundColor: "#fdfaf1",
-              touchAction: "pan-y",
-              transform: torn
-                ? "translateY(60px) rotate(-3deg)"
-                : `translateX(${dragPct * 30}px) rotate(${dragPct * -1.5}deg)`,
-              transition: torn ? "transform 250ms ease-in" : startX.current === null ? "transform 200ms" : "none",
-              opacity: torn ? 0 : 1,
-            }}
-          >
-            <div
-              className="absolute inset-y-0 left-0 bg-neutral-300/60"
-              style={{ width: `${dragPct * 100}%`, transition: startX.current === null ? "width 200ms" : "none" }}
-            />
-            <div className="relative flex h-full items-center justify-center text-[10px] uppercase tracking-widest text-neutral-500">
-              ← swipe to tear &amp; share →
-            </div>
+        {/* Perforation + barcode (also part of capture, with swipe interaction) */}
+        <div
+          ref={swipeZoneRef}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+          className="relative select-none"
+          style={{
+            backgroundColor: PAPER,
+            backgroundImage: NOISE_BG,
+            backgroundBlendMode: "multiply",
+            touchAction: "pan-y",
+            cursor: torn ? "default" : "grab",
+            transform: torn
+              ? "translateX(110%) rotate(-2deg)"
+              : `translateX(${dragPct * 40}px)`,
+            transition: torn
+              ? "transform 350ms ease-in, opacity 350ms ease-in"
+              : startX.current === null
+                ? "transform 200ms ease"
+                : "none",
+            opacity: torn ? 0 : 1,
+          }}
+        >
+          {/* Perforation line */}
+          <div className="border-t-2 border-dashed border-neutral-400/80" />
+          {/* Barcode */}
+          <div className="px-6 pt-3 pb-4">
+            <Barcode seed={barcodeSeed} />
           </div>
-          <JaggedEdge flip />
+
+          {/* Drag progress overlay — excluded from export */}
+          <div
+            data-export="hide"
+            className="pointer-events-none absolute inset-y-0 left-0 bg-neutral-900/5"
+            style={{
+              width: `${dragPct * 100}%`,
+              transition: startX.current === null ? "width 200ms" : "none",
+            }}
+          />
         </div>
+
+        <JaggedEdge position="bottom" />
       </div>
 
       <p data-export="hide" className="mt-3 text-center text-xs text-muted-foreground">
-        Drag across the perforation to tear &amp; export
+        Swipe across the barcode to tear &amp; share
       </p>
     </div>
   );
