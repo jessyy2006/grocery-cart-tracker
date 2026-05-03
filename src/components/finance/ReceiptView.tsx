@@ -216,12 +216,30 @@ export default function ReceiptView(props: Props) {
     try {
       const out = await generatePng();
       if (!out) return;
+
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      // On iOS/Android browsers, anchor-download of a PNG won't go to the Camera Roll.
+      // Use the native share sheet — the user picks "Save Image" to save to Photos.
+      if (navigator.share && nav.canShare?.({ files: [out.file] })) {
+        try {
+          await navigator.share({ files: [out.file], title: "Grocery Receipt" });
+          toast.success("Saved receipt");
+          return;
+        } catch (err) {
+          // User cancelled — fall through to desktop download fallback only on non-mobile.
+          if ((err as Error)?.name === "AbortError") return;
+        }
+      }
+
+      // Desktop fallback: trigger a file download.
+      const url = URL.createObjectURL(out.blob);
       const a = document.createElement("a");
-      a.href = out.dataUrl;
+      a.href = url;
       a.download = "grocery-receipt.png";
       document.body.appendChild(a);
       a.click();
       a.remove();
+      URL.revokeObjectURL(url);
       toast.success("Saved receipt image");
     } catch (e) {
       console.error(e);
