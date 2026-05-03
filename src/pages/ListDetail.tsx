@@ -33,9 +33,10 @@ export default function ListDetail() {
   const [listName, setListName] = useState("");
   const [items, setItems] = useState<Item[]>([]);
   const [name, setName] = useState("");
-  const [qty, setQty] = useState(1);
+  const [qtyText, setQtyText] = useState("1");
   const [category, setCategory] = useState<CategorySlug>("other");
   const [autoCat, setAutoCat] = useState(true);
+  const [runActive, setRunActive] = useState(false);
 
   useEffect(() => {
     if (!id || !user) return;
@@ -48,6 +49,13 @@ export default function ListDetail() {
         .eq("list_id", id)
         .order("created_at", { ascending: true });
       setItems((data ?? []) as Item[]);
+      const { data: trips } = await supabase
+        .from("trips")
+        .select("id")
+        .eq("list_id", id)
+        .eq("status", "active")
+        .limit(1);
+      setRunActive(!!trips?.[0]);
     })();
   }, [id, user]);
 
@@ -77,21 +85,26 @@ export default function ListDetail() {
   const addItem = async () => {
     if (!id || !name.trim()) return;
     const slug = autoCat ? guessCategory(name) : category;
+    const parsedQty = Math.max(1, parseInt(qtyText, 10) || 1);
     const insert = {
       list_id: id,
       name: name.trim(),
-      qty: Math.max(1, qty),
+      qty: parsedQty,
       category: slug,
     };
     const { data, error } = await supabase.from("shopping_list_items").insert(insert).select("*").single();
     if (error) return toast.error(error.message);
     setItems((c) => [...c, data as Item]);
     setName("");
-    setQty(1);
+    setQtyText("1");
     setAutoCat(true);
   };
 
   const toggle = async (it: Item) => {
+    if (!runActive) {
+      toast.error("Start the grocery run to check items off");
+      return;
+    }
     const checked_at = it.checked_at ? null : new Date().toISOString();
     setItems((c) => c.map((i) => (i.id === it.id ? { ...i, checked_at } : i)));
     await supabase.from("shopping_list_items").update({ checked_at }).eq("id", it.id);
@@ -160,6 +173,7 @@ export default function ListDetail() {
                       <Card className="flex items-center gap-3 p-3">
                         <Checkbox
                           checked={!!it.checked_at}
+                          disabled={!runActive}
                           onCheckedChange={() => toggle(it)}
                           aria-label="Toggle item"
                         />
@@ -203,9 +217,12 @@ export default function ListDetail() {
           <Input
             type="number"
             min={1}
-            value={qty}
-            onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
+            inputMode="numeric"
+            value={qtyText}
+            onChange={(e) => setQtyText(e.target.value.replace(/[^\d]/g, ""))}
+            onBlur={() => setQtyText((v) => String(Math.max(1, parseInt(v, 10) || 1)))}
             className="w-16"
+            aria-label="Quantity"
           />
         </div>
         <div className="flex gap-2">

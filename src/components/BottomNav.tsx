@@ -12,16 +12,18 @@ const items = [
 
 export const BottomNav = () => (
   <nav className="sticky bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur safe-bottom">
-    <ul className="grid grid-cols-5">
+    <ul className="grid grid-cols-5 px-2 pb-4 pt-2">
       {items.map(({ to, label, icon: Icon, end }) => (
-        <li key={to}>
+        <li key={to} className="flex justify-center">
           <NavLink
             to={to}
             end={end}
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center justify-center gap-1 px-3 py-3 text-xs font-medium transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                "flex w-full max-w-[72px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-medium transition-colors",
+                isActive
+                  ? "bg-accent/30 text-primary"
+                  : "text-muted-foreground hover:text-foreground"
               )
             }
           >

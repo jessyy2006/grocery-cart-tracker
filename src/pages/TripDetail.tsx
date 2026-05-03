@@ -46,7 +46,7 @@ export default function TripDetail() {
   }, [items]);
 
   return (
-    <div className="space-y-5 px-5 pb-8 pt-8">
+    <div className="space-y-5 px-5 pb-4 pt-4">
       <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground">
         <ArrowLeft className="h-4 w-4" /> Back
       </button>

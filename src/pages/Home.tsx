@@ -53,7 +53,7 @@ export default function Home() {
   const startTrip = () => navigate("/trip/new");
 
   return (
-    <div className="space-y-6 px-5 pb-8 pt-8">
+    <div className="space-y-6 px-5 pb-4 pt-4">
       <header>
         <p className="text-sm text-muted-foreground">Welcome back</p>
         <h1 className="text-3xl font-bold tracking-tight">Ready to shop?</h1>

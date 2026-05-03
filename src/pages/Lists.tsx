@@ -54,7 +54,7 @@ export default function Lists() {
   };
 
   return (
-    <div className="space-y-6 px-5 pb-8 pt-8">
+    <div className="space-y-6 px-5 pb-4 pt-4">
       <header className="flex items-end justify-between">
         <div>
           <p className="text-sm text-muted-foreground">Plan your run</p>
