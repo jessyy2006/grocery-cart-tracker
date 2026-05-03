@@ -357,7 +357,7 @@ export default function ReceiptView(props: Props) {
       {/* Receipt assembly — captured for export */}
       <div
         ref={exportRef}
-        className="relative w-full max-w-sm overflow-hidden"
+        className="relative w-full max-w-sm"
         style={{ filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.18))" }}
       >
         <JaggedEdge position="top" />
