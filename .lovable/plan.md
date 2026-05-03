@@ -1,97 +1,68 @@
-# Finance Receipt View
+I understand: the receipt export strip should visually resemble the attached travel-ticket/barcode reference, the receipt paper should have true jagged top and bottom edges on a white background, and the horizontal tear gesture needs to actually trigger share/export on mobile.
 
-Add a secondary **Receipt View** to the Finance tab, toggled from a control in the top-right of the page header. Card view stays the default and is unchanged.
+## Findings from code exploration
 
-## 1. Toggle
+Affected file: `src/components/finance/ReceiptView.tsx`
 
-Top-right of `src/pages/Finance.tsx` header, next to the existing edit-budget icon button:
+Root causes:
+- The current `JaggedEdge` SVG draws a filled rectangular strip with a zig-zag boundary, so it looks like a solid band instead of the receipt paper itself having a torn edge.
+- The bottom jagged SVG sits inside a paper-colored wrapper, so any transparent/jagged area is visually hidden by the same paper background.
+- The visible swipe target is only a 32px-tall text strip. If the user starts the swipe outside that exact strip, nothing happens.
+- The gesture only counts left-to-right movement. Right-to-left swipes clamp to `0`, even though the UI text implies either direction.
+- The completion check reads React state (`dragPct`) on pointer-up, which can be stale during fast thumb swipes.
+- Export currently captures only the middle receipt body, not the full receipt with jagged edges and barcode.
 
-- Two-icon segmented control (`ToggleGroup` from `src/components/ui/toggle-group.tsx`).
-  - `LayoutGrid` icon → Card view (default).
-  - `Receipt` icon → Receipt view.
-- Persist preference to `localStorage` key `finance:view` (`"card" | "receipt"`). Read synchronously on mount so there's no flash.
-- Switching is instant — both views read the same state already loaded by the page; no refetch.
+## Implementation plan
 
-## 2. Receipt view component
+### Phase 1 — Rebuild receipt paper shape
+- Replace the current separate filled-edge SVG approach with true transparent jagged edge SVGs:
+  - Top edge: transparent above, paper fill below a jagged top boundary.
+  - Bottom edge: paper fill above, transparent below a jagged bottom boundary.
+- Remove paper-colored backgrounds behind transparent jagged areas so the page background shows through.
+- Keep the main receipt background off-white/noisy, but place it on a clean white/near-white screen background.
 
-New file `src/components/finance/ReceiptView.tsx`. Props: the already-derived figures from `Finance.tsx` (`budgetCents`, `monthSpend`, `tripCount`, `avgTrip`, `extrasCents`, `extrasCount`, `momDelta`, current month start/end, currency).
+### Phase 2 — Replace on-receipt swipe text with barcode
+- Remove `← swipe to tear & share →` from the receipt itself.
+- Add a large generated barcode block in the lower receipt section, styled closer to the attached screenshot:
+  - thick/thin black bars
+  - high contrast
+  - centered with good horizontal width
+  - no extra explanatory text on the receipt
+- Generate the barcode client-side without adding a dependency.
+- Make the generated bars stable for the current mounted receipt/export, so the barcode does not flicker while dragging.
+- Keep the instructional text below the receipt, outside the exported area.
 
-### Visual structure
+### Phase 3 — Fix tear gesture reliability
+- Expand the interactive swipe zone to cover the lower barcode/perforation area, not just a tiny 32px strip.
+- Track drag progress with refs instead of only React state, so pointer-up uses the latest movement value.
+- Accept both left-to-right and right-to-left horizontal swipes.
+- Use a more realistic mobile threshold based on absolute pixel distance and/or percent width, so thumb swipes can trigger reliably on a 402px-wide phone viewport.
+- Preserve vertical page scrolling outside the barcode/perforation zone.
 
-```text
-        ┌─jagged─top─┐         (SVG, straight L/R sides)
-        │  paper     │
-        │  content   │
-        │ ── perforation ── │  (dashed line, draggable)
-        │  tear stub        │
-        └─jagged─bot─┘
-```
+### Phase 4 — Fix export capture
+- Capture the full clean receipt including:
+  - top jagged edge
+  - receipt body
+  - perforation line
+  - generated barcode
+  - bottom jagged edge
+- Exclude only page chrome and external helper text.
+- Ensure the tear animation/progress overlay does not appear in the exported PNG.
+- Keep native share first, fallback download second.
 
-- Wrapper is **not** a `Card`. A `<div>` with:
-  - `bg-[#fdfaf1]` (off-white paper), subtle CSS noise via inline `background-image` data-URI (tiny SVG turbulence) at low opacity.
-  - Straight vertical edges (no border-radius).
-  - Top + bottom jagged edges rendered as inline SVGs (zig-zag path) using the same paper fill — full width, ~10px tall.
-  - Soft drop shadow underneath for depth.
-- Inner padding `px-6 py-5`, **font-mono** (Tailwind built-in), `text-sm leading-tight`, `tracking-tight`.
+### Phase 5 — Review and test
+- Test in the mobile preview at the current viewport size (`402x716`).
+- Verify:
+  - Card/Receipt toggle still works.
+  - Receipt appears on a white background with jagged top and bottom edges.
+  - Barcode replaces receipt text.
+  - Horizontal swipe in either direction triggers share/download.
+  - Exported PNG contains the full receipt and no UI chrome.
 
-### Content (exact order)
+## Files expected to change
+- `src/components/finance/ReceiptView.tsx`
+- Potentially `src/pages/Finance.tsx` only if spacing/background around the receipt needs minor adjustment.
 
-```text
-   MONTHLY GROCERY SUMMARY
-        May 1 – May 31
-   ----------------------------
-
-   BUDGET                $600.00
-   SPENT                 $482.15
-   ----------------------------
-   REMAINING             $117.85
-        (or)
-   OVER BUDGET            $42.10
-
-   ----------------------------
-   TRIPS                       7
-   AVG / TRIP             $68.88
-   EXTRAS                 $82.40
-   EXTRA ITEMS                14
-   VS LAST MONTH         -$48.20    (omit if no prior data)
-   ----------------------------
-
-   * 18% of spending was unplanned *
-
-   Generated May 3, 2026
-```
-
-- Labels left, values right via `flex justify-between` per row + monospace for column alignment.
-- Insight: single line, derived locally (no AI call) — pick the strongest of: extras % of spend, MoM % change, over/under budget %. Falls back to "Keep tracking to unlock insights." when the month has <2 trips.
-- Currency rendered through existing `formatMoney`.
-
-### Perforation + tear-to-export
-
-- Below content: a 28px-tall row representing the perforated strip. have small text below the receipt, prompting the user to tear to export.
-  - Dashed horizontal line (`border-t border-dashed border-neutral-400`) above a thin "stub" area with smaller text `← swipe to share →`.
-- Pointer interaction (touch + mouse), implemented inline with `pointerdown/move/up`:
-  - Track horizontal drag distance on the strip; show progress as the strip translates/rotates slightly and a width-bound highlight bar fills left→right.
-  - At ≥70% width drag, commit the tear: animate the lower stub off-screen (`translateY` + slight rotate, 250ms), then trigger export popup.
-- Export:
-  - Add `html-to-image` dependency (~10kb, no canvas polyfills required, works on iOS Safari) and call `toPng(receiptRef.current, { pixelRatio: 3, cacheBust: true })`.
-  - The toggle, page chrome, and tear-strip are excluded by passing a ref that wraps **only** the receipt body (perforation strip is hidden during capture via a `data-export="hide"` attribute and a `filter` callback).
-  - Use `navigator.share({ files: [pngFile] })` when available; otherwise fall back to a download via an `<a download>` link.
-  - Reset the tear animation after the share sheet closes (or immediately on fallback) so the user can swipe again.
-
-## 3. Files touched
-
-- **edit** `src/pages/Finance.tsx` — add view state, top-right toggle, conditional render of `ReceiptView` vs the existing card stack. Lift the already-computed derived values so both views read the same memo.
-- **new** `src/components/finance/ReceiptView.tsx` — paper styling, jagged edges SVG, content rows, tear interaction, export handler.
-- **package** add `html-to-image` to `dependencies`.
-
-## 4. Out of scope
-
-- No charts, breakdowns, or AI insights inside the receipt (PRD §6).
-- No edits to backend, schema, or the existing card view contents.
-- No printing flow — share/download only.
-
-## 5. Risks
-
-- iOS Safari `navigator.share` with files works on 16.4+; older devices fall back to download. Acceptable.
-- `html-to-image` can miss web fonts; we use the system monospace stack so capture is faithful.
-- Drag gesture conflicts with vertical page scroll — the strip uses `touch-action: pan-y` off and `pan-x` on, scoped to the 28px strip only, so the rest of the page scrolls normally.
+## Risks
+- Native share behavior varies by browser/device. I will keep the fallback download path so export still works when file sharing is unsupported.
+- If the preview environment blocks downloads/share popups, the code can still be correct; I’ll note that separately during verification.
