@@ -20,47 +20,50 @@ export default function OnboardingIntro() {
       </div>
 
       <div className="relative mt-8 flex-1">
-        <div className="absolute inset-x-0 bottom-0 px-2">
-          <div className="relative">
-            <Card className="animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out p-4 shadow-elevated" style={{ animationDelay: "100ms", animationFillMode: "backwards" }}>
-              <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
-                <ReceiptIcon className="h-3.5 w-3.5" /> This month
-              </div>
-              <div className="mt-2 flex items-end justify-between">
-                <span className="text-3xl font-bold">$248.30</span>
-                <span className="text-sm text-muted-foreground">of $400 budget</span>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary">
-                <div className="h-full w-[62%] rounded-full bg-primary" />
-              </div>
-            </Card>
+        {/* List card — tall rectangle, bottom 60% */}
+        <Card
+          className="absolute inset-x-0 bottom-0 h-[60%] p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
+          style={{ animationDelay: "100ms", animationFillMode: "backwards" }}
+        >
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">Today's list</p>
+          <ul className="mt-3 space-y-3 text-sm">
+            {[
+              { name: "Whole milk", done: true },
+              { name: "Eggs (12 ct)", done: false },
+              { name: "Sourdough bread", done: false },
+              { name: "Bananas", done: false },
+              { name: "Greek yogurt", done: false },
+            ].map((it) => (
+              <li key={it.name} className="flex items-center gap-2">
+                <span
+                  className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                    it.done ? "border-primary bg-primary text-primary-foreground" : "border-border"
+                  }`}
+                >
+                  {it.done && <Check className="h-3 w-3" />}
+                </span>
+                <span className={it.done ? "line-through text-muted-foreground" : ""}>{it.name}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
 
-            <Card
-              className="animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out relative -mt-6 -ml-4 mr-2 p-4 shadow-elevated"
-              style={{ animationDelay: "320ms", animationFillMode: "backwards" }}
-            >
-              <p className="text-xs uppercase tracking-wider text-muted-foreground">Today's list</p>
-              <ul className="mt-2 space-y-2 text-sm">
-                {[
-                  { name: "Whole milk", done: true },
-                  { name: "Eggs (12 ct)", done: false },
-                  { name: "Sourdough bread", done: false },
-                ].map((it) => (
-                  <li key={it.name} className="flex items-center gap-2">
-                    <span
-                      className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                        it.done ? "border-primary bg-primary text-primary-foreground" : "border-border"
-                      }`}
-                    >
-                      {it.done && <Check className="h-3 w-3" />}
-                    </span>
-                    <span className={it.done ? "line-through text-muted-foreground" : ""}>{it.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+        {/* Budget card — overlaps top of list card, offset 32px to the right */}
+        <Card
+          className="absolute left-8 right-0 bottom-[55%] p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
+          style={{ animationDelay: "320ms", animationFillMode: "backwards" }}
+        >
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
+            <ReceiptIcon className="h-3.5 w-3.5" /> This month
           </div>
-        </div>
+          <div className="mt-2 flex items-end justify-between">
+            <span className="text-3xl font-bold">$248.30</span>
+            <span className="text-sm text-muted-foreground">of $400 budget</span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-secondary">
+            <div className="h-full w-[62%] rounded-full bg-primary" />
+          </div>
+        </Card>
       </div>
 
       <Button size="lg" className="relative z-10 mt-6 w-full" onClick={next}>
