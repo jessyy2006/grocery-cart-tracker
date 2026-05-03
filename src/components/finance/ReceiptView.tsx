@@ -168,6 +168,7 @@ export default function ReceiptView(props: Props) {
   const [torn, setTorn] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
   
 
   const remaining = budgetCents - monthSpend;
@@ -183,36 +184,29 @@ export default function ReceiptView(props: Props) {
 
   const generatePng = async (): Promise<{ dataUrl: string; blob: Blob; file: File } | null> => {
     if (!exportRef.current) return null;
-    // Clone offscreen so the saved PNG is a clean receipt regardless of torn/drag state.
-    const clone = exportRef.current.cloneNode(true) as HTMLElement;
-    clone.querySelectorAll('[data-export="hide"]').forEach((el) => el.remove());
-    clone.querySelectorAll<HTMLElement>('[data-export="hide-inverse"]').forEach((el) => {
-      el.style.visibility = "visible";
-    });
-    clone.querySelectorAll<HTMLElement>("[style]").forEach((el) => {
-      if (el.style.height === "0px") el.style.height = "auto";
-      if (el.style.transform) el.style.transform = "none";
-      if (el.style.opacity === "0") el.style.opacity = "1";
-    });
-    clone.style.transform = "none";
-    clone.style.filter = "none";
-
-    const wrap = document.createElement("div");
-    wrap.style.cssText =
-      "position:fixed;left:-100000px;top:0;width:384px;background:#ffffff;z-index:-1;";
-    wrap.appendChild(clone);
-    document.body.appendChild(wrap);
+    const node = exportRef.current;
+    // Switch to "exporting" state so the receipt re-mounts as a clean, untorn version
+    // for capture, regardless of current torn/drag state.
+    setExporting(true);
+    // Wait two frames to ensure styles are applied.
+    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     try {
-      const dataUrl = await toPng(clone, {
+      const dataUrl = await toPng(node, {
         pixelRatio: 3,
         cacheBust: true,
         backgroundColor: "#ffffff",
+        width: node.offsetWidth,
+        height: node.offsetHeight,
+        filter: (el) => {
+          if (!(el instanceof HTMLElement)) return true;
+          return el.dataset.export !== "hide";
+        },
       });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], "grocery-receipt.png", { type: "image/png" });
       return { dataUrl, blob, file };
     } finally {
-      wrap.remove();
+      setExporting(false);
     }
   };
 
@@ -341,22 +335,29 @@ export default function ReceiptView(props: Props) {
     dxRef.current = 0;
   };
 
-  // Stub transform — visible barcode piece below perforation
-  const stubTransform = torn
-    ? `translate(${tearDir * 140}%, 60%) rotate(${tearDir * 12}deg)`
-    : `translateX(${dragDx}px) rotate(${dragDx * 0.02}deg)`;
-  const stubTransition = torn
-    ? "transform 380ms cubic-bezier(.4,.1,.6,1), opacity 380ms ease-in"
-    : pointerIdRef.current === null
-      ? "transform 220ms ease"
-      : "none";
+  // Stub transform — visible barcode piece below perforation.
+  // While exporting, force untorn appearance so PNG includes the barcode cleanly.
+  const stubTransform = exporting
+    ? "none"
+    : torn
+      ? `translate(${tearDir * 160}%, 120%) rotate(${tearDir * 14}deg)`
+      : `translateX(${dragDx}px) rotate(${dragDx * 0.02}deg)`;
+  const stubTransition = exporting
+    ? "none"
+    : torn
+      ? "transform 520ms cubic-bezier(.4,.1,.6,1), opacity 520ms ease-in"
+      : pointerIdRef.current === null
+        ? "transform 220ms ease"
+        : "none";
+  const stubOpacity = exporting ? 1 : torn ? 0 : 1;
+  const stubContainerHeight = exporting ? "auto" : torn ? 0 : "auto";
 
   return (
     <div className="flex flex-col items-center">
       {/* Receipt assembly — captured for export */}
       <div
         ref={exportRef}
-        className="relative w-full max-w-sm overflow-hidden"
+        className="relative w-full max-w-sm"
         style={{ filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.18))" }}
       >
         <JaggedEdge position="top" />
@@ -404,29 +405,19 @@ export default function ReceiptView(props: Props) {
           </div>
         </div>
 
-        {/* Perforation line — stays attached to receipt */}
+        {/* Perforation line — same dotted weight as the dividers above */}
         <div style={{ backgroundColor: PAPER }}>
-          <div className="border-t-2 border-dashed border-neutral-400/80" />
+          <div className="border-t border-dashed border-neutral-500/60" />
         </div>
 
-        {/* Stub container — positioned so the stub can animate away */}
-        <div className="relative" style={{ height: torn ? 0 : "auto", transition: "height 380ms ease" }}>
-          {/* Export-only stub: shown while capturing so the saved PNG includes the barcode */}
-          <div
-            data-export="hide-inverse"
-            aria-hidden
-            className="pointer-events-none"
-            style={{
-              backgroundColor: PAPER,
-              visibility: "hidden",
-            }}
-          >
-            <div className="px-6 pt-3 pb-4">
-              <Barcode seed={barcodeSeed} />
-            </div>
-            <JaggedEdge position="bottom" />
-          </div>
-
+        {/* Stub container — collapses height when torn so the receipt above settles, but doesn't clip the flying stub */}
+        <div
+          className="relative"
+          style={{
+            height: stubContainerHeight,
+            transition: exporting ? "none" : "height 520ms ease",
+          }}
+        >
           {/* Visible interactive stub */}
           <div
             ref={swipeZoneRef}
@@ -434,7 +425,6 @@ export default function ReceiptView(props: Props) {
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
-            data-export="hide"
             className="absolute inset-x-0 top-0 select-none"
             style={{
               backgroundColor: PAPER,
@@ -442,8 +432,9 @@ export default function ReceiptView(props: Props) {
               cursor: torn ? "default" : "grab",
               transform: stubTransform,
               transition: stubTransition,
-              opacity: torn ? 0 : 1,
+              opacity: stubOpacity,
               willChange: "transform, opacity",
+              pointerEvents: torn || exporting ? "none" : "auto",
             }}
           >
             <div className="px-6 pt-3 pb-4">
