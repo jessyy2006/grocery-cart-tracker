@@ -73,6 +73,9 @@ export default function Home() {
               <Plus className="mr-2 h-5 w-5" /> Start new trip
             </Button>
           )}
+          <Button variant="outline" className="w-full" onClick={() => navigate("/lists")}>
+            <ListChecks className="mr-2 h-5 w-5" /> My shopping lists
+          </Button>
         </div>
       </Card>
 
