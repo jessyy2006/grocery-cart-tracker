@@ -512,7 +512,7 @@ export default function ActiveTrip() {
         />
       )}
 
-      <Dialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
+      <Dialog open={!!pending} onOpenChange={(o) => { if (!o) { setPending(null); setPendingErrors({}); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add to cart</DialogTitle>
@@ -522,36 +522,48 @@ export default function ActiveTrip() {
               {pending.image_url && (
                 <img src={pending.image_url} alt="" className="mx-auto h-24 w-24 rounded-lg object-contain" />
               )}
-              <div className="space-y-2">
-                <Label htmlFor="iname">Name</Label>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="iname">Name</Label>
+                  {pendingErrors.name && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                </div>
                 <Input
                   id="iname"
                   value={pending.name}
-                  onChange={(e) => setPending({ ...pending, name: e.target.value })}
+                  onChange={(e) => { setPending({ ...pending, name: e.target.value }); if (pendingErrors.name) setPendingErrors({ ...pendingErrors, name: false }); }}
                   placeholder="Item name"
+                  className={pendingErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="iprice">Price</Label>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="iprice">Price</Label>
+                    {pendingErrors.price && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                  </div>
                   <Input
                     id="iprice"
                     type="text"
                     inputMode="decimal"
                     value={pending.price}
-                    onChange={(e) => setPending({ ...pending, price: e.target.value })}
+                    onChange={(e) => { setPending({ ...pending, price: e.target.value }); if (pendingErrors.price) setPendingErrors({ ...pendingErrors, price: false }); }}
                     placeholder="0.00"
                     autoFocus={!pending.price}
+                    className={pendingErrors.price ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="iqty">Qty</Label>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="iqty">Qty</Label>
+                    {pendingErrors.qty && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                  </div>
                   <Input
                     id="iqty"
                     type="number"
                     min={1}
-                    value={pending.qty}
-                    onChange={(e) => setPending({ ...pending, qty: Math.max(1, Number(e.target.value) || 1) })}
+                    value={pending.qty || ""}
+                    onChange={(e) => { const n = parseInt(e.target.value, 10); setPending({ ...pending, qty: isNaN(n) ? 0 : n }); if (pendingErrors.qty) setPendingErrors({ ...pendingErrors, qty: false }); }}
+                    className={pendingErrors.qty ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
                 </div>
               </div>
@@ -560,6 +572,53 @@ export default function ActiveTrip() {
               )}
               <Button className="w-full" onClick={confirmAdd}>
                 <Plus className="mr-1 h-4 w-4" /> Add
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!manualCheck} onOpenChange={(o) => { if (!o) { setManualCheck(null); setManualErrors({}); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Check off {manualCheck?.item.name}</DialogTitle>
+          </DialogHeader>
+          {manualCheck && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="mprice">Price</Label>
+                    {manualErrors.price && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                  </div>
+                  <Input
+                    id="mprice"
+                    type="text"
+                    inputMode="decimal"
+                    value={manualCheck.price}
+                    onChange={(e) => { setManualCheck({ ...manualCheck, price: e.target.value }); if (manualErrors.price) setManualErrors({ ...manualErrors, price: false }); }}
+                    placeholder="0.00"
+                    autoFocus
+                    className={manualErrors.price ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="mqty">Qty</Label>
+                    {manualErrors.qty && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                  </div>
+                  <Input
+                    id="mqty"
+                    type="number"
+                    min={1}
+                    value={manualCheck.qty}
+                    onChange={(e) => { setManualCheck({ ...manualCheck, qty: e.target.value.replace(/[^\d]/g, "") }); if (manualErrors.qty) setManualErrors({ ...manualErrors, qty: false }); }}
+                    className={manualErrors.qty ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
+                </div>
+              </div>
+              <Button className="w-full" onClick={confirmManualCheck}>
+                <Check className="mr-1 h-4 w-4" /> Check off
               </Button>
             </div>
           )}
