@@ -7,29 +7,29 @@
 
 @layer base {
   :root {
-    /* Surfaces */
-    --background: 60 30% 98%;          /* off-white, paperish */
-    --foreground: 150 25% 12%;         /* deep forest text */
+    /* Surfaces — neutral white */
+    --background: 0 0% 99%;
+    --foreground: 150 35% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 150 25% 12%;
+    --card-foreground: 150 35% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 150 25% 12%;
+    --popover-foreground: 150 35% 10%;
 
-    /* Brand: deep market green */
-    --primary: 150 55% 28%;
-    --primary-foreground: 60 30% 98%;
-    --primary-glow: 150 60% 42%;
+    /* Brand: dark forest green */
+    --primary: 150 50% 18%;
+    --primary-foreground: 0 0% 99%;
+    --primary-glow: 145 50% 30%;
 
-    /* Accent: warm produce orange */
-    --accent: 24 90% 58%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent: light spring green */
+    --accent: 130 55% 65%;
+    --accent-foreground: 150 50% 12%;
 
-    --secondary: 150 25% 94%;
-    --secondary-foreground: 150 30% 18%;
+    --secondary: 140 25% 95%;
+    --secondary-foreground: 150 40% 16%;
 
-    --muted: 60 15% 94%;
+    --muted: 140 15% 95%;
     --muted-foreground: 150 10% 38%;
 
     --destructive: 0 75% 50%;
