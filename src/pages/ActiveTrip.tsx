@@ -61,6 +61,9 @@ export default function ActiveTrip() {
     image_url?: string;
   } | null>(null);
   const [pickStoreOpen, setPickStoreOpen] = useState(false);
+  const [pendingErrors, setPendingErrors] = useState<{ name?: boolean; price?: boolean; qty?: boolean }>({});
+  const [manualCheck, setManualCheck] = useState<{ item: ListItem; qty: string; price: string } | null>(null);
+  const [manualErrors, setManualErrors] = useState<{ qty?: boolean; price?: boolean }>({});
 
   // Load active trip
   useEffect(() => {
