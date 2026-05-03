@@ -225,29 +225,66 @@ export default function ReceiptView(props: Props) {
   };
 
 
+  // Pre-generate the receipt PNG when the dialog opens, so the user's tap on
+  // Save/Share runs synchronously and keeps user activation for navigator.share.
+  useEffect(() => {
+    if (!dialogOpen) return;
+    let cancelled = false;
+    setPreparingExport(true);
+    setExportFile(null);
+    setExportDataUrl(null);
+    (async () => {
+      try {
+        const out = await generatePng();
+        if (cancelled || !out) return;
+        setExportFile(out.file);
+        setExportDataUrl(out.dataUrl);
+      } catch (err) {
+        if (!cancelled) {
+          console.error(err);
+          toast.error("Couldn't prepare receipt image");
+        }
+      } finally {
+        if (!cancelled) setPreparingExport(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [dialogOpen]);
+
+  const canNativeShare = (file: File) => {
+    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+    return Boolean(navigator.share && nav.canShare?.({ files: [file] }));
+  };
+
+  const isMobile = () =>
+    typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   const handleSave = async () => {
-    if (busy) return;
+    if (busy || !exportFile || !exportDataUrl) return;
     setBusy(true);
     try {
-      const out = await generatePng();
-      if (!out) return;
-
-      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-      // On iOS/Android browsers, anchor-download of a PNG won't go to the Camera Roll.
-      // Use the native share sheet — the user picks "Save Image" to save to Photos.
-      if (navigator.share && nav.canShare?.({ files: [out.file] })) {
+      // Mobile: prefer native share sheet — user picks "Save Image" → Photos.
+      if (canNativeShare(exportFile)) {
         try {
-          await navigator.share({ files: [out.file], title: "Grocery Receipt" });
+          await navigator.share({ files: [exportFile], title: "Grocery Receipt" });
           toast.success("Saved receipt");
           return;
         } catch (err) {
-          // User cancelled — fall through to desktop download fallback only on non-mobile.
           if ((err as Error)?.name === "AbortError") return;
+          // Share failed for another reason — fall through to preview/download.
         }
       }
 
-      // Desktop fallback: trigger a file download.
-      const url = URL.createObjectURL(out.blob);
+      // Mobile fallback (no file share): show full-size image so user can long-press → Save to Photos.
+      if (isMobile()) {
+        setPreviewOpen(true);
+        return;
+      }
+
+      // Desktop fallback: download the file.
+      const url = URL.createObjectURL(exportFile);
       const a = document.createElement("a");
       a.href = url;
       a.download = "grocery-receipt.png";
@@ -265,15 +302,12 @@ export default function ReceiptView(props: Props) {
   };
 
   const handleShare = async () => {
-    if (busy) return;
+    if (busy || !exportFile) return;
     setBusy(true);
     try {
-      const out = await generatePng();
-      if (!out) return;
-      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-      if (navigator.share && nav.canShare?.({ files: [out.file] })) {
+      if (canNativeShare(exportFile)) {
         await navigator.share({
-          files: [out.file],
+          files: [exportFile],
           title: "Monthly Grocery Summary",
           text: "My grocery receipt",
         });
@@ -283,7 +317,6 @@ export default function ReceiptView(props: Props) {
         });
       }
     } catch (e) {
-      // Cancelled share is fine
       if ((e as Error)?.name !== "AbortError") {
         console.error(e);
         toast.error("Couldn't share image");
@@ -295,7 +328,7 @@ export default function ReceiptView(props: Props) {
 
   // Reset tear when dialog closes
   useEffect(() => {
-    if (!dialogOpen && torn) {
+    if (!dialogOpen && torn && !previewOpen) {
       const t = setTimeout(() => {
         setTorn(false);
         setDragDx(0);
@@ -304,7 +337,7 @@ export default function ReceiptView(props: Props) {
       }, 250);
       return () => clearTimeout(t);
     }
-  }, [dialogOpen, torn]);
+  }, [dialogOpen, torn, previewOpen]);
 
   const TEAR_RATIO = 0.2;
 
