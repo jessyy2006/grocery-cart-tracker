@@ -57,7 +57,14 @@ export default function Home() {
         }))
       );
 
-      const { data: all } = await supabase.from("trips").select("total_cents").eq("status", "saved");
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const { data: all } = await supabase
+        .from("trips")
+        .select("total_cents")
+        .eq("status", "saved")
+        .gte("started_at", monthStart.toISOString());
       setLifetime((all ?? []).reduce((a, t: any) => a + (t.total_cents ?? 0), 0));
     })();
   }, [user]);
