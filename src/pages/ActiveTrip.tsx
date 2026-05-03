@@ -61,6 +61,9 @@ export default function ActiveTrip() {
     image_url?: string;
   } | null>(null);
   const [pickStoreOpen, setPickStoreOpen] = useState(false);
+  const [pendingErrors, setPendingErrors] = useState<{ name?: boolean; price?: boolean; qty?: boolean }>({});
+  const [manualCheck, setManualCheck] = useState<{ item: ListItem; qty: string; price: string } | null>(null);
+  const [manualErrors, setManualErrors] = useState<{ qty?: boolean; price?: boolean }>({});
 
   // Load active trip
   useEffect(() => {
@@ -140,15 +143,32 @@ export default function ActiveTrip() {
     return CATEGORY_ORDER.filter((s) => map.has(s)).map((s) => ({ slug: s, items: map.get(s)! }));
   }, [listItems]);
 
-  const toggleListItem = async (it: ListItem) => {
-    const nowChecking = !it.checked_at;
-    const checked_at = nowChecking ? new Date().toISOString() : null;
-    const price_cents = nowChecking ? it.price_cents : null;
-    setListItems((c) => c.map((i) => (i.id === it.id ? { ...i, checked_at, price_cents } : i)));
+  const openManualCheck = (it: ListItem) => {
+    setManualErrors({});
+    setManualCheck({ item: it, qty: String(it.qty || 1), price: "" });
+  };
+
+  const confirmManualCheck = async () => {
+    if (!manualCheck) return;
+    const qtyNum = parseInt(manualCheck.qty, 10);
+    const priceCents = parsePriceToCents(manualCheck.price);
+    const errs: { qty?: boolean; price?: boolean } = {};
+    if (!qtyNum || qtyNum < 1) errs.qty = true;
+    if (priceCents == null) errs.price = true;
+    if (errs.qty || errs.price) {
+      setManualErrors(errs);
+      return;
+    }
+    const it = manualCheck.item;
+    const checked_at = new Date().toISOString();
+    setListItems((c) =>
+      c.map((i) => (i.id === it.id ? { ...i, checked_at, qty: qtyNum, price_cents: priceCents } : i))
+    );
     await supabase
       .from("shopping_list_items")
-      .update({ checked_at, price_cents })
+      .update({ checked_at, qty: qtyNum, price_cents: priceCents })
       .eq("id", it.id);
+    setManualCheck(null);
   };
 
   const aiMatch = async (scannedName: string): Promise<string | null> => {
@@ -241,21 +261,22 @@ export default function ActiveTrip() {
   const confirmAdd = async () => {
     if (!pending || !tripId || !activeStore) return;
     const price_cents = parsePriceToCents(pending.price);
-    if (price_cents == null) {
-      toast.error("Enter a valid price");
+    const errs: { name?: boolean; price?: boolean; qty?: boolean } = {};
+    if (!pending.name.trim()) errs.name = true;
+    if (price_cents == null) errs.price = true;
+    if (!pending.qty || pending.qty < 1) errs.qty = true;
+    if (errs.name || errs.price || errs.qty) {
+      setPendingErrors(errs);
       return;
     }
-    if (!pending.name.trim()) {
-      toast.error("Enter a name");
-      return;
-    }
+    setPendingErrors({});
     const insert = {
       trip_id: tripId,
       store_id: activeStore.id,
       store_name_snapshot: activeStore.name,
       barcode: pending.barcode,
       name_snapshot: pending.name.trim(),
-      price_cents,
+      price_cents: price_cents as number,
       qty: pending.qty,
     };
     const { data, error } = await supabase.from("trip_items").insert(insert).select("*").single();
@@ -398,7 +419,7 @@ export default function ActiveTrip() {
                         {!it.checked_at && (
                           <Checkbox
                             checked={false}
-                            onCheckedChange={() => toggleListItem(it)}
+                            onCheckedChange={() => openManualCheck(it)}
                             aria-label="Toggle item"
                           />
                         )}
@@ -491,7 +512,7 @@ export default function ActiveTrip() {
         />
       )}
 
-      <Dialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
+      <Dialog open={!!pending} onOpenChange={(o) => { if (!o) { setPending(null); setPendingErrors({}); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add to cart</DialogTitle>
@@ -501,36 +522,48 @@ export default function ActiveTrip() {
               {pending.image_url && (
                 <img src={pending.image_url} alt="" className="mx-auto h-24 w-24 rounded-lg object-contain" />
               )}
-              <div className="space-y-2">
-                <Label htmlFor="iname">Name</Label>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="iname">Name</Label>
+                  {pendingErrors.name && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                </div>
                 <Input
                   id="iname"
                   value={pending.name}
-                  onChange={(e) => setPending({ ...pending, name: e.target.value })}
+                  onChange={(e) => { setPending({ ...pending, name: e.target.value }); if (pendingErrors.name) setPendingErrors({ ...pendingErrors, name: false }); }}
                   placeholder="Item name"
+                  className={pendingErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label htmlFor="iprice">Price</Label>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="iprice">Price</Label>
+                    {pendingErrors.price && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                  </div>
                   <Input
                     id="iprice"
                     type="text"
                     inputMode="decimal"
                     value={pending.price}
-                    onChange={(e) => setPending({ ...pending, price: e.target.value })}
+                    onChange={(e) => { setPending({ ...pending, price: e.target.value }); if (pendingErrors.price) setPendingErrors({ ...pendingErrors, price: false }); }}
                     placeholder="0.00"
                     autoFocus={!pending.price}
+                    className={pendingErrors.price ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="iqty">Qty</Label>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="iqty">Qty</Label>
+                    {pendingErrors.qty && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                  </div>
                   <Input
                     id="iqty"
                     type="number"
                     min={1}
-                    value={pending.qty}
-                    onChange={(e) => setPending({ ...pending, qty: Math.max(1, Number(e.target.value) || 1) })}
+                    value={pending.qty || ""}
+                    onChange={(e) => { const n = parseInt(e.target.value, 10); setPending({ ...pending, qty: isNaN(n) ? 0 : n }); if (pendingErrors.qty) setPendingErrors({ ...pendingErrors, qty: false }); }}
+                    className={pendingErrors.qty ? "border-red-500 focus-visible:ring-red-500" : ""}
                   />
                 </div>
               </div>
@@ -539,6 +572,53 @@ export default function ActiveTrip() {
               )}
               <Button className="w-full" onClick={confirmAdd}>
                 <Plus className="mr-1 h-4 w-4" /> Add
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!manualCheck} onOpenChange={(o) => { if (!o) { setManualCheck(null); setManualErrors({}); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Check off {manualCheck?.item.name}</DialogTitle>
+          </DialogHeader>
+          {manualCheck && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="mprice">Price</Label>
+                    {manualErrors.price && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                  </div>
+                  <Input
+                    id="mprice"
+                    type="text"
+                    inputMode="decimal"
+                    value={manualCheck.price}
+                    onChange={(e) => { setManualCheck({ ...manualCheck, price: e.target.value }); if (manualErrors.price) setManualErrors({ ...manualErrors, price: false }); }}
+                    placeholder="0.00"
+                    autoFocus
+                    className={manualErrors.price ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="mqty">Qty</Label>
+                    {manualErrors.qty && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                  </div>
+                  <Input
+                    id="mqty"
+                    type="number"
+                    min={1}
+                    value={manualCheck.qty}
+                    onChange={(e) => { setManualCheck({ ...manualCheck, qty: e.target.value.replace(/[^\d]/g, "") }); if (manualErrors.qty) setManualErrors({ ...manualErrors, qty: false }); }}
+                    className={manualErrors.qty ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  />
+                </div>
+              </div>
+              <Button className="w-full" onClick={confirmManualCheck}>
+                <Check className="mr-1 h-4 w-4" /> Check off
               </Button>
             </div>
           )}
