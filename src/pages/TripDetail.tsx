@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, MapPin } from "lucide-react";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 
 type Item = { id: string; name_snapshot: string; price_cents: number; qty: number; store_name_snapshot: string | null };
@@ -11,6 +11,7 @@ type Item = { id: string; name_snapshot: string; price_cents: number; qty: numbe
 export default function TripDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  useCurrency();
   const [trip, setTrip] = useState<{ started_at: string; total_cents: number } | null>(null);
   const [items, setItems] = useState<Item[]>([]);
 
@@ -45,7 +46,7 @@ export default function TripDetail() {
   }, [items]);
 
   return (
-    <div className="space-y-5 px-5 pb-3 pt-4">
+    <div className="space-y-5 px-5 pb-8 pt-8">
       <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground">
         <ArrowLeft className="h-4 w-4" /> Back
       </button>

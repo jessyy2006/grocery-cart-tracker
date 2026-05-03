@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Scanner } from "@/components/Scanner";
 import { ScanLine, Plus, MapPin, Trash2, Check, ListChecks } from "lucide-react";
-import { formatMoney, parsePriceToCents } from "@/lib/format";
+import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
 import { findListMatch, getCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
 import { toast } from "sonner";
@@ -38,6 +38,7 @@ type ListItem = {
 export default function ActiveTrip() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  useCurrency();
   const [tripId, setTripId] = useState<string | null>(null);
   const [listId, setListId] = useState<string | null>(null);
   const [listName, setListName] = useState<string>("");

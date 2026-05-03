@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 
 type Row = { id: string; started_at: string; total_cents: number; stores: string[]; itemCount: number };
@@ -12,6 +12,7 @@ type Row = { id: string; started_at: string; total_cents: number; stores: string
 export default function History() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  useCurrency();
   const [rows, setRows] = useState<Row[]>([]);
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function History() {
   }, [user]);
 
   return (
-    <div className="space-y-4 px-5 pb-3 pt-4">
+    <div className="space-y-4 px-5 pb-8 pt-8">
       <h1 className="text-3xl font-bold tracking-tight">History</h1>
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">No saved trips yet.</p>
