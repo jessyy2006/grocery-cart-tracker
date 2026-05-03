@@ -425,7 +425,14 @@ export default function ActiveTrip() {
         <div className="mb-3 flex items-end justify-between">
           <div>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Cart total</p>
-            <p className="text-3xl font-bold">{formatMoney(total)}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-3xl font-bold">{formatMoney(total)}</p>
+              {listItems.length > 0 && (
+                <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
+                  {listItems.filter((i) => i.checked_at).length}/{listItems.length}
+                </span>
+              )}
+            </div>
           </div>
           <Button variant="outline" onClick={saveTrip} disabled={items.length === 0}>
             <Check className="mr-1 h-4 w-4" /> Save trip
@@ -441,11 +448,25 @@ export default function ActiveTrip() {
           key={confetti.id}
           className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center"
         >
-          <span className="animate-ping text-7xl">{confetti.emoji}</span>
+          <span className="animate-confetti-bounce text-8xl">{confetti.emoji}</span>
         </div>
       )}
 
-      {scanning && <Scanner onCode={onScanned} onClose={() => setScanning(false)} />}
+      {scanning && (
+        <Scanner
+          onCode={onScanned}
+          onClose={() => setScanning(false)}
+          onManualEntry={() => {
+            setScanning(false);
+            if (!activeStore) {
+              toast.error("Pick a store first");
+              setPickStoreOpen(true);
+              return;
+            }
+            setPending({ barcode: null, name: "", price: "", qty: 1 });
+          }}
+        />
+      )}
 
       <Dialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
         <DialogContent>
