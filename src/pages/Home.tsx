@@ -4,11 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ShoppingBasket, Plus, MapPin, ListChecks } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { ShoppingBasket, Plus, MapPin, ListChecks, ShoppingCart } from "lucide-react";
 import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
+type ShortList = { id: string; name: string };
 
 export default function Home() {
   const { user } = useAuth();
@@ -17,6 +26,9 @@ export default function Home() {
   const [activeTrip, setActiveTrip] = useState<Trip | null>(null);
   const [recent, setRecent] = useState<(Trip & { stores: string[] })[]>([]);
   const [lifetime, setLifetime] = useState(0);
+  const [startOpen, setStartOpen] = useState(false);
+  const [lists, setLists] = useState<ShortList[]>([]);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -50,7 +62,33 @@ export default function Home() {
     })();
   }, [user]);
 
-  const startTrip = () => navigate("/trip/new");
+  const openStart = async () => {
+    const { data } = await supabase
+      .from("shopping_lists")
+      .select("id, name")
+      .order("updated_at", { ascending: false });
+    setLists(data ?? []);
+    setStartOpen(true);
+  };
+
+  const startTripWith = async (listId: string | null) => {
+    if (!user) return;
+    setCreating(true);
+    try {
+      const { data, error } = await supabase
+        .from("trips")
+        .insert({ user_id: user.id, list_id: listId })
+        .select("id")
+        .single();
+      if (error) throw error;
+      setStartOpen(false);
+      navigate("/trip", { replace: true });
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to start trip");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <div className="space-y-6 px-5 pb-6 pt-6">
@@ -70,7 +108,7 @@ export default function Home() {
               <ShoppingBasket className="mr-2 h-5 w-5" /> Resume current trip · {formatMoney(activeTrip.total_cents)}
             </Button>
           ) : (
-            <Button className="w-full" size="lg" onClick={startTrip}>
+            <Button className="w-full" size="lg" onClick={openStart}>
               <Plus className="mr-2 h-5 w-5" /> Start new trip
             </Button>
           )}
@@ -105,6 +143,43 @@ export default function Home() {
           </ul>
         )}
       </section>
+
+      <Dialog open={startOpen} onOpenChange={setStartOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Start a new trip</DialogTitle>
+            <DialogDescription>
+              Pick a shopping list to shop for, or shop freely without a list.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            {lists.length > 0 && (
+              <ul className="space-y-2">
+                {lists.map((l) => (
+                  <li key={l.id}>
+                    <button
+                      disabled={creating}
+                      onClick={() => startTripWith(l.id)}
+                      className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary disabled:opacity-50"
+                    >
+                      <ListChecks className="h-5 w-5 text-primary" />
+                      <span className="font-medium">{l.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Button
+              variant="outline"
+              className="w-full"
+              disabled={creating}
+              onClick={() => startTripWith(null)}
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" /> Shop freely (no list)
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
