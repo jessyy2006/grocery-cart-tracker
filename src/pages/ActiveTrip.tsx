@@ -9,9 +9,10 @@ import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Scanner } from "@/components/Scanner";
-import { ScanLine, Plus, MapPin, Trash2, Check } from "lucide-react";
+import { ScanLine, Plus, MapPin, Trash2, Check, ListChecks } from "lucide-react";
 import { formatMoney, parsePriceToCents } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
+import { findListMatch, getCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
 import { toast } from "sonner";
 
 type TripItem = {
