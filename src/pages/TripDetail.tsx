@@ -11,6 +11,7 @@ type Item = { id: string; name_snapshot: string; price_cents: number; qty: numbe
 export default function TripDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  useCurrency();
   const [trip, setTrip] = useState<{ started_at: string; total_cents: number } | null>(null);
   const [items, setItems] = useState<Item[]>([]);
 
