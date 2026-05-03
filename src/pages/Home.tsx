@@ -57,7 +57,14 @@ export default function Home() {
         }))
       );
 
-      const { data: all } = await supabase.from("trips").select("total_cents").eq("status", "saved");
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const { data: all } = await supabase
+        .from("trips")
+        .select("total_cents")
+        .eq("status", "saved")
+        .gte("started_at", monthStart.toISOString());
       setLifetime((all ?? []).reduce((a, t: any) => a + (t.total_cents ?? 0), 0));
     })();
   }, [user]);
@@ -109,7 +116,7 @@ export default function Home() {
 
       <Card className="overflow-hidden p-0 shadow-elevated">
         <div className="gradient-hero p-6 text-primary-foreground">
-          <p className="text-xs uppercase tracking-wider opacity-80">Lifetime spend</p>
+          <p className="text-xs uppercase tracking-wider opacity-80">This month's spend</p>
           <p className="mt-1 text-3xl font-bold">{formatMoney(lifetime)}</p>
         </div>
         <div className="space-y-3 p-5">
