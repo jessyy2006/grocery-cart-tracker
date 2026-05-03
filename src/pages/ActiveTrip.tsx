@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Scanner } from "@/components/Scanner";
-import { ScanLine, Plus, MapPin, Trash2, Check, ListChecks } from "lucide-react";
+import { ScanLine, Plus, MapPin, Trash2, Check } from "lucide-react";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
 import { findListMatch, getCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
@@ -46,6 +47,9 @@ export default function ActiveTrip() {
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [stores, setStores] = useState<Store[]>([]);
   const [items, setItems] = useState<TripItem[]>([]);
+  const [extras, setExtras] = useState<TripItem[]>([]);
+  const [extrasOpen, setExtrasOpen] = useState(false);
+  const [confetti, setConfetti] = useState<{ id: number; emoji: string } | null>(null);
   const [scanning, setScanning] = useState(false);
   const [pending, setPending] = useState<{
     barcode: string | null;
@@ -75,7 +79,7 @@ export default function ActiveTrip() {
     })();
   }, [user, navigate]);
 
-  // Load shopping list (if linked)
+  // Load shopping list
   useEffect(() => {
     if (!listId) {
       setListItems([]);
@@ -118,60 +122,73 @@ export default function ActiveTrip() {
     })();
   }, [tripId, user]);
 
-  // Realtime
-  useEffect(() => {
-    if (!tripId) return;
-    const ch = supabase
-      .channel(`trip-items-${tripId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "trip_items", filter: `trip_id=eq.${tripId}` },
-        (payload) => {
-          setItems((curr) => {
-            if (payload.eventType === "INSERT") {
-              if (curr.some((i) => i.id === (payload.new as any).id)) return curr;
-              return [...curr, payload.new as TripItem];
-            }
-            if (payload.eventType === "DELETE") return curr.filter((i) => i.id !== (payload.old as any).id);
-            if (payload.eventType === "UPDATE")
-              return curr.map((i) => (i.id === (payload.new as any).id ? (payload.new as TripItem) : i));
-            return curr;
-          });
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [tripId]);
-
   const total = useMemo(() => items.reduce((a, i) => a + i.price_cents * i.qty, 0), [items]);
-  const grouped = useMemo(() => {
-    const m = new Map<string, { name: string; items: TripItem[]; subtotal: number }>();
-    for (const i of items) {
-      const key = i.store_id ?? "unknown";
-      const name = i.store_name_snapshot ?? "Unspecified store";
-      if (!m.has(key)) m.set(key, { name, items: [], subtotal: 0 });
-      const g = m.get(key)!;
-      g.items.push(i);
-      g.subtotal += i.price_cents * i.qty;
-    }
-    return Array.from(m.values());
-  }, [items]);
 
-  const tryCheckOffList = async (code: string, productName: string | undefined) => {
-    if (!listId || listItems.length === 0) return;
-    const match = findListMatch(listItems, { barcode: code, name: productName });
-    if (!match) return;
-    const checked_at = new Date().toISOString();
-    setListItems((c) =>
-      c.map((i) => (i.id === match.id ? { ...i, checked_at, barcode: i.barcode ?? code } : i))
-    );
-    await supabase
-      .from("shopping_list_items")
-      .update({ checked_at, barcode: match.barcode ?? code })
-      .eq("id", match.id);
-    toast.success(`Checked off: ${match.name}`);
+  const groupedList = useMemo(() => {
+    const map = new Map<CategorySlug, ListItem[]>();
+    for (const it of listItems) {
+      const slug = (CATEGORY_ORDER.includes(it.category as CategorySlug)
+        ? it.category
+        : "other") as CategorySlug;
+      if (!map.has(slug)) map.set(slug, []);
+      map.get(slug)!.push(it);
+    }
+    for (const arr of map.values())
+      arr.sort((a, b) => Number(!!a.checked_at) - Number(!!b.checked_at));
+    return CATEGORY_ORDER.filter((s) => map.has(s)).map((s) => ({ slug: s, items: map.get(s)! }));
+  }, [listItems]);
+
+  const toggleListItem = async (it: ListItem) => {
+    const checked_at = it.checked_at ? null : new Date().toISOString();
+    setListItems((c) => c.map((i) => (i.id === it.id ? { ...i, checked_at } : i)));
+    await supabase.from("shopping_list_items").update({ checked_at }).eq("id", it.id);
+  };
+
+  const aiMatch = async (scannedName: string): Promise<string | null> => {
+    const open = listItems.filter((i) => !i.checked_at);
+    if (open.length === 0) return null;
+    try {
+      const { data, error } = await supabase.functions.invoke("match-list-item", {
+        body: { scannedName, listItems: open.map((i) => ({ id: i.id, name: i.name })) },
+      });
+      if (error) throw error;
+      if (data?.matchId) return data.matchId as string;
+      // fall through to local fallback if AI returned null but we want to double-check
+      return null;
+    } catch (e) {
+      const fallback = findListMatch(open, { barcode: "", name: scannedName });
+      return fallback?.id ?? null;
+    }
+  };
+
+  const handleMatchOrExtra = async (
+    code: string | null,
+    productName: string,
+    tripItem: TripItem
+  ) => {
+    // Try barcode-first quick match
+    const open = listItems.filter((i) => !i.checked_at);
+    let matchId: string | null = null;
+    if (code) {
+      const byBarcode = open.find((i) => i.barcode && i.barcode === code);
+      if (byBarcode) matchId = byBarcode.id;
+    }
+    if (!matchId) matchId = await aiMatch(productName);
+
+    if (matchId) {
+      const checked_at = new Date().toISOString();
+      setListItems((c) =>
+        c.map((i) => (i.id === matchId ? { ...i, checked_at, barcode: i.barcode ?? code } : i))
+      );
+      await supabase
+        .from("shopping_list_items")
+        .update({ checked_at, barcode: code ?? undefined })
+        .eq("id", matchId);
+      toast.success(`Checked off: ${productName}`);
+    } else {
+      setExtras((c) => [...c, tripItem]);
+      toast("Added to Extras", { icon: "✨" });
+    }
   };
 
   const onScanned = async (code: string) => {
@@ -181,7 +198,6 @@ export default function ActiveTrip() {
       setPickStoreOpen(true);
       return;
     }
-    // Check cached product
     const { data: cached } = await supabase
       .from("products")
       .select("name, brand, image_url, default_price_cents")
@@ -189,7 +205,6 @@ export default function ActiveTrip() {
       .maybeSingle();
     if (cached) {
       const fullName = cached.brand ? `${cached.brand} — ${cached.name}` : cached.name;
-      await tryCheckOffList(code, fullName);
       setPending({
         barcode: code,
         name: fullName,
@@ -201,7 +216,6 @@ export default function ActiveTrip() {
     }
     const off = await lookupBarcode(code);
     const fullName = off ? (off.brand ? `${off.brand} — ${off.name}` : off.name) : "";
-    await tryCheckOffList(code, fullName || undefined);
     setPending({
       barcode: code,
       name: fullName,
@@ -236,8 +250,8 @@ export default function ActiveTrip() {
       toast.error(error.message);
       return;
     }
-    setItems((c) => (c.some((i) => i.id === data!.id) ? c : [...c, data as TripItem]));
-    // Update product cache
+    const newItem = data as TripItem;
+    setItems((c) => (c.some((i) => i.id === newItem.id) ? c : [...c, newItem]));
     if (pending.barcode) {
       await supabase.from("products").upsert({
         barcode: pending.barcode,
@@ -246,12 +260,19 @@ export default function ActiveTrip() {
         default_price_cents: price_cents,
       });
     }
+    const nameForMatch = pending.name.trim();
+    const codeForMatch = pending.barcode;
     setPending(null);
+    await handleMatchOrExtra(codeForMatch, nameForMatch, newItem);
   };
 
-  const removeItem = async (id: string) => {
+  const removeExtra = async (id: string) => {
+    setExtras((c) => c.filter((i) => i.id !== id));
     setItems((c) => c.filter((i) => i.id !== id));
     await supabase.from("trip_items").delete().eq("id", id);
+    const emojis = ["🎉", "✨", "🥳", "🎊", "💚"];
+    setConfetti({ id: Date.now(), emoji: emojis[Math.floor(Math.random() * emojis.length)] });
+    setTimeout(() => setConfetti(null), 900);
   };
 
   const saveTrip = async () => {
@@ -291,103 +312,91 @@ export default function ActiveTrip() {
             <span className="font-semibold">{activeStore?.name ?? "Pick a store"}</span>
           </button>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => setPickStoreOpen(true)}>
-          Switch
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setPickStoreOpen(true)}>
+            Switch
+          </Button>
+          {extras.length > 0 && (
+            <button
+              onClick={() => setExtrasOpen((o) => !o)}
+              aria-label="Show extras"
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white shadow-md"
+            >
+              {extras.length}
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
-        {listId && listItems.length > 0 && (
-          <section className="rounded-2xl border border-border bg-secondary/40 p-3">
+        {extrasOpen && extras.length > 0 && (
+          <section className="rounded-2xl border border-accent bg-accent/30 p-3">
             <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ListChecks className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold">{listName}</span>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {listItems.filter((i) => i.checked_at).length}/{listItems.length} picked up
-              </span>
+              <h3 className="text-sm font-semibold">Extras</h3>
+              <span className="text-xs text-muted-foreground">{extras.length}</span>
             </div>
-            {(() => {
-              const groups = new Map<CategorySlug, ListItem[]>();
-              for (const it of listItems) {
-                const slug = (CATEGORY_ORDER.includes(it.category as CategorySlug)
-                  ? it.category
-                  : "other") as CategorySlug;
-                if (!groups.has(slug)) groups.set(slug, []);
-                groups.get(slug)!.push(it);
-              }
-              for (const arr of groups.values())
-                arr.sort((a, b) => Number(!!a.checked_at) - Number(!!b.checked_at));
-              return CATEGORY_ORDER.filter((s) => groups.has(s)).map((s) => {
-                const meta = getCategory(s);
-                return (
-                  <div key={s} className="mb-2">
-                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {meta.emoji} {meta.label}
+            <ul className="space-y-2">
+              {extras.map((ex) => (
+                <li key={ex.id} className="flex items-center justify-between rounded-xl bg-card p-2">
+                  <div className="min-w-0 flex-1 pr-2">
+                    <p className="truncate text-sm font-medium">{ex.name_snapshot}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {ex.qty} × {formatMoney(ex.price_cents)}
                     </p>
-                    <ul className="space-y-1">
-                      {groups.get(s)!.map((it) => (
-                        <li
-                          key={it.id}
-                          className={`flex items-center justify-between text-sm ${
-                            it.checked_at ? "text-muted-foreground line-through" : ""
-                          }`}
-                        >
-                          <span className="truncate">{it.name}</span>
-                          {it.qty > 1 && (
-                            <span className="ml-2 text-xs text-muted-foreground">×{it.qty}</span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
                   </div>
-                );
-              });
-            })()}
+                  <button
+                    onClick={() => removeExtra(ex.id)}
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label="Remove extra"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
-        {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
-            <ScanLine className="mb-3 h-10 w-10 text-primary" />
-            <p className="font-medium text-foreground">Cart is empty</p>
-            <p className="mt-1 text-sm">Tap Scan to add your first item</p>
-          </div>
+
+        {listItems.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">
+            No shopping list linked to this trip.
+          </p>
         ) : (
-          <div className="space-y-5">
-            {grouped.map((g) => (
-              <section key={g.name}>
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    {g.name}
-                  </h3>
-                  <span className="text-xs font-medium">{formatMoney(g.subtotal)}</span>
-                </div>
+          groupedList.map(({ slug, items: lis }) => {
+            const meta = getCategory(slug);
+            return (
+              <section key={slug}>
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {meta.emoji} {meta.label}
+                </h3>
                 <ul className="space-y-2">
-                  {g.items.map((it) => (
+                  {lis.map((it) => (
                     <li key={it.id}>
-                      <Card className="flex items-center justify-between p-3">
-                        <div className="min-w-0 flex-1 pr-2">
-                          <p className="truncate font-medium">{it.name_snapshot}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {it.qty} × {formatMoney(it.price_cents)}
+                      <Card className="flex items-center gap-3 p-3">
+                        <Checkbox
+                          checked={!!it.checked_at}
+                          onCheckedChange={() => toggleListItem(it)}
+                          aria-label="Toggle item"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className={`truncate font-medium ${
+                              it.checked_at ? "text-muted-foreground line-through" : ""
+                            }`}
+                          >
+                            {it.name}
                           </p>
+                          {it.qty > 1 && (
+                            <p className="text-xs text-muted-foreground">Qty {it.qty}</p>
+                          )}
                         </div>
-                        <span className="mr-2 font-semibold">{formatMoney(it.price_cents * it.qty)}</span>
-                        <button
-                          onClick={() => removeItem(it.id)}
-                          className="text-muted-foreground hover:text-destructive"
-                          aria-label="Remove"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
                       </Card>
                     </li>
                   ))}
                 </ul>
               </section>
-            ))}
-          </div>
+            );
+          })
         )}
       </div>
 
@@ -405,6 +414,15 @@ export default function ActiveTrip() {
           <ScanLine className="mr-2 h-5 w-5" /> Scan barcode
         </Button>
       </footer>
+
+      {confetti && (
+        <div
+          key={confetti.id}
+          className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center"
+        >
+          <span className="animate-ping text-7xl">{confetti.emoji}</span>
+        </div>
+      )}
 
       {scanning && <Scanner onCode={onScanned} onClose={() => setScanning(false)} />}
 
