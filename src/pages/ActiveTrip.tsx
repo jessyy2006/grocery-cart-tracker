@@ -143,15 +143,32 @@ export default function ActiveTrip() {
     return CATEGORY_ORDER.filter((s) => map.has(s)).map((s) => ({ slug: s, items: map.get(s)! }));
   }, [listItems]);
 
-  const toggleListItem = async (it: ListItem) => {
-    const nowChecking = !it.checked_at;
-    const checked_at = nowChecking ? new Date().toISOString() : null;
-    const price_cents = nowChecking ? it.price_cents : null;
-    setListItems((c) => c.map((i) => (i.id === it.id ? { ...i, checked_at, price_cents } : i)));
+  const openManualCheck = (it: ListItem) => {
+    setManualErrors({});
+    setManualCheck({ item: it, qty: String(it.qty || 1), price: "" });
+  };
+
+  const confirmManualCheck = async () => {
+    if (!manualCheck) return;
+    const qtyNum = parseInt(manualCheck.qty, 10);
+    const priceCents = parsePriceToCents(manualCheck.price);
+    const errs: { qty?: boolean; price?: boolean } = {};
+    if (!qtyNum || qtyNum < 1) errs.qty = true;
+    if (priceCents == null) errs.price = true;
+    if (errs.qty || errs.price) {
+      setManualErrors(errs);
+      return;
+    }
+    const it = manualCheck.item;
+    const checked_at = new Date().toISOString();
+    setListItems((c) =>
+      c.map((i) => (i.id === it.id ? { ...i, checked_at, qty: qtyNum, price_cents: priceCents } : i))
+    );
     await supabase
       .from("shopping_list_items")
-      .update({ checked_at, price_cents })
+      .update({ checked_at, qty: qtyNum, price_cents: priceCents })
       .eq("id", it.id);
+    setManualCheck(null);
   };
 
   const aiMatch = async (scannedName: string): Promise<string | null> => {
