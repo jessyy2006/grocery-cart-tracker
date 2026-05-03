@@ -26,10 +26,22 @@ type TripItem = {
 };
 type Store = { id: string; name: string };
 
+type ListItem = {
+  id: string;
+  name: string;
+  qty: number;
+  category: string;
+  barcode: string | null;
+  checked_at: string | null;
+};
+
 export default function ActiveTrip() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [tripId, setTripId] = useState<string | null>(null);
+  const [listId, setListId] = useState<string | null>(null);
+  const [listName, setListName] = useState<string>("");
+  const [listItems, setListItems] = useState<ListItem[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [stores, setStores] = useState<Store[]>([]);
   const [items, setItems] = useState<TripItem[]>([]);
