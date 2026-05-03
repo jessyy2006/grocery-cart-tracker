@@ -34,6 +34,8 @@ type ListItem = {
   category: string;
   barcode: string | null;
   checked_at: string | null;
+  price_cents: number | null;
+  notes: string | null;
 };
 
 export default function ActiveTrip() {
@@ -139,9 +141,14 @@ export default function ActiveTrip() {
   }, [listItems]);
 
   const toggleListItem = async (it: ListItem) => {
-    const checked_at = it.checked_at ? null : new Date().toISOString();
-    setListItems((c) => c.map((i) => (i.id === it.id ? { ...i, checked_at } : i)));
-    await supabase.from("shopping_list_items").update({ checked_at }).eq("id", it.id);
+    const nowChecking = !it.checked_at;
+    const checked_at = nowChecking ? new Date().toISOString() : null;
+    const price_cents = nowChecking ? it.price_cents : null;
+    setListItems((c) => c.map((i) => (i.id === it.id ? { ...i, checked_at, price_cents } : i)));
+    await supabase
+      .from("shopping_list_items")
+      .update({ checked_at, price_cents })
+      .eq("id", it.id);
   };
 
   const aiMatch = async (scannedName: string): Promise<string | null> => {
@@ -177,12 +184,18 @@ export default function ActiveTrip() {
 
     if (matchId) {
       const checked_at = new Date().toISOString();
+      const newName = productName;
+      const newPrice = tripItem.price_cents;
       setListItems((c) =>
-        c.map((i) => (i.id === matchId ? { ...i, checked_at, barcode: i.barcode ?? code } : i))
+        c.map((i) =>
+          i.id === matchId
+            ? { ...i, checked_at, barcode: i.barcode ?? code, name: newName, price_cents: newPrice }
+            : i
+        )
       );
       await supabase
         .from("shopping_list_items")
-        .update({ checked_at, barcode: code ?? undefined })
+        .update({ checked_at, barcode: code ?? undefined, name: newName, price_cents: newPrice })
         .eq("id", matchId);
       toast.success(`Checked off: ${productName}`);
     } else {
@@ -270,9 +283,8 @@ export default function ActiveTrip() {
     setExtras((c) => c.filter((i) => i.id !== id));
     setItems((c) => c.filter((i) => i.id !== id));
     await supabase.from("trip_items").delete().eq("id", id);
-    const emojis = ["🎉", "✨", "🥳", "🎊", "💚"];
-    setConfetti({ id: Date.now(), emoji: emojis[Math.floor(Math.random() * emojis.length)] });
-    setTimeout(() => setConfetti(null), 900);
+    setConfetti({ id: Date.now(), emoji: "🎉" });
+    setTimeout(() => setConfetti(null), 2000);
   };
 
   const saveTrip = async () => {
@@ -386,10 +398,19 @@ export default function ActiveTrip() {
                           >
                             {it.name}
                           </p>
-                          {it.qty > 1 && (
-                            <p className="text-xs text-muted-foreground">Qty {it.qty}</p>
+                          {(it.qty > 1 || it.notes) && (
+                            <p className="truncate text-xs text-muted-foreground">
+                              {it.qty > 1 ? `Qty ${it.qty}` : ""}
+                              {it.qty > 1 && it.notes ? " · " : ""}
+                              {it.notes ?? ""}
+                            </p>
                           )}
                         </div>
+                        {it.price_cents != null && (
+                          <span className="shrink-0 text-right text-sm font-semibold text-primary">
+                            {formatMoney(it.price_cents)}
+                          </span>
+                        )}
                       </Card>
                     </li>
                   ))}
@@ -404,7 +425,14 @@ export default function ActiveTrip() {
         <div className="mb-3 flex items-end justify-between">
           <div>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Cart total</p>
-            <p className="text-3xl font-bold">{formatMoney(total)}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-3xl font-bold">{formatMoney(total)}</p>
+              {listItems.length > 0 && (
+                <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
+                  {listItems.filter((i) => i.checked_at).length}/{listItems.length}
+                </span>
+              )}
+            </div>
           </div>
           <Button variant="outline" onClick={saveTrip} disabled={items.length === 0}>
             <Check className="mr-1 h-4 w-4" /> Save trip
@@ -420,11 +448,25 @@ export default function ActiveTrip() {
           key={confetti.id}
           className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center"
         >
-          <span className="animate-ping text-7xl">{confetti.emoji}</span>
+          <span className="animate-confetti-bounce text-8xl">{confetti.emoji}</span>
         </div>
       )}
 
-      {scanning && <Scanner onCode={onScanned} onClose={() => setScanning(false)} />}
+      {scanning && (
+        <Scanner
+          onCode={onScanned}
+          onClose={() => setScanning(false)}
+          onManualEntry={() => {
+            setScanning(false);
+            if (!activeStore) {
+              toast.error("Pick a store first");
+              setPickStoreOpen(true);
+              return;
+            }
+            setPending({ barcode: null, name: "", price: "", qty: 1 });
+          }}
+        />
+      )}
 
       <Dialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
         <DialogContent>

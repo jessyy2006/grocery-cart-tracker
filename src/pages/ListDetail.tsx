@@ -13,7 +13,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Plus, Trash2, ShoppingBasket } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ShoppingBasket, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { formatMoney } from "@/lib/format";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
 import { toast } from "sonner";
 
@@ -24,6 +26,8 @@ type Item = {
   category: string;
   barcode: string | null;
   checked_at: string | null;
+  notes: string | null;
+  price_cents: number | null;
 };
 
 export default function ListDetail() {
@@ -37,6 +41,11 @@ export default function ListDetail() {
   const [category, setCategory] = useState<CategorySlug>("other");
   const [autoCat, setAutoCat] = useState(true);
   const [runActive, setRunActive] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [editing, setEditing] = useState<Item | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editQtyText, setEditQtyText] = useState("1");
+  const [editNotes, setEditNotes] = useState("");
 
   useEffect(() => {
     if (!id || !user) return;
@@ -91,13 +100,38 @@ export default function ListDetail() {
       name: name.trim(),
       qty: parsedQty,
       category: slug,
+      notes: notes.trim() ? notes.trim().slice(0, 25) : null,
     };
     const { data, error } = await supabase.from("shopping_list_items").insert(insert).select("*").single();
     if (error) return toast.error(error.message);
     setItems((c) => [...c, data as Item]);
     setName("");
     setQtyText("1");
+    setNotes("");
     setAutoCat(true);
+  };
+
+  const openEdit = (it: Item) => {
+    setEditing(it);
+    setEditName(it.name);
+    setEditQtyText(String(it.qty));
+    setEditNotes(it.notes ?? "");
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    const newName = editName.trim();
+    if (!newName) return toast.error("Name can't be empty");
+    const newQty = Math.max(1, parseInt(editQtyText, 10) || 1);
+    const newNotes = editNotes.trim() ? editNotes.trim().slice(0, 25) : null;
+    setItems((c) =>
+      c.map((i) => (i.id === editing.id ? { ...i, name: newName, qty: newQty, notes: newNotes } : i))
+    );
+    await supabase
+      .from("shopping_list_items")
+      .update({ name: newName, qty: newQty, notes: newNotes })
+      .eq("id", editing.id);
+    setEditing(null);
   };
 
   const toggle = async (it: Item) => {
@@ -185,10 +219,26 @@ export default function ListDetail() {
                           >
                             {it.name}
                           </p>
-                          {it.qty > 1 && (
-                            <p className="text-xs text-muted-foreground">Qty {it.qty}</p>
+                          {(it.qty > 1 || it.notes) && (
+                            <p className="truncate text-xs text-muted-foreground">
+                              {it.qty > 1 ? `Qty ${it.qty}` : ""}
+                              {it.qty > 1 && it.notes ? " · " : ""}
+                              {it.notes ?? ""}
+                            </p>
                           )}
                         </div>
+                        {it.price_cents != null && (
+                          <span className="shrink-0 text-sm font-semibold text-primary">
+                            {formatMoney(it.price_cents)}
+                          </span>
+                        )}
+                        <button
+                          onClick={() => openEdit(it)}
+                          className="text-muted-foreground hover:text-foreground"
+                          aria-label="Edit item"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
                         <button
                           onClick={() => remove(it.id)}
                           className="text-muted-foreground hover:text-destructive"
@@ -225,6 +275,12 @@ export default function ListDetail() {
             aria-label="Quantity"
           />
         </div>
+        <Input
+          placeholder="Notes (e.g. 500 ml) — optional"
+          value={notes}
+          maxLength={25}
+          onChange={(e) => setNotes(e.target.value)}
+        />
         <div className="flex gap-2">
           <Select
             value={category}
@@ -252,6 +308,40 @@ export default function ListDetail() {
           <ShoppingBasket className="mr-2 h-5 w-5" /> Start grocery run
         </Button>
       </footer>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit item</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Name" />
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={editQtyText}
+                onChange={(e) => setEditQtyText(e.target.value.replace(/[^\d]/g, ""))}
+                className="w-20"
+                aria-label="Quantity"
+              />
+              <Input
+                value={editNotes}
+                maxLength={25}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Notes (e.g. 500 ml)"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button onClick={saveEdit}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,63 +1,96 @@
-# Active Trip page overhaul
+# Updates to Active Trip + Shopping List
 
-Reshape `/trip` so the shopping list is the page, scanned items auto-check matching list entries (verified by AI), and unmatched scans land in a hidden "Extras" tray.
+## 1. Manual-entry button on the Scanner
 
-## 1. Hide the bottom nav on the trip page
+`src/components/Scanner.tsx`
 
-In `src/components/BottomNav.tsx`, read the current route via `useLocation()` and return `null` when `pathname === "/trip"`. This keeps `AppLayout` untouched and the trip screen full-height.
+- Add a new prop `onManualEntry: () => void`.
+- Add a floating button in the bottom-right of the scanner overlay (above the safe-bottom hint) with a pencil/keyboard icon and label "Enter manually".
+- Tapping it calls `onManualEntry()`, which the parent uses to close the scanner and open the existing add-item dialog (`pending` state) with `barcode: null` and empty fields.
 
-## 2. Full-screen shopping list (replaces the empty-cart placeholder)
+`src/pages/ActiveTrip.tsx`
 
-Rewrite the body of `src/pages/ActiveTrip.tsx`:
+- Pass `onManualEntry` to `<Scanner>` that runs:
+  - `setScanning(false)`
+  - if no `activeStore`, prompt to pick one (same guard as scan)
+  - `setPending({ barcode: null, name: "", price: "", qty: 1 })`
+- The existing dialog + `confirmAdd` already handle null-barcode inserts, so no further changes needed.
 
-- Remove the "Cart is empty / Tap Scan to add your first item" block and the small list summary card.
-- The main scrollable area becomes the **shopping list itself**, grouped by category (reuse the existing `CATEGORY_ORDER` / `getCategory` rendering already in the file).
-- Each list item row gets a `Checkbox` (like `ListDetail.tsx`) so the user can manually tick items off. Toggling updates `shopping_list_items.checked_at` in Supabase and local state. Checked items are greyed + struck-through and sorted to the bottom of their category.
-- Delete the per-store "cart items" section from the visible list — keep that data only for the cart total in the footer (which already sums `trip_items`). Cart total + Save trip + Scan barcode footer stays as-is.
+## 2. Replace checked list-item name with scanned product name + show price
 
-## 3. Extras tray + red badge
+DB: `shopping_list_items` already has `name` and `barcode` columns; we'll reuse `name` for the displayed name and add a new nullable `price_cents integer` column via migration to remember the matched item's price for display.
 
-State: `const [extras, setExtras] = useState<TripItem[]>([])` and `const [extrasOpen, setExtrasOpen] = useState(false)`.
+Migration:
 
-Header (right side, replacing/next to "Switch"):
+```sql
+alter table public.shopping_list_items
+  add column if not exists price_cents integer;
+```
 
-- A circular red badge button shown only when `extras.length > 0`. White number, `bg-destructive` (or `bg-red-500`), `rounded-full`, ~22px. Clicking toggles `extrasOpen`.
-- Keep the "Switch" text button to its left.
+`src/pages/ActiveTrip.tsx` — in `handleMatchOrExtra` when a match is found:
 
-Extras module:
+- Update local + DB `shopping_list_items` row with `{ checked_at, barcode: code, name: productName, price_cents: tripItem.price_cents }`.
+- The `ListItem` type gets a `price_cents: number | null` field.
 
-- Rendered ABOVE the shopping list inside the scroll area, only when `extrasOpen` is true.
-- Light-red accent card titled "Extras", listing each unmatched scanned item (name, qty, price). Each row has a trash icon to remove (also deletes the `trip_items` row).
-- When an extra is removed, celebration emoji confetti animation is enlarged on the screen for a brief moment. keep this animation simple and quick. 
+Render in the grouped list (and in `ListDetail.tsx` for consistency):
 
-## 4. Scan → AI match → check off OR add to extras
+- Right-aligned price label inside the row's `Card`, using `text-primary font-semibold` (the app's primary green) — only shown when `price_cents != null`.
+- Keep the existing strike-through / muted styling on the name for checked items.
 
-Replace `tryCheckOffList` with a new flow used inside `onScanned` and `confirmAdd`:
+When the user manually un-checks a list item (`toggleListItem`), clear `price_cents` (set null) so it returns to its plain state. The original list name is overwritten — that is per request and acceptable.
 
-1. After the user confirms an item in the existing add dialog (`confirmAdd`), insert into `trip_items` as today.
-2. Then call a new edge function `match-list-item` with `{ scannedName, listItems: openItems.map(i => ({id, name})) }`.
-3. The function returns `{ matchId: string | null }`. If non-null, mark that `shopping_list_items` row as `checked_at = now()` and update local `listItems`.
-4. If null, push the trip item onto `extras` and (if not already open) flash a subtle toast "Added to Extras".
+## 3. Progress badge in cart footer
 
-Local fallback: if the edge call fails, fall back to the existing `findListMatch` token logic so the feature still works offline.
+`src/pages/ActiveTrip.tsx`
 
-## 5. New edge function: `supabase/functions/match-list-item/index.ts`
+- Compute `const checkedCount = listItems.filter(i => i.checked_at).length;` and `const totalCount = listItems.length;`.
+- In the footer, next to the `Cart total` price, render a small pill: `bg-accent text-accent-foreground rounded-full px-2 py-0.5 text-xs font-semibold` showing `{checked}/{total}` — only when `totalCount > 0`.
+- Updates automatically as `listItems` state changes.
 
-- Calls Lovable AI Gateway (`google/gemini-3-flash-preview`) using tool calling for structured output.
-- System prompt: "You decide whether a scanned grocery product matches any item on a shopping list. A match means at least one meaningful word in the scanned product name corresponds to a word/concept in a list item (e.g. '2% Whole Milk' matches 'milk', 'Boneless chicken thighs' matches 'chicken'). Pick the single best match or none."
-- Tool schema returns `{ match_id: string | null }` chosen from the provided list IDs.
-- Handles 429/402 and returns `{ matchId: null, error }` so the client can fall back.
-- CORS headers + `verify_jwt = true` (default).
+## 4. Confetti animation = 2s bounce
 
-## 6. Data flow notes
+`src/index.css` — add a keyframe:
 
-- The existing list-load effect in `ActiveTrip` already fetches `listItems`; reuse it.
-- "Extras" is derived from `trip_items` whose name didn't match — track this client-side via the `extras` state set during scanning. (No schema change needed.) On page refresh extras reset to empty; this is acceptable for the active session.
-- Manual checkbox toggling in the list updates Supabase the same way `ListDetail.tsx` does.
+```css
+@keyframes confetti-bounce {
+  0%   { transform: translateY(120vh) scale(0.6); opacity: 0; }
+  25%  { transform: translateY(-20px) scale(1.2); opacity: 1; }
+  50%  { transform: translateY(0)     scale(1);   opacity: 1; }
+  75%  { transform: translateY(-10px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(120vh) scale(0.8); opacity: 0; }
+}
+.animate-confetti-bounce { animation: confetti-bounce 2s ease-in-out forwards; }
+```
+
+`ActiveTrip.tsx`:
+
+- Force the emoji to `🎉` (drop the random array).
+- Replace `animate-ping` with `animate-confetti-bounce`.
+- Change the timeout to `2000ms`.
+
+## 5. Optional "notes" on shopping list items
+
+Migration:
+
+```sql
+alter table public.shopping_list_items
+  add column if not exists notes text;
+```
+
+`src/pages/ListDetail.tsx`:
+
+- Add a `notes` text input in the add-item footer (small, placeholder "Notes (e.g. 500 ml) — optional"), included in the insert payload. Max character length of 25. 
+- Display notes underneath the item name in muted small text when present.
+- Add a pencil icon on each row to edit notes inline via a small `Dialog` (name + qty + notes fields), so existing items can gain notes too.
+
+`src/pages/ActiveTrip.tsx`:
+
+- Include `notes` in `ListItem` type and show it under the name in the same muted style so the shopper sees them while scanning.
 
 ## Files
 
-- edit `src/components/BottomNav.tsx` — hide on `/trip`
-- edit `src/pages/ActiveTrip.tsx` — full-screen list, checkboxes, extras tray, red badge, AI match call
-- new `supabase/functions/match-list-item/index.ts` — Gemini-backed matcher
-- (no DB migration, no `config.toml` changes needed)
+- migration: add `price_cents int` and `notes text` to `shopping_list_items`
+- edit `src/components/Scanner.tsx` — manual-entry button + prop
+- edit `src/pages/ActiveTrip.tsx` — manual entry wiring, name/price overwrite on match, footer progress pill, 2s bounce confetti, render notes
+- edit `src/pages/ListDetail.tsx` — notes input on add + edit dialog, display notes, display price for checked items
+- edit `src/index.css` — `confetti-bounce` keyframe + utility

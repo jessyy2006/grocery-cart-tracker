@@ -1,10 +1,18 @@
 import { useEffect, useRef } from "react";
 import { startBarcodeScan, ScannerHandle } from "@/lib/device/scanner";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Keyboard } from "lucide-react";
 import { toast } from "sonner";
 
-export const Scanner = ({ onCode, onClose }: { onCode: (code: string) => void; onClose: () => void }) => {
+export const Scanner = ({
+  onCode,
+  onClose,
+  onManualEntry,
+}: {
+  onCode: (code: string) => void;
+  onClose: () => void;
+  onManualEntry?: () => void;
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const handleRef = useRef<ScannerHandle | null>(null);
 
@@ -40,8 +48,18 @@ export const Scanner = ({ onCode, onClose }: { onCode: (code: string) => void; o
           <X className="h-5 w-5" />
         </Button>
       </div>
-      <div className="absolute bottom-0 left-0 right-0 p-6 text-center text-sm text-primary-foreground safe-bottom">
-        Center a barcode in the frame
+      <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-3 p-6 safe-bottom">
+        <p className="flex-1 text-sm text-primary-foreground">Center a barcode in the frame</p>
+        {onManualEntry && (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={onManualEntry}
+            className="shadow-elevated"
+          >
+            <Keyboard className="mr-1 h-4 w-4" /> Enter manually
+          </Button>
+        )}
       </div>
     </div>
   );
