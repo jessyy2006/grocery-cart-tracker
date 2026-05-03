@@ -395,11 +395,13 @@ export default function ActiveTrip() {
                   {lis.map((it) => (
                     <li key={it.id}>
                       <Card className="flex items-center gap-3 p-3">
-                        <Checkbox
-                          checked={!!it.checked_at}
-                          onCheckedChange={() => toggleListItem(it)}
-                          aria-label="Toggle item"
-                        />
+                        {!it.checked_at && (
+                          <Checkbox
+                            checked={false}
+                            onCheckedChange={() => toggleListItem(it)}
+                            aria-label="Toggle item"
+                          />
+                        )}
                         <div className="min-w-0 flex-1">
                           <p
                             className={`truncate font-medium ${
@@ -437,11 +439,22 @@ export default function ActiveTrip() {
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Cart total</p>
             <div className="flex items-center gap-2">
               <p className="text-3xl font-bold">{formatMoney(total)}</p>
-              {listItems.length > 0 && (
-                <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground">
-                  {listItems.filter((i) => i.checked_at).length}/{listItems.length}
-                </span>
-              )}
+              {listItems.length > 0 && (() => {
+                const checked = listItems.filter((i) => i.checked_at).length;
+                const denom = listItems.length;
+                const numer = checked + extras.length;
+                const cls =
+                  numer > denom
+                    ? "bg-red-500 text-white"
+                    : numer === denom && denom > 0
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-muted-foreground";
+                return (
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>
+                    {checked}/{denom}
+                  </span>
+                );
+              })()}
             </div>
           </div>
           <Button variant="outline" onClick={saveTrip} disabled={items.length === 0}>
