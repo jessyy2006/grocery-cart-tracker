@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ShoppingBasket, Plus, MapPin } from "lucide-react";
+import { ShoppingBasket, Plus, MapPin, ListChecks } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { format } from "date-fns";
 
@@ -73,6 +73,9 @@ export default function Home() {
               <Plus className="mr-2 h-5 w-5" /> Start new trip
             </Button>
           )}
+          <Button variant="outline" className="w-full" onClick={() => navigate("/lists")}>
+            <ListChecks className="mr-2 h-5 w-5" /> My shopping lists
+          </Button>
         </div>
       </Card>
 

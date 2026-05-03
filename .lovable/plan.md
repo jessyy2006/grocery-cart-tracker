@@ -1,58 +1,91 @@
-## Problem
+# Shopping Lists + Barcode Check-off
 
-On **Start new trip**, the "Near you" list spins forever and never shows stores. Three root causes are likely, and the current code masks all of them:
+Add a "Shopping Lists" feature: build a categorized list of items before a grocery run, then during an active trip scan barcodes to auto-cross items off. Also retheme the app to dark green / neutral white with a light green accent.
 
-1. **Geolocation never resolves in the preview iframe.** Lovable's preview iframe doesn't always grant `geolocation` permission. In Safari/Chrome, when permission is blocked at the iframe level, `getCurrentPosition` can hang past our 10s timeout without firing either callback.
-2. **Overpass API is slow or rate-limited.** `https://overpass-api.de/api/interpreter` regularly takes 10–30s and sometimes returns 429/504. Our `fetch` has no timeout, so a slow response keeps the spinner up indefinitely.
-3. **Errors are swallowed.** `StartTrip.tsx` wraps the whole flow in `try { … } catch {}` with an empty handler, so the user has no idea what failed and no way to recover. (The `finally` does set `loading=false`, so a true infinite spinner only happens when geolocation/fetch never settle — see #1 and #2.)
+## User flow
 
-## Fix
+1. From Home or new "Lists" tab → create a list (e.g. "Weekly groceries").
+2. Add items to the list. Each item has a name, quantity, and a category (auto-suggested from a built-in dictionary, editable). Items are grouped by category in the UI (Dairy, Produce, Bakery, Meat & Seafood, Pantry, Frozen, Snacks, Other).
+3. Swipe / tap trash to delete an item.
+4. Tap "Start grocery run" on a list → creates an active trip linked to that list and navigates to ActiveTrip.
+5. In ActiveTrip, the linked list is shown above the cart with items grouped by category. Scanning a barcode that matches a list item (by barcode OR fuzzy name match against the OFF product name) auto-checks it off AND adds it to the cart as today. Manual tap on the checkbox also toggles it.
+6. Items already checked are visually struck through and sink to the bottom of their category. Progress indicator shows "7 / 12 picked up".
 
-### 1. Add real timeouts and split the two phases
-`src/lib/device/geolocation.ts`
-- `getCurrentPosition`: keep the GPS timeout but also wrap in a hard `Promise.race` (12s) so a misbehaving iframe permission still rejects.
-- `findNearbyStores`: pass an `AbortController` with a 12s timeout to `fetch`. Fall back to the mirror `https://overpass.kumi.systems/api/interpreter` on first failure. Throw typed errors (`GeoPermissionError`, `GeoTimeoutError`, `StoreSearchError`) so the UI can render specific messages.
-- Add a `searchStoresByName(query)` helper that hits Nominatim (`https://nominatim.openstreetmap.org/search?q=…&format=json&limit=10`) for a manual text/address fallback — no GPS needed.
+## Data model (new tables)
 
-### 2. Make `StartTrip.tsx` show state, not spin
-- Track three independent states: `gpsState` (`idle|loading|denied|timeout|ok`), `nearbyState` (`idle|loading|error|ok`), and `savedStores`.
-- Render saved stores and the "type a name" input **immediately**, before GPS resolves, so the user is never blocked.
-- For the "Near you" section, show:
-  - spinner while `nearbyState === "loading"`,
-  - friendly error + **Retry** button on `error`/`timeout`,
-  - "Location blocked — search by name instead" on `denied`, with a Nominatim-backed search box.
-- Replace the silent `catch {}` with `console.error` + `toast.error` for unexpected failures.
+```text
+shopping_lists
+  id uuid pk, user_id uuid, name text, created_at, updated_at
 
-### 3. Cache the last successful position
-Store the latest coords in `sessionStorage` so a retry doesn't re-prompt for GPS, and so navigating back to `StartTrip` skips the slow geolocation call when fresh (<5 min).
+shopping_list_items
+  id uuid pk
+  list_id uuid -> shopping_lists.id (cascade)
+  name text
+  qty int default 1
+  category text          -- one of the canonical category slugs
+  barcode text null      -- optional, set when matched/scanned
+  checked_at timestamptz null
+  position int           -- for ordering within category
+  created_at
+
+trips
+  + list_id uuid null    -- new column linking a run to its list
+```
+
+RLS: owner-only via `user_id` on lists; items via `EXISTS` join on parent list (mirrors trip_items pattern).
+
+## Category dictionary
+
+Static map in `src/lib/categories.ts`:
+
+- Slugs: `produce`, `dairy`, `bakery`, `meat`, `pantry`, `frozen`, `beverages`, `snacks`, `household`, `other`.
+- Each has label, emoji/icon, and a keyword list for auto-categorization (e.g. "milk|yogurt|cheese|butter" → dairy).
+- Helper `guessCategory(name: string): CategorySlug` used when adding items manually and when ingesting an OFF product.
+
+## Barcode → list match
+
+In ActiveTrip's `onScanned`:
+
+1. After OFF/product-cache lookup (existing logic), if there is a linked list with unchecked items:
+  - Match by `barcode` first.
+  - Else fuzzy-match the resolved product name against unchecked item names (lowercase token overlap, threshold ≥ 1 strong token).
+2. If matched, mark `checked_at = now()` and persist the scanned `barcode` back onto the list item so future scans are exact.
+3. Toast: "Checked off: Milk".
+4. Cart insert proceeds as today.
+
+## Screens / components
+
+- `src/pages/Lists.tsx` — list of shopping lists with "New list" button.
+- `src/pages/ListDetail.tsx` — items grouped by category; add-item input with category picker; delete; "Start grocery run" CTA.
+- `src/components/ListItemRow.tsx` — checkbox, name, qty, category chip, trash.
+- Update `src/pages/ActiveTrip.tsx` — show linked list panel above cart, wire scan-to-checkoff.
+- Update `src/pages/StartTrip.tsx` — optional "Use a list" selector.
+- Update `src/components/BottomNav.tsx` — replace "History" with "Lists" (History stays accessible from Profile/Home), or add a 5th tab. Recommend 5 tabs: Home, Lists, Trip, History, Profile.
+- Update `src/App.tsx` routes: `/lists`, `/lists/:id`.
+
+## Theme refresh (dark green + white + light green accent)
+
+Update `src/index.css` tokens:
+
+- `--background: 0 0% 99%` (neutral white)
+- `--foreground: 150 35% 12%` (deep green text)
+- `--primary: 150 50% 20%` (dark forest green)
+- `--primary-glow: 145 55% 32%`
+- `--accent: 130 55% 65%` (light green)
+- `--secondary: 140 25% 95%`
+- `--border: 140 15% 88%`
+- Dark mode: invert with `--background: 150 30% 8%`, `--primary: 130 55% 65%` (light green), `--accent: 145 50% 45%`.
+- Replace the orange-derived utilities and any hardcoded oranges in components.
 
 ## Tests
 
-Add Vitest specs (jsdom env already configured in `vitest.config.ts`):
+- `src/lib/categories.test.ts` — `guessCategory` returns correct slug for representative items (milk→dairy, apple→produce, bread→bakery, frozen pizza→frozen, etc.) and falls back to `other`.
+- `src/lib/listMatch.test.ts` — fuzzy match: barcode hit, name token hit, no-match returns null, already-checked items skipped.
+- `src/pages/ListDetail.test.tsx` (RTL) — adding an item assigns category; deleting removes it; checking moves it to bottom of section.
+- Manual QA via browser tool: create list → start run → scan known barcode → item crossed off and added to cart.
 
-- `src/lib/device/geolocation.test.ts`
-  - `getCurrentPosition` resolves with mocked `navigator.geolocation`.
-  - `getCurrentPosition` rejects with `GeoPermissionError` when the error code is `1`.
-  - `getCurrentPosition` rejects with `GeoTimeoutError` after 12s when the browser callback never fires (use fake timers).
-  - `findNearbyStores` returns parsed `{name, address, lat, lng}` from a mocked Overpass response.
-  - `findNearbyStores` falls back to the kumi mirror when the primary endpoint 5xxs.
-  - `findNearbyStores` rejects with `StoreSearchError` when both endpoints fail or the request aborts.
-  - `searchStoresByName` parses Nominatim results into the same shape.
-- `src/pages/StartTrip.test.tsx` (React Testing Library)
-  - Renders saved stores immediately even while GPS is still pending.
-  - Shows a "Location blocked" hint when geolocation rejects with permission error.
-  - Shows a Retry button on Overpass failure and re-fires the lookup when clicked.
-  - Manual Nominatim search renders results and starting a trip from one creates a store + trip (Supabase client mocked).
+## Out of scope
 
-## Files touched
-
-- `src/lib/device/geolocation.ts` — timeouts, typed errors, mirror fallback, `searchStoresByName`.
-- `src/pages/StartTrip.tsx` — granular state, error UI, retry, manual-search box, sessionStorage cache.
-- `src/lib/device/geolocation.test.ts` *(new)*
-- `src/pages/StartTrip.test.tsx` *(new)*
-
-No DB or schema changes. No new dependencies.
-
-## Note on the preview iframe
-
-Even after this fix, GPS may stay "denied" inside Lovable's preview because the iframe's `allow="geolocation"` policy isn't always present. The new UI degrades cleanly: saved stores + manual name/address search will still work, and once the PWA is installed (or opened in a full browser tab via the preview URL), GPS will work normally.
+- Sharing lists with other users.
+- Voice / image add (icon shown in inspiration but not requested).
+- Recipe templates / "Often purchased".

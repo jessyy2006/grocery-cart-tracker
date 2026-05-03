@@ -65,6 +65,74 @@ export type Database = {
         }
         Relationships: []
       }
+      shopping_list_items: {
+        Row: {
+          barcode: string | null
+          category: string
+          checked_at: string | null
+          created_at: string
+          id: string
+          list_id: string
+          name: string
+          position: number
+          qty: number
+        }
+        Insert: {
+          barcode?: string | null
+          category?: string
+          checked_at?: string | null
+          created_at?: string
+          id?: string
+          list_id: string
+          name: string
+          position?: number
+          qty?: number
+        }
+        Update: {
+          barcode?: string | null
+          category?: string
+          checked_at?: string | null
+          created_at?: string
+          id?: string
+          list_id?: string
+          name?: string
+          position?: number
+          qty?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_lists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stores: {
         Row: {
           address: string | null
@@ -150,6 +218,7 @@ export type Database = {
         Row: {
           ended_at: string | null
           id: string
+          list_id: string | null
           note: string | null
           started_at: string
           status: Database["public"]["Enums"]["trip_status"]
@@ -159,6 +228,7 @@ export type Database = {
         Insert: {
           ended_at?: string | null
           id?: string
+          list_id?: string | null
           note?: string | null
           started_at?: string
           status?: Database["public"]["Enums"]["trip_status"]
@@ -168,13 +238,22 @@ export type Database = {
         Update: {
           ended_at?: string | null
           id?: string
+          list_id?: string | null
           note?: string | null
           started_at?: string
           status?: Database["public"]["Enums"]["trip_status"]
           total_cents?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "trips_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

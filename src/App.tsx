@@ -13,6 +13,8 @@ import ActiveTrip from "./pages/ActiveTrip";
 import History from "./pages/History";
 import TripDetail from "./pages/TripDetail";
 import Profile from "./pages/Profile";
+import Lists from "./pages/Lists";
+import ListDetail from "./pages/ListDetail";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -39,6 +41,8 @@ const App = () => (
               <Route path="/trip/:id" element={<TripDetail />} />
               <Route path="/history" element={<History />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/lists" element={<Lists />} />
+              <Route path="/lists/:id" element={<ListDetail />} />
             </Route>
             <Route path="/index" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />

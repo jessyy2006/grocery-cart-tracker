@@ -1,9 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { Home, ShoppingCart, History, User } from "lucide-react";
+import { Home, ListChecks, ShoppingCart, History, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/", label: "Home", icon: Home, end: true },
+  { to: "/lists", label: "Lists", icon: ListChecks },
   { to: "/trip", label: "Trip", icon: ShoppingCart },
   { to: "/history", label: "History", icon: History },
   { to: "/profile", label: "Profile", icon: User },
@@ -11,7 +12,7 @@ const items = [
 
 export const BottomNav = () => (
   <nav className="sticky bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur safe-bottom">
-    <ul className="grid grid-cols-4">
+    <ul className="grid grid-cols-5">
       {items.map(({ to, label, icon: Icon, end }) => (
         <li key={to}>
           <NavLink

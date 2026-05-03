@@ -9,9 +9,10 @@ import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Scanner } from "@/components/Scanner";
-import { ScanLine, Plus, MapPin, Trash2, Check } from "lucide-react";
+import { ScanLine, Plus, MapPin, Trash2, Check, ListChecks } from "lucide-react";
 import { formatMoney, parsePriceToCents } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
+import { findListMatch, getCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
 import { toast } from "sonner";
 
 type TripItem = {
@@ -25,10 +26,22 @@ type TripItem = {
 };
 type Store = { id: string; name: string };
 
+type ListItem = {
+  id: string;
+  name: string;
+  qty: number;
+  category: string;
+  barcode: string | null;
+  checked_at: string | null;
+};
+
 export default function ActiveTrip() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [tripId, setTripId] = useState<string | null>(null);
+  const [listId, setListId] = useState<string | null>(null);
+  const [listName, setListName] = useState<string>("");
+  const [listItems, setListItems] = useState<ListItem[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [stores, setStores] = useState<Store[]>([]);
   const [items, setItems] = useState<TripItem[]>([]);
@@ -48,7 +61,7 @@ export default function ActiveTrip() {
     (async () => {
       const { data } = await supabase
         .from("trips")
-        .select("id")
+        .select("id, list_id")
         .eq("status", "active")
         .order("started_at", { ascending: false })
         .limit(1);
@@ -57,8 +70,28 @@ export default function ActiveTrip() {
         return;
       }
       setTripId(data[0].id);
+      setListId((data[0] as any).list_id ?? null);
     })();
   }, [user, navigate]);
+
+  // Load shopping list (if linked)
+  useEffect(() => {
+    if (!listId) {
+      setListItems([]);
+      setListName("");
+      return;
+    }
+    (async () => {
+      const { data: l } = await supabase.from("shopping_lists").select("name").eq("id", listId).maybeSingle();
+      if (l) setListName(l.name);
+      const { data } = await supabase
+        .from("shopping_list_items")
+        .select("*")
+        .eq("list_id", listId)
+        .order("created_at", { ascending: true });
+      setListItems((data ?? []) as ListItem[]);
+    })();
+  }, [listId]);
 
   // Load items + stores
   useEffect(() => {
@@ -125,6 +158,21 @@ export default function ActiveTrip() {
     return Array.from(m.values());
   }, [items]);
 
+  const tryCheckOffList = async (code: string, productName: string | undefined) => {
+    if (!listId || listItems.length === 0) return;
+    const match = findListMatch(listItems, { barcode: code, name: productName });
+    if (!match) return;
+    const checked_at = new Date().toISOString();
+    setListItems((c) =>
+      c.map((i) => (i.id === match.id ? { ...i, checked_at, barcode: i.barcode ?? code } : i))
+    );
+    await supabase
+      .from("shopping_list_items")
+      .update({ checked_at, barcode: match.barcode ?? code })
+      .eq("id", match.id);
+    toast.success(`Checked off: ${match.name}`);
+  };
+
   const onScanned = async (code: string) => {
     setScanning(false);
     if (!activeStore) {
@@ -139,9 +187,11 @@ export default function ActiveTrip() {
       .eq("barcode", code)
       .maybeSingle();
     if (cached) {
+      const fullName = cached.brand ? `${cached.brand} — ${cached.name}` : cached.name;
+      await tryCheckOffList(code, fullName);
       setPending({
         barcode: code,
-        name: cached.brand ? `${cached.brand} — ${cached.name}` : cached.name,
+        name: fullName,
         price: cached.default_price_cents != null ? (cached.default_price_cents / 100).toFixed(2) : "",
         qty: 1,
         image_url: cached.image_url ?? undefined,
@@ -149,9 +199,11 @@ export default function ActiveTrip() {
       return;
     }
     const off = await lookupBarcode(code);
+    const fullName = off ? (off.brand ? `${off.brand} — ${off.name}` : off.name) : "";
+    await tryCheckOffList(code, fullName || undefined);
     setPending({
       barcode: code,
-      name: off ? (off.brand ? `${off.brand} — ${off.name}` : off.name) : "",
+      name: fullName,
       price: "",
       qty: 1,
       image_url: off?.image_url,
@@ -243,9 +295,59 @@ export default function ActiveTrip() {
         </Button>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+        {listId && listItems.length > 0 && (
+          <section className="rounded-2xl border border-border bg-secondary/40 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ListChecks className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">{listName}</span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {listItems.filter((i) => i.checked_at).length}/{listItems.length} picked up
+              </span>
+            </div>
+            {(() => {
+              const groups = new Map<CategorySlug, ListItem[]>();
+              for (const it of listItems) {
+                const slug = (CATEGORY_ORDER.includes(it.category as CategorySlug)
+                  ? it.category
+                  : "other") as CategorySlug;
+                if (!groups.has(slug)) groups.set(slug, []);
+                groups.get(slug)!.push(it);
+              }
+              for (const arr of groups.values())
+                arr.sort((a, b) => Number(!!a.checked_at) - Number(!!b.checked_at));
+              return CATEGORY_ORDER.filter((s) => groups.has(s)).map((s) => {
+                const meta = getCategory(s);
+                return (
+                  <div key={s} className="mb-2">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {meta.emoji} {meta.label}
+                    </p>
+                    <ul className="space-y-1">
+                      {groups.get(s)!.map((it) => (
+                        <li
+                          key={it.id}
+                          className={`flex items-center justify-between text-sm ${
+                            it.checked_at ? "text-muted-foreground line-through" : ""
+                          }`}
+                        >
+                          <span className="truncate">{it.name}</span>
+                          {it.qty > 1 && (
+                            <span className="ml-2 text-xs text-muted-foreground">×{it.qty}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              });
+            })()}
+          </section>
+        )}
         {items.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
+          <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
             <ScanLine className="mb-3 h-10 w-10 text-primary" />
             <p className="font-medium text-foreground">Cart is empty</p>
             <p className="mt-1 text-sm">Tap Scan to add your first item</p>
