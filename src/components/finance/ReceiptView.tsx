@@ -516,21 +516,51 @@ export default function ReceiptView(props: Props) {
           <DialogHeader>
             <DialogTitle>Receipt ready</DialogTitle>
             <DialogDescription>
-              Save the receipt image to your device, or share it through your phone's share sheet.
+              {preparingExport
+                ? "Preparing your receipt image…"
+                : "Save the receipt image to your device, or share it through your phone's share sheet."}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" onClick={handleSave} disabled={busy}>
+            <Button
+              variant="outline"
+              onClick={handleSave}
+              disabled={busy || preparingExport || !exportFile}
+            >
               <Download className="h-4 w-4" />
               Save image
             </Button>
-            <Button onClick={handleShare} disabled={busy}>
+            <Button
+              onClick={handleShare}
+              disabled={busy || preparingExport || !exportFile}
+            >
               <Share2 className="h-4 w-4" />
               Share
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Mobile fallback: full image so the user can long-press → Save to Photos */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save to Photos</DialogTitle>
+            <DialogDescription>
+              Long-press the receipt below, then choose “Save to Photos” / “Add to Photos”.
+            </DialogDescription>
+          </DialogHeader>
+          {exportDataUrl && (
+            <img
+              src={exportDataUrl}
+              alt="Grocery receipt"
+              className="mx-auto block w-full max-w-xs rounded-md"
+              draggable={false}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
