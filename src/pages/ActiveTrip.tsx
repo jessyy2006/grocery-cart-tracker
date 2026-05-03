@@ -295,9 +295,59 @@ export default function ActiveTrip() {
         </Button>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+        {listId && listItems.length > 0 && (
+          <section className="rounded-2xl border border-border bg-secondary/40 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ListChecks className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold">{listName}</span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {listItems.filter((i) => i.checked_at).length}/{listItems.length} picked up
+              </span>
+            </div>
+            {(() => {
+              const groups = new Map<CategorySlug, ListItem[]>();
+              for (const it of listItems) {
+                const slug = (CATEGORY_ORDER.includes(it.category as CategorySlug)
+                  ? it.category
+                  : "other") as CategorySlug;
+                if (!groups.has(slug)) groups.set(slug, []);
+                groups.get(slug)!.push(it);
+              }
+              for (const arr of groups.values())
+                arr.sort((a, b) => Number(!!a.checked_at) - Number(!!b.checked_at));
+              return CATEGORY_ORDER.filter((s) => groups.has(s)).map((s) => {
+                const meta = getCategory(s);
+                return (
+                  <div key={s} className="mb-2">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {meta.emoji} {meta.label}
+                    </p>
+                    <ul className="space-y-1">
+                      {groups.get(s)!.map((it) => (
+                        <li
+                          key={it.id}
+                          className={`flex items-center justify-between text-sm ${
+                            it.checked_at ? "text-muted-foreground line-through" : ""
+                          }`}
+                        >
+                          <span className="truncate">{it.name}</span>
+                          {it.qty > 1 && (
+                            <span className="ml-2 text-xs text-muted-foreground">×{it.qty}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              });
+            })()}
+          </section>
+        )}
         {items.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center text-muted-foreground">
+          <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
             <ScanLine className="mb-3 h-10 w-10 text-primary" />
             <p className="font-medium text-foreground">Cart is empty</p>
             <p className="mt-1 text-sm">Tap Scan to add your first item</p>
