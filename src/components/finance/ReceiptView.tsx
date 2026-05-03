@@ -425,7 +425,7 @@ export default function ReceiptView(props: Props) {
             className="pointer-events-none"
             style={{
               backgroundColor: PAPER,
-              visibility: exporting ? "visible" : "hidden",
+              visibility: "hidden",
             }}
           >
             <div className="px-6 pt-3 pb-4">
