@@ -402,21 +402,17 @@ export default function ReceiptView(props: Props) {
   };
 
   // Stub transform — visible barcode piece below perforation.
-  // While exporting, force untorn appearance so PNG includes the barcode cleanly.
-  const stubTransform = exporting
-    ? "none"
-    : torn
-      ? `translate(${tearDir * 160}%, 120%) rotate(${tearDir * 14}deg)`
-      : `translateX(${dragDx}px) rotate(${dragDx * 0.02}deg)`;
-  const stubTransition = exporting
-    ? "none"
-    : torn
-      ? "transform 520ms cubic-bezier(.4,.1,.6,1), opacity 520ms ease-in"
-      : pointerIdRef.current === null
-        ? "transform 220ms ease"
-        : "none";
-  const stubOpacity = exporting ? 1 : torn ? 0 : 1;
-  const stubContainerHeight = exporting ? "auto" : torn ? 0 : "auto";
+  const stubTransform = torn
+    ? `translate(${tearDir * 160}%, 120%) rotate(${tearDir * 14}deg)`
+    : `translateX(${dragDx}px) rotate(${dragDx * 0.02}deg)`;
+  const stubTransition = torn
+    ? "transform 520ms cubic-bezier(.4,.1,.6,1), opacity 520ms ease-in"
+    : pointerIdRef.current === null
+      ? "transform 220ms ease"
+      : "none";
+  const stubOpacity = torn ? 0 : 1;
+  const stubContainerHeight = torn ? 0 : "auto";
+
 
   return (
     <div className="flex flex-col items-center">
