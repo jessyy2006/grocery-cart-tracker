@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ShoppingBasket, Plus, MapPin } from "lucide-react";
+import { ShoppingBasket, Plus, MapPin, ListChecks } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { format } from "date-fns";
 
