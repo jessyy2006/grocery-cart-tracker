@@ -309,26 +309,31 @@ export default function ReceiptView(props: Props) {
     e.preventDefault();
     dxRef.current = dx;
     setDragDx(dx);
-    // Auto-complete as soon as 35% threshold is crossed mid-drag.
-    const w = swipeZoneRef.current?.offsetWidth ?? window.innerWidth;
-    if (Math.abs(dx) >= w * 0.35) {
-      finishSwipe();
+    // Auto-complete as soon as the thumb has moved 35% of the screen width.
+    const threshold = window.innerWidth * 0.35;
+    if (Math.abs(dx) >= threshold) {
+      finishSwipe(true);
     }
   };
 
-  const finishSwipe = () => {
-    if (pointerIdRef.current === null && !torn) {
-      // already released
+  const triggerTearHaptics = () => {
+    const n = navigator as Navigator & { vibrate?: (p: number | number[]) => boolean };
+    if (typeof n.vibrate === "function") {
+      // buzz buzz buzz
+      n.vibrate([40, 60, 40, 60, 40]);
     }
+  };
+
+  const finishSwipe = (forceComplete = false) => {
     const dx = dxRef.current;
-    const w = swipeZoneRef.current?.offsetWidth ?? window.innerWidth;
-    const completed = Math.abs(dx) >= w * 0.35;
+    const threshold = window.innerWidth * 0.35;
+    const completed = forceComplete || Math.abs(dx) >= threshold;
     pointerIdRef.current = null;
     lockedHorizontalRef.current = null;
     if (completed) {
+      triggerTearHaptics();
       setTearDir(dx >= 0 ? 1 : -1);
       setTorn(true);
-      // Open dialog after the tear animation has time to play
       window.setTimeout(() => setDialogOpen(true), 380);
     } else {
       setDragDx(0);
