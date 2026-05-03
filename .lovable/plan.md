@@ -1,96 +1,48 @@
-# Updates to Active Trip + Shopping List
+# Active trip fixes + trip start flow
 
-## 1. Manual-entry button on the Scanner
+## 1. Disable manual toggle on auto-checked items
+In `src/pages/ActiveTrip.tsx` the list rows render a `<Checkbox>` regardless of how the item became checked. Replace the checkbox with a conditional render:
+- If `it.checked_at` is set → render nothing in the checkbox slot (item just shows greyed/strikethrough name + price). The user can no longer toggle it back on.
+- If unchecked → render the existing `<Checkbox>` so the user can still manually mark items they grabbed without scanning.
 
-`src/components/Scanner.tsx`
+`toggleListItem` keeps working for the manual-check case (only invoked from the unchecked-state checkbox).
 
-- Add a new prop `onManualEntry: () => void`.
-- Add a floating button in the bottom-right of the scanner overlay (above the safe-bottom hint) with a pencil/keyboard icon and label "Enter manually".
-- Tapping it calls `onManualEntry()`, which the parent uses to close the scanner and open the existing add-item dialog (`pending` state) with `barcode: null` and empty fields.
+## 2. Dynamic color on the "checked / total" tag
+Currently the pill in the footer is hard-coded to `bg-accent`. Compute counts and pick a color:
 
-`src/pages/ActiveTrip.tsx`
-
-- Pass `onManualEntry` to `<Scanner>` that runs:
-  - `setScanning(false)`
-  - if no `activeStore`, prompt to pick one (same guard as scan)
-  - `setPending({ barcode: null, name: "", price: "", qty: 1 })`
-- The existing dialog + `confirmAdd` already handle null-barcode inserts, so no further changes needed.
-
-## 2. Replace checked list-item name with scanned product name + show price
-
-DB: `shopping_list_items` already has `name` and `barcode` columns; we'll reuse `name` for the displayed name and add a new nullable `price_cents integer` column via migration to remember the matched item's price for display.
-
-Migration:
-
-```sql
-alter table public.shopping_list_items
-  add column if not exists price_cents integer;
+```
+const checked = listItems.filter(i => i.checked_at).length;
+const total = listItems.length;
+// extras count = items in `extras` state (already tracked)
+const denom = total;
+const numer = checked + extras.length; // total scanned/checked-off so far
 ```
 
-`src/pages/ActiveTrip.tsx` — in `handleMatchOrExtra` when a match is found:
+Color rules for the pill:
+- `numer > denom` → red (`bg-red-500 text-white`)
+- `numer === denom && denom > 0` → green (current `bg-accent text-accent-foreground`)
+- otherwise → grey (`bg-muted text-muted-foreground`)
 
-- Update local + DB `shopping_list_items` row with `{ checked_at, barcode: code, name: productName, price_cents: tripItem.price_cents }`.
-- The `ListItem` type gets a `price_cents: number | null` field.
+Display text stays `checked / total` (extras are already surfaced via the red badge in the header, so the tag itself reflects list progress; it only flips red when the combined count exceeds the list size).
 
-Render in the grouped list (and in `ListDetail.tsx` for consistency):
+## 3. Route through store picker after starting a trip
+Today `Home.tsx` inserts a `trips` row immediately and navigates to `/trip`, which skips `/trip/new` (StartTrip). Change the flow:
 
-- Right-aligned price label inside the row's `Card`, using `text-primary font-semibold` (the app's primary green) — only shown when `price_cents != null`.
-- Keep the existing strike-through / muted styling on the name for checked items.
+**`src/pages/Home.tsx` – `startTripWith(listId)`**
+- Stop inserting into `trips`.
+- Still delete any lingering `active` trips for this user and reset the chosen list's items (`checked_at`, `price_cents` to null) so the next trip starts clean.
+- Stash the chosen list selection in `sessionStorage` under a known key, e.g. `pendingTrip:listId` (string uuid or the literal `"none"` for shop-freely).
+- Navigate to `/trip/new`.
 
-When the user manually un-checks a list item (`toggleListItem`), clear `price_cents` (set null) so it returns to its plain state. The original list name is overwritten — that is per request and acceptable.
+**`src/pages/StartTrip.tsx` – `startWith(store)`**
+- After resolving/creating the `storeId`, read `sessionStorage.getItem("pendingTrip:listId")`. Convert `"none"` → `null`, otherwise use the uuid.
+- Insert the `trips` row with `{ user_id, list_id }` (instead of the current `{ user_id }` only).
+- Keep the existing `sessionStorage.setItem(\`trip:${trip.id}:store\`, storeId)` so `ActiveTrip` picks up the store.
+- Clear `pendingTrip:listId` and navigate to `/trip`.
 
-## 3. Progress badge in cart footer
+`ActiveTrip` already loads the active trip + its `list_id` and the stashed store id, so no changes are needed there for routing.
 
-`src/pages/ActiveTrip.tsx`
-
-- Compute `const checkedCount = listItems.filter(i => i.checked_at).length;` and `const totalCount = listItems.length;`.
-- In the footer, next to the `Cart total` price, render a small pill: `bg-accent text-accent-foreground rounded-full px-2 py-0.5 text-xs font-semibold` showing `{checked}/{total}` — only when `totalCount > 0`.
-- Updates automatically as `listItems` state changes.
-
-## 4. Confetti animation = 2s bounce
-
-`src/index.css` — add a keyframe:
-
-```css
-@keyframes confetti-bounce {
-  0%   { transform: translateY(120vh) scale(0.6); opacity: 0; }
-  25%  { transform: translateY(-20px) scale(1.2); opacity: 1; }
-  50%  { transform: translateY(0)     scale(1);   opacity: 1; }
-  75%  { transform: translateY(-10px) scale(1.1); opacity: 1; }
-  100% { transform: translateY(120vh) scale(0.8); opacity: 0; }
-}
-.animate-confetti-bounce { animation: confetti-bounce 2s ease-in-out forwards; }
-```
-
-`ActiveTrip.tsx`:
-
-- Force the emoji to `🎉` (drop the random array).
-- Replace `animate-ping` with `animate-confetti-bounce`.
-- Change the timeout to `2000ms`.
-
-## 5. Optional "notes" on shopping list items
-
-Migration:
-
-```sql
-alter table public.shopping_list_items
-  add column if not exists notes text;
-```
-
-`src/pages/ListDetail.tsx`:
-
-- Add a `notes` text input in the add-item footer (small, placeholder "Notes (e.g. 500 ml) — optional"), included in the insert payload. Max character length of 25. 
-- Display notes underneath the item name in muted small text when present.
-- Add a pencil icon on each row to edit notes inline via a small `Dialog` (name + qty + notes fields), so existing items can gain notes too.
-
-`src/pages/ActiveTrip.tsx`:
-
-- Include `notes` in `ListItem` type and show it under the name in the same muted style so the shopper sees them while scanning.
-
-## Files
-
-- migration: add `price_cents int` and `notes text` to `shopping_list_items`
-- edit `src/components/Scanner.tsx` — manual-entry button + prop
-- edit `src/pages/ActiveTrip.tsx` — manual entry wiring, name/price overwrite on match, footer progress pill, 2s bounce confetti, render notes
-- edit `src/pages/ListDetail.tsx` — notes input on add + edit dialog, display notes, display price for checked items
-- edit `src/index.css` — `confetti-bounce` keyframe + utility
+## Files touched
+- `src/pages/ActiveTrip.tsx` — checkbox conditional + tag color logic
+- `src/pages/Home.tsx` — defer trip creation, stash list choice, navigate to `/trip/new`
+- `src/pages/StartTrip.tsx` — consume stashed list choice when inserting the trip
