@@ -19,6 +19,7 @@ type Store = { id: string; name: string; address: string | null };
 
 export default function Profile() {
   const { user } = useAuth();
+  const { firstName } = useProfile();
   const currency = useCurrency();
   const [stores, setStores] = useState<Store[]>([]);
 
