@@ -3,13 +3,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { SUPPORTED_CURRENCIES, useCurrency, setCurrency, Currency } from "@/lib/format";
 
 type Store = { id: string; name: string; address: string | null };
 
 export default function Profile() {
   const { user } = useAuth();
+  const currency = useCurrency();
   const [stores, setStores] = useState<Store[]>([]);
 
   const load = async () => {
@@ -27,11 +36,35 @@ export default function Profile() {
   };
 
   return (
-    <div className="space-y-6 px-5 pb-3 pt-4">
+    <div className="space-y-6 px-5 pb-8 pt-8">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
         <p className="mt-1 text-sm text-muted-foreground">{user?.email}</p>
       </header>
+
+      <section>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Currency
+        </h2>
+        <Card className="flex items-center justify-between p-4">
+          <div>
+            <p className="font-medium">Display currency</p>
+            <p className="text-xs text-muted-foreground">Used for all prices and totals.</p>
+          </div>
+          <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
+            <SelectTrigger className="w-28">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPORTED_CURRENCIES.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Card>
+      </section>
 
       <section>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">My stores</h2>
