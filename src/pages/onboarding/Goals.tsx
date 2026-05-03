@@ -24,7 +24,6 @@ export default function OnboardingGoals() {
       step={2}
       title="What do you want help with?"
       subtitle="Pick anything that resonates."
-      skipTo="/onboarding/budget"
       primaryLabel="Continue"
       primaryDisabled={draft.goals.length === 0}
       onPrimary={() => navigate("/onboarding/budget")}
