@@ -41,6 +41,11 @@ export default function ListDetail() {
   const [category, setCategory] = useState<CategorySlug>("other");
   const [autoCat, setAutoCat] = useState(true);
   const [runActive, setRunActive] = useState(false);
+  const [notes, setNotes] = useState("");
+  const [editing, setEditing] = useState<Item | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editQtyText, setEditQtyText] = useState("1");
+  const [editNotes, setEditNotes] = useState("");
 
   useEffect(() => {
     if (!id || !user) return;
