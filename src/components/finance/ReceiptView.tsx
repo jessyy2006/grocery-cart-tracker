@@ -60,13 +60,14 @@ const JaggedEdge = ({ position }: { position: "top" | "bottom" }) => {
     }
     points.push("400,12");
   } else {
+    // Mirror the top edge: jagged on the bottom side, flat top fills paper.
     points.push("0,0");
-    for (let i = 0; i <= teeth; i++) {
+    points.push("400,0");
+    for (let i = teeth; i >= 0; i--) {
       const x = i * step;
       const y = i % 2 === 0 ? 12 - valley : 12 - peak;
       points.push(`${x},${y}`);
     }
-    points.push("400,0");
   }
   return (
     <svg
@@ -477,6 +478,7 @@ export default function ReceiptView(props: Props) {
           className="relative"
           style={{
             height: stubContainerHeight,
+            overflow: "visible",
             transition: "height 520ms ease",
           }}
         >
@@ -487,7 +489,7 @@ export default function ReceiptView(props: Props) {
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerCancel}
-            className="absolute inset-x-0 top-0 select-none"
+            className="select-none"
             style={{
               backgroundColor: PAPER,
               touchAction: "none",
