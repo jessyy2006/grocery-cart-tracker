@@ -64,6 +64,15 @@ export default function Finance() {
   const [budgetInput, setBudgetInput] = useState("");
   const [insights, setInsights] = useState<Insight[] | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [view, setView] = useState<"card" | "receipt">(() => {
+    if (typeof window === "undefined") return "card";
+    return (localStorage.getItem("finance:view") as "card" | "receipt") || "card";
+  });
+  const setViewPersist = (v: "card" | "receipt") => {
+    setView(v);
+    try { localStorage.setItem("finance:view", v); } catch { /* noop */ }
+  };
+  const currency = useCurrency();
 
   useEffect(() => {
     if (!user) return;
