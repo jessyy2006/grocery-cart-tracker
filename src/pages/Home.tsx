@@ -12,6 +12,7 @@ type Trip = { id: string; started_at: string; total_cents: number; status: strin
 
 export default function Home() {
   const { user } = useAuth();
+  useCurrency();
   const navigate = useNavigate();
   const [activeTrip, setActiveTrip] = useState<Trip | null>(null);
   const [recent, setRecent] = useState<(Trip & { stores: string[] })[]>([]);
