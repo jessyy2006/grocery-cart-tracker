@@ -183,15 +183,24 @@ export default function ReceiptView(props: Props) {
 
   const generatePng = async (): Promise<{ dataUrl: string; blob: Blob; file: File } | null> => {
     if (!exportRef.current) return null;
-    const dataUrl = await toPng(exportRef.current, {
-      pixelRatio: 3,
-      cacheBust: true,
-      backgroundColor: "#ffffff",
-      filter: (node) => !(node instanceof HTMLElement && node.dataset.export === "hide"),
-    });
-    const blob = await (await fetch(dataUrl)).blob();
-    const file = new File([blob], "grocery-receipt.png", { type: "image/png" });
-    return { dataUrl, blob, file };
+    setExporting(true);
+    // Wait two frames for the export-only stub to become visible
+    await new Promise<void>((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => r())),
+    );
+    try {
+      const dataUrl = await toPng(exportRef.current, {
+        pixelRatio: 3,
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+        filter: (node) => !(node instanceof HTMLElement && node.dataset.export === "hide"),
+      });
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], "grocery-receipt.png", { type: "image/png" });
+      return { dataUrl, blob, file };
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleSave = async () => {
