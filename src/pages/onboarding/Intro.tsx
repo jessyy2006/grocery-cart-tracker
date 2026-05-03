@@ -48,9 +48,9 @@ export default function OnboardingIntro() {
           </ul>
         </Card>
 
-        {/* Budget card — overlaps top of list card, offset 32px to the right */}
+        {/* Budget card — top-left, overlaps list card */}
         <Card
-          className="absolute left-8 right-0 bottom-[55%] p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
+          className="absolute left-0 right-8 top-0 p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
           style={{ animationDelay: "320ms", animationFillMode: "backwards" }}
         >
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
