@@ -40,7 +40,7 @@ export default function Profile() {
   return (
     <div className="space-y-6 px-5 pb-6 pt-6">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{firstName ? `${firstName}'s Profile` : "Profile"}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{user?.email}</p>
       </header>
 
