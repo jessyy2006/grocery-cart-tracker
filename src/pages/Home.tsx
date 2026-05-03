@@ -15,6 +15,10 @@ import { ShoppingBasket, Plus, MapPin, ListChecks, ShoppingCart } from "lucide-r
 import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useProfile } from "@/hooks/useProfile";
+import FeatureIntroDialog from "@/components/FeatureIntroDialog";
+import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
+import { useSearchParams } from "react-router-dom";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
 type ShortList = { id: string; name: string };
@@ -23,12 +27,24 @@ export default function Home() {
   const { user } = useAuth();
   useCurrency();
   const navigate = useNavigate();
+  const { firstName } = useProfile();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [introOpen, setIntroOpen] = useState(false);
   const [activeTrip, setActiveTrip] = useState<Trip | null>(null);
   const [recent, setRecent] = useState<(Trip & { stores: string[] })[]>([]);
   const [lifetime, setLifetime] = useState(0);
   const [startOpen, setStartOpen] = useState(false);
   const [lists, setLists] = useState<ShortList[]>([]);
   const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("intro") === "1" && localStorage.getItem(FEATURE_INTRO_KEY) !== "1") {
+      setIntroOpen(true);
+      searchParams.delete("intro");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
 
   useEffect(() => {
     if (!user) return;
@@ -110,9 +126,10 @@ export default function Home() {
   return (
     <div className="space-y-6 px-5 pb-6 pt-6">
       <header>
-        <p className="text-sm text-muted-foreground">Welcome back</p>
+        <p className="text-sm text-muted-foreground">{firstName ? `Welcome back, ${firstName}` : "Welcome back"}</p>
         <h1 className="text-3xl font-bold tracking-tight">Ready to shop?</h1>
       </header>
+      <FeatureIntroDialog open={introOpen} onClose={() => setIntroOpen(false)} />
 
       <Card className="overflow-hidden p-0 shadow-elevated">
         <div className="gradient-hero p-6 text-primary-foreground">

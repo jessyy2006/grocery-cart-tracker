@@ -1,51 +1,107 @@
-I understand: you want to stay web/PWA-only, save the receipt image itself, and understand why the previous approach stopped saving to Photos/Camera Roll.
+## Onboarding Flow — Implementation Plan
 
-## Diagnosis
+### 1. Data layer (migration)
 
-The current code is trying to use the right browser capability, but two implementation details are likely breaking it:
+New table `user_onboarding` (one row per user):
 
-- `src/components/finance/ReceiptView.tsx` now generates the PNG asynchronously inside the Save tap, then calls `navigator.share(...)`. In some mobile/PWA contexts, the share call can fail because the browser’s required “user activation” expires while the PNG is being rendered.
-- The receipt capture targets the live torn receipt DOM while a dialog is open. The barcode stub is absolutely positioned and its container can have `height: 0`, so `toPng(..., { width, height })` can crop or miss part of the receipt. This explains why “receipt-only” export is less reliable than the old full-screen screenshot.
+```sql
+-- UP
+create table public.user_onboarding (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  first_name text,
+  last_name text,
+  gender text,                 -- 'male' | 'female' | 'other' | 'prefer_not'
+  age_range text,              -- '18-24' | '25-34' | '35-44' | '45-54' | '55+'
+  goals text[] not null default '{}',
+  shopping_behavior text,      -- 'plan_all' | 'plan_most' | 'decide_in_store'
+  completed_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.user_onboarding enable row level security;
+create policy "own onboarding read"   on public.user_onboarding for select using (auth.uid() = user_id);
+create policy "own onboarding insert" on public.user_onboarding for insert with check (auth.uid() = user_id);
+create policy "own onboarding update" on public.user_onboarding for update using (auth.uid() = user_id);
+```
 
-Also: a PWA/browser cannot silently write directly to Camera Roll without native APIs. The best web-only path is to hand an image file to the OS share sheet, where the user taps “Save Image” / “Save to Photos”.
+Default budget: on completion, upsert `user_budgets` with `monthly_cents = 40000` if user skipped (currency-agnostic; treated as 400 in active currency).
 
-## PWA-only save options
+### 2. Trigger logic
 
-1. **Best option: Web Share API with a pre-generated PNG file**
-   - Generate the receipt-only PNG before the user taps Save.
-   - On Save tap, immediately call the native share sheet with the cached PNG file.
-   - User selects “Save Image” / “Save to Photos”.
+- LocalStorage flag: `cartwise:onboarded` (per device, per the user's choice).
+- New `<RequireOnboarding>` wrapper inside `RequireAuth` → if user logged in and flag missing → redirect to `/onboarding`.
+- Setting flag happens after Screen 6 CTA (Start Trip) or skip (Home).
 
-2. **Reliable fallback: show the generated PNG as an actual image**
-   - If file sharing is unavailable, open a preview modal containing only the receipt PNG.
-   - User long-presses the image and chooses “Save to Photos”.
-   - This is usually the most reliable fallback on iOS PWAs.
+### 3. Routes & screens
 
-3. **Download fallback**
-   - Keep a normal PNG download link for desktop/unsupported browsers.
-   - On mobile this often saves to Files/Downloads, not Camera Roll, so it should not be the primary mobile path.
+New route group `/onboarding/*` (no `AppLayout` chrome — clean full-screen):
 
-## Implementation plan
 
-1. **Make receipt PNG generation independent of the torn UI**
-   - Refactor `generatePng` in `src/components/finance/ReceiptView.tsx` to clone/render a clean static receipt offscreen.
-   - Force the barcode stub to be visible, untorn, and part of normal layout during export.
-   - Remove reliance on the live dialog/torn state for capture.
+| #   | Path                        | Screen                                                                    |
+| --- | --------------------------- | ------------------------------------------------------------------------- |
+| 0   | `/onboarding`               | Value intro (animated card preview)                                       |
+| 1   | `/onboarding/signup`        | Skipped if already authed; else Google + email                            |
+| 2   | `/onboarding/profile`       | First/last name (autofill from Google `user_metadata`), gender, age range |
+| 3   | `/onboarding/goals`         | Multi-select chips                                                        |
+| 4   | `/onboarding/budget`        | Numeric input + Skip                                                      |
+| 5   | `/onboarding/behavior`      | Single-select                                                             |
+| 6   | `/onboarding/first-list`    | Pre-filled editable list (milk, eggs, bread)                              |
+| 7   | `/onboarding/feature-intro` | Modal-style finance/receipt intro, dismissible                            |
 
-2. **Pre-generate the receipt image when the share dialog opens**
-   - Add export state like `preparedExport`, `exportError`, and `preparingExport`.
-   - When the tear finishes and the dialog opens, generate/cache the PNG Blob/File/Data URL once.
-   - Disable Save/Share until the PNG is ready.
 
-3. **Update Save behavior for PWA/mobile**
-   - On Save tap, use the cached file immediately with `navigator.share({ files: [...] })` when supported.
-   - If unsupported or blocked, show an in-app image preview with clear instructions: “Long-press the receipt image, then choose Save to Photos.”
-   - Keep desktop download as a fallback.
+Shared layout:
 
-4. **Add focused tests**
-   - Add/adjust tests around the export helper behavior where feasible.
-   - Run the existing test suite via the project test command after changes.
+- Top-right Skip (text) where applicable
+- Bottom primary CTA matching scan-barcode button (`Button` default = primary green)
+- Progress dots (subtle, top)
 
-## Risk / limitation
+State held in a `useOnboarding()` context; persisted to `user_onboarding` only on Screen 6 submit (single write) to keep flow snappy. Budget persisted at same point. Name persisted to `profiles.display_name` too.
 
-Even after this fix, web/PWA apps cannot do true one-tap silent Camera Roll writes. That requires native capabilities such as Capacitor. The plan above gives the most reliable PWA-only flow while ensuring the saved image is just the receipt.
+### 4. First-list handoff
+
+- Screen 6 "Start your first trip":
+  - Create a temporary `shopping_list` + items from edits, then route through existing Home `startTripWith(listId)` logic (set `sessionStorage.pendingTrip:listId`, navigate `/trip/new`).
+- Skip → discard list, navigate `/`.
+- Either path: set `cartwise:onboarded=1` and stamp `completed_at`.
+- Feature intro (Screen 7) shown as a `<Dialog>` overlay on the destination (Home or Trip) on first arrival, controlled by `cartwise:featureIntroShown`.
+
+### 5. Personalization wiring
+
+- `Home.tsx` greeting: read `user_onboarding.first_name` (cached in `useAuth` context extension or a `useProfile()` hook). Show `Welcome back, {firstName}` else generic.
+- Finance insights edge function (`finance-insights`): pass `goals` + `shopping_behavior` in the request body so the prompt can tailor messaging. Update `supabase/functions/finance-insights/index.ts` accordingly.
+
+### 6. Visual / interaction details
+
+- Value-intro animation: framer-motion already? If not, use Tailwind `animate-in slide-in-from-bottom` + a subtle floating loop via CSS keyframe. Card composition: a fake Finance receipt + a checked grocery list (static mock components, not live data).
+- All primary CTAs: `<Button size="lg" className="w-full">` (already maps to dark primary green per design system).
+- Skip: `<Link className="absolute right-4 top-4 text-sm text-muted-foreground">Skip</Link>`.
+
+### 7. Files to add / change
+
+**Add**
+
+- `supabase/migrations/<ts>_user_onboarding.sql`
+- `src/pages/onboarding/Layout.tsx` (shared shell + progress)
+- `src/pages/onboarding/{Intro,Profile,Goals,Budget,Behavior,FirstList,FeatureIntro}.tsx`
+- `src/hooks/useOnboarding.tsx` (context + draft state)
+- `src/hooks/useProfile.tsx` (firstName lookup, cached)
+- `src/components/RequireOnboarding.tsx`
+
+**Edit**
+
+- `src/App.tsx` — add `/onboarding/*` routes outside `AppLayout`; wrap protected routes with `RequireOnboarding`.
+- `src/pages/Home.tsx` — personalized greeting; trigger feature-intro modal on first visit.
+- `src/integrations/supabase/types.ts` — auto-regenerated, no manual edit.
+- `supabase/functions/finance-insights/index.ts` — include goals/behavior in prompt.
+
+### 8. Reality check / risks
+
+- **"First login this device"detected on the users on boarded or not boolean val. If true, skip the onboarding flow and land on the home page. If not, go through on boarding.**
+- **Google name autofill**: `session.user.user_metadata.full_name` / `given_name` is only populated when signing in with Google; email signup users will type names manually. Realistic.
+- **Skipping signup**: if a user is already authed and lands on `/onboarding`, we skip Screen 1 and jump to Screen 2. Fine.
+- **Pre-filled list discarded on skip**: we won't insert it at all unless user proceeds via "Start your first trip" — avoids dangling lists.
+- **Default budget = $400 CAD: if user chooses diff currency, convert into that currency** 
+- **Feature intro on top of `/trip/new**`: the trip-start flow has its own important UI. Recommend showing feature-intro only when user lands on Home (skip path), not when starting trip — keeps the "first real value moment" uninterrupted. Flag if you disagree.
+- Everything else in the PRD is realistic and small-scope. ETA: ~1 focused implementation pass.
+
+Confirm and I'll execute.
