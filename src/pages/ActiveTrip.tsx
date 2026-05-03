@@ -261,14 +261,15 @@ export default function ActiveTrip() {
   const confirmAdd = async () => {
     if (!pending || !tripId || !activeStore) return;
     const price_cents = parsePriceToCents(pending.price);
-    if (price_cents == null) {
-      toast.error("Enter a valid price");
+    const errs: { name?: boolean; price?: boolean; qty?: boolean } = {};
+    if (!pending.name.trim()) errs.name = true;
+    if (price_cents == null) errs.price = true;
+    if (!pending.qty || pending.qty < 1) errs.qty = true;
+    if (errs.name || errs.price || errs.qty) {
+      setPendingErrors(errs);
       return;
     }
-    if (!pending.name.trim()) {
-      toast.error("Enter a name");
-      return;
-    }
+    setPendingErrors({});
     const insert = {
       trip_id: tripId,
       store_id: activeStore.id,
