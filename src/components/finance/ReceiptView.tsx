@@ -183,23 +183,36 @@ export default function ReceiptView(props: Props) {
 
   const generatePng = async (): Promise<{ dataUrl: string; blob: Blob; file: File } | null> => {
     if (!exportRef.current) return null;
-    setExporting(true);
-    // Wait two frames for the export-only stub to become visible
-    await new Promise<void>((r) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => r())),
-    );
+    // Clone offscreen so the saved PNG is a clean receipt regardless of torn/drag state.
+    const clone = exportRef.current.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('[data-export="hide"]').forEach((el) => el.remove());
+    clone.querySelectorAll<HTMLElement>('[data-export="hide-inverse"]').forEach((el) => {
+      el.style.visibility = "visible";
+    });
+    clone.querySelectorAll<HTMLElement>("[style]").forEach((el) => {
+      if (el.style.height === "0px") el.style.height = "auto";
+      if (el.style.transform) el.style.transform = "none";
+      if (el.style.opacity === "0") el.style.opacity = "1";
+    });
+    clone.style.transform = "none";
+    clone.style.filter = "none";
+
+    const wrap = document.createElement("div");
+    wrap.style.cssText =
+      "position:fixed;left:-100000px;top:0;width:384px;background:#ffffff;z-index:-1;";
+    wrap.appendChild(clone);
+    document.body.appendChild(wrap);
     try {
-      const dataUrl = await toPng(exportRef.current, {
+      const dataUrl = await toPng(clone, {
         pixelRatio: 3,
         cacheBust: true,
         backgroundColor: "#ffffff",
-        filter: (node) => !(node instanceof HTMLElement && node.dataset.export === "hide"),
       });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], "grocery-receipt.png", { type: "image/png" });
       return { dataUrl, blob, file };
     } finally {
-      setExporting(false);
+      wrap.remove();
     }
   };
 
