@@ -385,7 +385,10 @@ export default function ReceiptView(props: Props) {
       triggerTearHaptics();
       setTearDir(dx >= 0 ? 1 : -1);
       setTorn(true);
-      window.setTimeout(() => setDialogOpen(true), 380);
+      window.setTimeout(() => {
+        dialogShownRef.current = true;
+        setDialogOpen(true);
+      }, 380);
     } else {
       setDragDx(0);
       dxRef.current = 0;
