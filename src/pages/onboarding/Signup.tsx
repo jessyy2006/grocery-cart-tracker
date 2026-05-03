@@ -66,11 +66,11 @@ export default function OnboardingSignup() {
 
       <Card className="w-full max-w-sm p-6 shadow-soft">
         <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
@@ -81,7 +81,12 @@ export default function OnboardingSignup() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <Button type="submit" variant="outline" className="w-full" disabled={busy}>
+          <Button
+            type="submit"
+            variant="outline"
+            className="w-full border-2 border-primary text-primary hover:bg-primary/5 hover:text-primary"
+            disabled={busy}
+          >
             Create account
           </Button>
         </form>
