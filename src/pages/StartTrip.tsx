@@ -137,7 +137,7 @@ export default function StartTrip() {
   );
 
   return (
-    <div className="space-y-6 px-5 pb-6 pt-6">
+    <div className="space-y-6 px-5 pb-3 pt-4">
       <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground">
         <ArrowLeft className="h-4 w-4" /> Back
       </button>

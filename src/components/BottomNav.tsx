@@ -19,7 +19,7 @@ export const BottomNav = () => (
             end={end}
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors",
+                "flex flex-col items-center gap-1 py-2 text-xs font-medium transition-colors",
                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )
             }
