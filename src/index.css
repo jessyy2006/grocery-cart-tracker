@@ -109,3 +109,12 @@
   .shadow-elevated { box-shadow: var(--shadow-elevated); }
   .shadow-soft { box-shadow: var(--shadow-soft); }
 }
+
+@keyframes confetti-bounce {
+  0%   { transform: translateY(120vh) scale(0.6); opacity: 0; }
+  25%  { transform: translateY(-20px) scale(1.2); opacity: 1; }
+  50%  { transform: translateY(0)     scale(1);   opacity: 1; }
+  75%  { transform: translateY(-10px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(120vh) scale(0.8); opacity: 0; }
+}
+.animate-confetti-bounce { animation: confetti-bounce 2s ease-in-out forwards; }
