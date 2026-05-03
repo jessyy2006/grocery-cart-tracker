@@ -491,7 +491,6 @@ export default function ReceiptView(props: Props) {
             onPointerCancel={onPointerCancel}
             className="select-none"
             style={{
-              backgroundColor: PAPER,
               touchAction: "none",
               cursor: torn ? "default" : "grab",
               transform: stubTransform,
@@ -501,7 +500,8 @@ export default function ReceiptView(props: Props) {
               pointerEvents: torn ? "none" : "auto",
             }}
           >
-            <div className="px-6 pt-3 pb-4">
+            {/* Paper-colored content only — SVG below sits on transparent so its jagged shape shows */}
+            <div className="px-6 pt-3 pb-4" style={{ backgroundColor: PAPER }}>
               <Barcode seed={barcodeSeed} />
             </div>
             <JaggedEdge position="bottom" />

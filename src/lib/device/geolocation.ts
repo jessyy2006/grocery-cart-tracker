@@ -92,7 +92,10 @@ function parseOverpass(data: any): NearbyStore[] {
         .filter(Boolean)
         .join(" ");
       const city = el.tags?.["addr:city"];
-      const address = [street, city].filter(Boolean).join(", ") || undefined;
+      const country = el.tags?.["addr:country"];
+      const address = [street, [city, country].filter(Boolean).join(", ")]
+        .filter(Boolean)
+        .join(", ") || undefined;
       return { name, address, lat, lng };
     })
     .filter(Boolean) as NearbyStore[];
@@ -155,7 +158,14 @@ export async function searchStoresByName(query: string): Promise<NearbyStore[]> 
         const lng = parseFloat(el.lon);
         if (!isFinite(lat) || !isFinite(lng)) return null;
         const name: string = el.namedetails?.name || el.display_name?.split(",")[0] || "Unknown";
-        const address: string | undefined = el.display_name;
+        const a = el.address ?? {};
+        const street = [a.house_number, a.road].filter(Boolean).join(" ");
+        const city = a.city || a.town || a.village || a.hamlet || a.suburb || a.county;
+        const country = a.country;
+        const formatted = [street, [city, country].filter(Boolean).join(", ")]
+          .filter(Boolean)
+          .join(", ");
+        const address: string | undefined = formatted || el.display_name;
         return { name, address, lat, lng };
       })
       .filter(Boolean) as NearbyStore[];
