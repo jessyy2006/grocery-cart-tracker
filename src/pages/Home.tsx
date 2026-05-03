@@ -75,7 +75,22 @@ export default function Home() {
     if (!user) return;
     setCreating(true);
     try {
-      const { data, error } = await supabase
+      // End any lingering active trips so we always start fresh
+      await supabase
+        .from("trips")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("status", "active");
+
+      // Reset the chosen list so nothing is pre-checked
+      if (listId) {
+        await supabase
+          .from("shopping_list_items")
+          .update({ checked_at: null, price_cents: null })
+          .eq("list_id", listId);
+      }
+
+      const { error } = await supabase
         .from("trips")
         .insert({ user_id: user.id, list_id: listId })
         .select("id")
@@ -103,15 +118,9 @@ export default function Home() {
           <p className="mt-1 text-3xl font-bold">{formatMoney(lifetime)}</p>
         </div>
         <div className="space-y-3 p-5">
-          {activeTrip ? (
-            <Button className="w-full" size="lg" onClick={() => navigate("/trip")}>
-              <ShoppingBasket className="mr-2 h-5 w-5" /> Resume current trip · {formatMoney(activeTrip.total_cents)}
-            </Button>
-          ) : (
-            <Button className="w-full" size="lg" onClick={openStart}>
-              <Plus className="mr-2 h-5 w-5" /> Start new trip
-            </Button>
-          )}
+          <Button className="w-full" size="lg" onClick={openStart}>
+            <Plus className="mr-2 h-5 w-5" /> Start new trip
+          </Button>
           <Button variant="outline" className="w-full" onClick={() => navigate("/lists")}>
             <ListChecks className="mr-2 h-5 w-5" /> My shopping lists
           </Button>
