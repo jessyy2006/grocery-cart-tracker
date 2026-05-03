@@ -1,7 +1,17 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import { formatMoney, type Currency } from "@/lib/format";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Download, Share2 } from "lucide-react";
 
 type Props = {
   budgetCents: number;
@@ -34,12 +44,8 @@ const Row = ({ label, value, strong }: { label: string; value: string; strong?: 
 
 const Divider = () => <div className="my-2 border-t border-dashed border-neutral-500/60" />;
 
-/**
- * True torn-paper edges. The fill polygon covers the bottom (or top) of the SVG
- * with a zig-zag boundary; the rest is transparent so the page background shows.
- */
+/** Transparent torn-paper edges. Polygon fills only the paper region. */
 const JaggedEdge = ({ position }: { position: "top" | "bottom" }) => {
-  // 40 teeth across the width
   const teeth = 40;
   const step = 400 / teeth;
   const peak = 2;
@@ -67,16 +73,13 @@ const JaggedEdge = ({ position }: { position: "top" | "bottom" }) => {
       viewBox="0 0 400 12"
       preserveAspectRatio="none"
       className="block w-full"
-      style={{ height: 10 }}
+      style={{ height: 10, display: "block" }}
       aria-hidden
     >
       <polygon points={points.join(" ")} fill={PAPER} />
     </svg>
   );
 };
-
-const NOISE_BG =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
 
 function buildInsight(
   monthSpend: number,
@@ -103,10 +106,8 @@ function buildInsight(
   return "Steady spending — keep it up.";
 }
 
-/** Generate a random Code-128-looking barcode pattern (visual only, not scannable). */
 function useBarcodePattern(seed: string) {
   return useMemo(() => {
-    // Deterministic PRNG from seed so it doesn't flicker on rerender
     let h = 0;
     for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
     const rand = () => {
@@ -115,8 +116,8 @@ function useBarcodePattern(seed: string) {
     };
     const bars: { w: number; gap: number }[] = [];
     for (let i = 0; i < 55; i++) {
-      const w = 1 + Math.floor(rand() * 4); // 1-4
-      const gap = 1 + Math.floor(rand() * 3); // 1-3
+      const w = 1 + Math.floor(rand() * 4);
+      const gap = 1 + Math.floor(rand() * 3);
       bars.push({ w, gap });
     }
     return bars;
@@ -154,12 +155,19 @@ export default function ReceiptView(props: Props) {
 
   const exportRef = useRef<HTMLDivElement>(null);
   const swipeZoneRef = useRef<HTMLDivElement>(null);
-  const startX = useRef<number | null>(null);
-  const startY = useRef<number | null>(null);
-  const latestPct = useRef(0);
-  const horizontal = useRef(false);
-  const [dragPct, setDragPct] = useState(0);
+
+  // Pointer/touch state in refs for accurate, real-time gesture tracking.
+  const pointerIdRef = useRef<number | null>(null);
+  const startXRef = useRef(0);
+  const startYRef = useRef(0);
+  const dxRef = useRef(0);
+  const lockedHorizontalRef = useRef<boolean | null>(null);
+
+  const [dragDx, setDragDx] = useState(0);
+  const [tearDir, setTearDir] = useState<1 | -1>(1);
   const [torn, setTorn] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const remaining = budgetCents - monthSpend;
@@ -171,107 +179,176 @@ export default function ReceiptView(props: Props) {
     day: "numeric",
   });
 
-  // Stable-per-month seed so barcode doesn't change while the user interacts
   const barcodeSeed = `${monthStart.getFullYear()}-${monthStart.getMonth()}-${monthSpend}-${tripCount}`;
 
-  const doExport = async () => {
-    if (!exportRef.current || exporting) return;
+  const generatePng = async (): Promise<{ dataUrl: string; blob: Blob; file: File } | null> => {
+    if (!exportRef.current) return null;
     setExporting(true);
+    // Wait two frames for the export-only stub to become visible
+    await new Promise<void>((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => r())),
+    );
     try {
       const dataUrl = await toPng(exportRef.current, {
         pixelRatio: 3,
         cacheBust: true,
         backgroundColor: "#ffffff",
-        filter: (node) =>
-          !(node instanceof HTMLElement && node.dataset.export === "hide"),
+        filter: (node) => !(node instanceof HTMLElement && node.dataset.export === "hide"),
       });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], "grocery-receipt.png", { type: "image/png" });
-      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-      if (nav.canShare?.({ files: [file] }) && navigator.share) {
-        await navigator.share({ files: [file], title: "Monthly Grocery Summary" });
-      } else {
-        const a = document.createElement("a");
-        a.href = dataUrl;
-        a.download = "grocery-receipt.png";
-        a.click();
-      }
-    } catch (e) {
-      toast.error("Couldn't export receipt");
-      // eslint-disable-next-line no-console
-      console.error(e);
+      return { dataUrl, blob, file };
     } finally {
       setExporting(false);
-      setTimeout(() => {
-        setTorn(false);
-        setDragPct(0);
-        latestPct.current = 0;
-      }, 500);
     }
   };
 
-  const onPointerDown = (e: React.PointerEvent) => {
-    if (torn || exporting) return;
-    startX.current = e.clientX;
-    startY.current = e.clientY;
-    horizontal.current = false;
-    latestPct.current = 0;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  const handleSave = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const out = await generatePng();
+      if (!out) return;
+      const a = document.createElement("a");
+      a.href = out.dataUrl;
+      a.download = "grocery-receipt.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast.success("Saved receipt image");
+    } catch (e) {
+      console.error(e);
+      toast.error("Couldn't save image");
+    } finally {
+      setBusy(false);
+    }
   };
+
+  const handleShare = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const out = await generatePng();
+      if (!out) return;
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (navigator.share && nav.canShare?.({ files: [out.file] })) {
+        await navigator.share({
+          files: [out.file],
+          title: "Monthly Grocery Summary",
+          text: "My grocery receipt",
+        });
+      } else {
+        toast.message("Sharing not supported here", {
+          description: "Use Save image instead, or open in mobile Safari.",
+        });
+      }
+    } catch (e) {
+      // Cancelled share is fine
+      if ((e as Error)?.name !== "AbortError") {
+        console.error(e);
+        toast.error("Couldn't share image");
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Reset tear when dialog closes
+  useEffect(() => {
+    if (!dialogOpen && torn) {
+      const t = setTimeout(() => {
+        setTorn(false);
+        setDragDx(0);
+        dxRef.current = 0;
+      }, 250);
+      return () => clearTimeout(t);
+    }
+  }, [dialogOpen, torn]);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (torn || busy) return;
+    pointerIdRef.current = e.pointerId;
+    startXRef.current = e.clientX;
+    startYRef.current = e.clientY;
+    dxRef.current = 0;
+    lockedHorizontalRef.current = null;
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch { /* noop */ }
+  };
+
   const onPointerMove = (e: React.PointerEvent) => {
-    if (startX.current === null || startY.current === null || !swipeZoneRef.current) return;
-    const dx = e.clientX - startX.current;
-    const dy = e.clientY - startY.current;
-    if (!horizontal.current) {
-      // Lock direction once the user clearly moves
-      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-      horizontal.current = Math.abs(dx) > Math.abs(dy);
-      if (!horizontal.current) {
-        // Vertical scroll — release tracking so page can scroll
-        startX.current = null;
-        startY.current = null;
+    if (pointerIdRef.current !== e.pointerId) return;
+    const dx = e.clientX - startXRef.current;
+    const dy = e.clientY - startYRef.current;
+
+    if (lockedHorizontalRef.current === null) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      lockedHorizontalRef.current = Math.abs(dx) > Math.abs(dy);
+      if (!lockedHorizontalRef.current) {
+        // Vertical scroll — release tracking
+        pointerIdRef.current = null;
         return;
       }
     }
     e.preventDefault();
-    const w = swipeZoneRef.current.offsetWidth;
-    const pct = Math.min(1, Math.abs(dx) / w);
-    latestPct.current = pct;
-    setDragPct(pct);
+    dxRef.current = dx;
+    setDragDx(dx);
   };
-  const onPointerUp = () => {
-    const pct = latestPct.current;
-    startX.current = null;
-    startY.current = null;
-    horizontal.current = false;
-    if (pct >= 0.55) {
+
+  const finishSwipe = () => {
+    const dx = dxRef.current;
+    const w = swipeZoneRef.current?.offsetWidth ?? 320;
+    const completed = Math.abs(dx) > Math.max(120, w * 0.45);
+    pointerIdRef.current = null;
+    lockedHorizontalRef.current = null;
+    if (completed) {
+      setTearDir(dx >= 0 ? 1 : -1);
       setTorn(true);
-      setDragPct(1);
-      void doExport();
+      // Open dialog after the tear animation has time to play
+      window.setTimeout(() => setDialogOpen(true), 380);
     } else {
-      setDragPct(0);
-      latestPct.current = 0;
+      setDragDx(0);
+      dxRef.current = 0;
     }
   };
 
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (pointerIdRef.current !== e.pointerId) return;
+    finishSwipe();
+  };
+  const onPointerCancel = (e: React.PointerEvent) => {
+    if (pointerIdRef.current !== e.pointerId) return;
+    pointerIdRef.current = null;
+    lockedHorizontalRef.current = null;
+    setDragDx(0);
+    dxRef.current = 0;
+  };
+
+  // Stub transform — visible barcode piece below perforation
+  const stubTransform = torn
+    ? `translate(${tearDir * 140}%, 60%) rotate(${tearDir * 12}deg)`
+    : `translateX(${dragDx}px) rotate(${dragDx * 0.02}deg)`;
+  const stubTransition = torn
+    ? "transform 380ms cubic-bezier(.4,.1,.6,1), opacity 380ms ease-in"
+    : pointerIdRef.current === null
+      ? "transform 220ms ease"
+      : "none";
+
   return (
     <div className="flex flex-col items-center">
-      {/* Capture area: full receipt with jagged top + body + perforation + barcode + jagged bottom */}
+      {/* Receipt assembly — captured for export */}
       <div
         ref={exportRef}
-        className="relative w-full max-w-sm"
-        style={{ filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.18))" }}
+        className="relative w-full max-w-sm overflow-hidden"
+        style={{ filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.18))" }}
       >
         <JaggedEdge position="top" />
 
-        {/* Receipt body */}
+        {/* Body */}
         <div
           className="px-6 py-5 font-mono text-[13px] leading-snug text-neutral-900"
-          style={{
-            backgroundColor: PAPER,
-            backgroundImage: NOISE_BG,
-            backgroundBlendMode: "multiply",
-          }}
+          style={{ backgroundColor: PAPER }}
         >
           <div className="text-center">
             <div className="text-base font-bold uppercase tracking-widest">
@@ -311,55 +388,80 @@ export default function ReceiptView(props: Props) {
           </div>
         </div>
 
-        {/* Perforation + barcode (also part of capture, with swipe interaction) */}
-        <div
-          ref={swipeZoneRef}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          className="relative select-none"
-          style={{
-            backgroundColor: PAPER,
-            backgroundImage: NOISE_BG,
-            backgroundBlendMode: "multiply",
-            touchAction: "pan-y",
-            cursor: torn ? "default" : "grab",
-            transform: torn
-              ? "translateX(110%) rotate(-2deg)"
-              : `translateX(${dragPct * 40}px)`,
-            transition: torn
-              ? "transform 350ms ease-in, opacity 350ms ease-in"
-              : startX.current === null
-                ? "transform 200ms ease"
-                : "none",
-            opacity: torn ? 0 : 1,
-          }}
-        >
-          {/* Perforation line */}
+        {/* Perforation line — stays attached to receipt */}
+        <div style={{ backgroundColor: PAPER }}>
           <div className="border-t-2 border-dashed border-neutral-400/80" />
-          {/* Barcode */}
-          <div className="px-6 pt-3 pb-4">
-            <Barcode seed={barcodeSeed} />
-          </div>
-
-          {/* Drag progress overlay — excluded from export */}
-          <div
-            data-export="hide"
-            className="pointer-events-none absolute inset-y-0 left-0 bg-neutral-900/5"
-            style={{
-              width: `${dragPct * 100}%`,
-              transition: startX.current === null ? "width 200ms" : "none",
-            }}
-          />
         </div>
 
-        <JaggedEdge position="bottom" />
+        {/* Stub container — positioned so the stub can animate away */}
+        <div className="relative" style={{ height: torn ? 0 : "auto", transition: "height 380ms ease" }}>
+          {/* Export-only stub: shown while capturing so the saved PNG includes the barcode */}
+          <div
+            data-export="hide-inverse"
+            aria-hidden
+            className="pointer-events-none"
+            style={{
+              backgroundColor: PAPER,
+              visibility: exporting ? "visible" : "hidden",
+            }}
+          >
+            <div className="px-6 pt-3 pb-4">
+              <Barcode seed={barcodeSeed} />
+            </div>
+            <JaggedEdge position="bottom" />
+          </div>
+
+          {/* Visible interactive stub */}
+          <div
+            ref={swipeZoneRef}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            data-export="hide"
+            className="absolute inset-x-0 top-0 select-none"
+            style={{
+              backgroundColor: PAPER,
+              touchAction: "pan-y",
+              cursor: torn ? "default" : "grab",
+              transform: stubTransform,
+              transition: stubTransition,
+              opacity: torn ? 0 : 1,
+              willChange: "transform, opacity",
+            }}
+          >
+            <div className="px-6 pt-3 pb-4">
+              <Barcode seed={barcodeSeed} />
+            </div>
+            <JaggedEdge position="bottom" />
+          </div>
+        </div>
       </div>
 
       <p data-export="hide" className="mt-3 text-center text-xs text-muted-foreground">
         Swipe across the barcode to tear &amp; share
       </p>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Receipt ready</DialogTitle>
+            <DialogDescription>
+              Save the receipt image to your device, or share it through your phone's share sheet.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={handleSave} disabled={busy}>
+              <Download className="h-4 w-4" />
+              Save image
+            </Button>
+            <Button onClick={handleShare} disabled={busy}>
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
