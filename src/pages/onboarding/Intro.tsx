@@ -13,16 +13,16 @@ export default function OnboardingIntro() {
   return (
     <div className="relative flex min-h-full flex-col overflow-hidden bg-background px-5 pb-6 pt-12">
       <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight">Stop overspending on groceries</h1>
+        <h1 className="text-5xl font-bold tracking-tight">Cartwise</h1>
         <p className="mt-3 text-base text-muted-foreground">
-          Plan your trips, avoid impulse buys, and stay on budget.
+          Plan your groceries. Stop overspending.
         </p>
       </div>
 
       <div className="relative mt-8 flex-1">
-        {/* List card — tall rectangle, bottom 60% */}
+        {/* List card — tall rectangle, bottom-right with left offset */}
         <Card
-          className="absolute inset-x-0 bottom-0 h-[60%] p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
+          className="absolute left-8 right-0 bottom-0 h-[70%] p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
           style={{ animationDelay: "100ms", animationFillMode: "backwards" }}
         >
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Today's list</p>
@@ -48,9 +48,9 @@ export default function OnboardingIntro() {
           </ul>
         </Card>
 
-        {/* Budget card — overlaps top of list card, offset 32px to the right */}
+        {/* Budget card — top-left, overlaps list card */}
         <Card
-          className="absolute left-8 right-0 bottom-[55%] p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
+          className="absolute left-0 right-8 top-0 p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
           style={{ animationDelay: "320ms", animationFillMode: "backwards" }}
         >
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">
