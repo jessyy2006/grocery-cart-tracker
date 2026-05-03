@@ -10,7 +10,10 @@ const items = [
   { to: "/profile", label: "Profile", icon: User },
 ];
 
-export const BottomNav = () => (
+export const BottomNav = () => {
+  const { pathname } = useLocation();
+  if (pathname === "/trip") return null;
+  return (
   <nav className="sticky bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur safe-bottom">
     <ul className="grid grid-cols-5 px-2 py-2">
       {items.map(({ to, label, icon: Icon, end }) => (
