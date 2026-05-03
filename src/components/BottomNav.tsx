@@ -1,11 +1,11 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, ListChecks, ShoppingCart, History, User } from "lucide-react";
+import { Home, ListChecks, BarChart3, History, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/", label: "Home", icon: Home, end: true },
   { to: "/lists", label: "Lists", icon: ListChecks },
-  { to: "/trip", label: "Trip", icon: ShoppingCart },
+  { to: "/finance", label: "Finance", icon: BarChart3 },
   { to: "/history", label: "History", icon: History },
   { to: "/profile", label: "Profile", icon: User },
 ];

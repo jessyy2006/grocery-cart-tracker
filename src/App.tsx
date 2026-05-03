@@ -15,6 +15,7 @@ import TripDetail from "./pages/TripDetail";
 import Profile from "./pages/Profile";
 import Lists from "./pages/Lists";
 import ListDetail from "./pages/ListDetail";
+import Finance from "./pages/Finance";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/lists" element={<Lists />} />
               <Route path="/lists/:id" element={<ListDetail />} />
+              <Route path="/finance" element={<Finance />} />
             </Route>
             <Route path="/index" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
