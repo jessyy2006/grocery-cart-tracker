@@ -22,7 +22,7 @@ export default function OnboardingGoals() {
   return (
     <OnboardingLayout
       step={2}
-      title="What do you want help with?"
+      title="How can we help you?"
       subtitle="Pick anything that resonates."
       primaryLabel="Continue"
       primaryDisabled={draft.goals.length === 0}
