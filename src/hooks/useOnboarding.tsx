@@ -1,5 +1,12 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
+export type OnboardingListItem = {
+  name: string;
+  qty: number;
+  category: string;
+  notes: string | null;
+};
+
 export type OnboardingDraft = {
   firstName: string;
   lastName: string;
@@ -8,7 +15,7 @@ export type OnboardingDraft = {
   goals: string[];
   budgetCents: number | null; // null = skipped (use default)
   shoppingBehavior: string | null;
-  firstListItems: string[];
+  firstListItems: OnboardingListItem[];
 };
 
 const DEFAULT: OnboardingDraft = {
@@ -19,7 +26,11 @@ const DEFAULT: OnboardingDraft = {
   goals: [],
   budgetCents: null,
   shoppingBehavior: null,
-  firstListItems: ["Milk", "Eggs", "Bread"],
+  firstListItems: [
+    { name: "Milk", qty: 1, category: "dairy", notes: null },
+    { name: "Eggs", qty: 1, category: "dairy", notes: null },
+    { name: "Bread", qty: 1, category: "bakery", notes: null },
+  ],
 };
 
 type Ctx = {
