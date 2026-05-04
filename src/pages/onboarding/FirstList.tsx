@@ -312,8 +312,6 @@ export default function OnboardingFirstList() {
             );
           })
         )}
-
-        )}
       </div>
 
       <Dialog open={editing != null} onOpenChange={(o) => !o && setEditing(null)}>
