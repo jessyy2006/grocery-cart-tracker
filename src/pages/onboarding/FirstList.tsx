@@ -211,6 +211,57 @@ export default function OnboardingFirstList() {
       primaryLabel={busy ? "Starting…" : "Start your first trip"}
       primaryDisabled={busy}
       onPrimary={startTrip}
+      footer={
+        <div className="space-y-3 border-t border-border pt-4">
+          <div className="flex gap-2">
+            <Input
+              placeholder="Add item (e.g. milk)"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && add()}
+            />
+            <Input
+              type="number"
+              min={1}
+              inputMode="numeric"
+              value={qtyText}
+              onChange={(e) => setQtyText(e.target.value.replace(/[^\d]/g, ""))}
+              onBlur={() => setQtyText((v) => String(Math.max(1, parseInt(v, 10) || 1)))}
+              className="w-16"
+              aria-label="Quantity"
+            />
+          </div>
+          <Input
+            placeholder="Notes (e.g. 500 ml) — optional"
+            value={notes}
+            maxLength={25}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <Select
+              value={category}
+              onValueChange={(v) => {
+                setCategory(v as CategorySlug);
+                setAutoCat(false);
+              }}
+            >
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((c) => (
+                  <SelectItem key={c.slug} value={c.slug}>
+                    {c.emoji} {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={add} disabled={!name.trim()}>
+              <Plus className="mr-1 h-4 w-4" /> Add
+            </Button>
+          </div>
+        </div>
+      }
     >
       <div className="space-y-5">
         {grouped.length === 0 ? (
@@ -262,55 +313,7 @@ export default function OnboardingFirstList() {
           })
         )}
 
-        <div className="space-y-3 border-t border-border pt-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Add item (e.g. milk)"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && add()}
-            />
-            <Input
-              type="number"
-              min={1}
-              inputMode="numeric"
-              value={qtyText}
-              onChange={(e) => setQtyText(e.target.value.replace(/[^\d]/g, ""))}
-              onBlur={() => setQtyText((v) => String(Math.max(1, parseInt(v, 10) || 1)))}
-              className="w-16"
-              aria-label="Quantity"
-            />
-          </div>
-          <Input
-            placeholder="Notes (e.g. 500 ml) — optional"
-            value={notes}
-            maxLength={25}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-          <div className="flex gap-2">
-            <Select
-              value={category}
-              onValueChange={(v) => {
-                setCategory(v as CategorySlug);
-                setAutoCat(false);
-              }}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c.slug} value={c.slug}>
-                    {c.emoji} {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={add} disabled={!name.trim()}>
-              <Plus className="mr-1 h-4 w-4" /> Add
-            </Button>
-          </div>
-        </div>
+        )}
       </div>
 
       <Dialog open={editing != null} onOpenChange={(o) => !o && setEditing(null)}>
