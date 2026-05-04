@@ -38,7 +38,7 @@ export default function OnboardingProfile() {
   return (
     <OnboardingLayout
       step={1}
-      title="Tell us a bit about you"
+      title="Tell us about you."
       subtitle="Just the basics — everything else is optional."
       primaryLabel="Continue"
       primaryDisabled={!canContinue}
@@ -64,11 +64,11 @@ export default function OnboardingProfile() {
                 key={g.v}
                 type="button"
                 onClick={() => update({ gender: draft.gender === g.v ? null : g.v })}
-                className={`rounded-xl border p-3 text-sm transition ${
+                className={`border p-3 text-sm transition ${
                   draft.gender === g.v
                     ? "border-primary bg-primary/10 font-medium"
                     : "border-border hover:border-primary/50"
-                }`}
+                } rounded-md`}
               >
                 {g.l}
               </button>
@@ -84,11 +84,11 @@ export default function OnboardingProfile() {
                 key={a}
                 type="button"
                 onClick={() => update({ ageRange: draft.ageRange === a ? null : a })}
-                className={`rounded-full border px-4 py-2 text-sm transition ${
+                className={`border px-4 py-2 text-sm transition ${
                   draft.ageRange === a
                     ? "border-primary bg-primary/10 font-medium"
                     : "border-border hover:border-primary/50"
-                }`}
+                } rounded-md`}
               >
                 {a}
               </button>
