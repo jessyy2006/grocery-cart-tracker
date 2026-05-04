@@ -2,8 +2,21 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useOnboarding } from "@/hooks/useOnboarding";
-import { parsePriceToCents, useCurrency } from "@/lib/format";
+import {
+  parsePriceToCents,
+  setCurrency,
+  SUPPORTED_CURRENCIES,
+  useCurrency,
+  type Currency,
+} from "@/lib/format";
 import OnboardingLayout from "./Layout";
 
 export default function OnboardingBudget() {
@@ -31,13 +44,24 @@ export default function OnboardingBudget() {
     >
       <div className="space-y-2">
         <Label htmlFor="budget">Monthly budget</Label>
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{currency}</span>
+        <div className="flex gap-2">
+          <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
+            <SelectTrigger className="w-[110px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPORTED_CURRENCIES.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             id="budget"
             inputMode="decimal"
             placeholder="400"
-            className="pl-12 text-lg"
+            className="text-lg"
             value={value}
             onChange={(e) => setValue(e.target.value)}
           />
