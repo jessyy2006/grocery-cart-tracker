@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { ArrowLeft, Plus, Trash2, ShoppingBasket, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/format";
@@ -205,12 +205,6 @@ export default function ListDetail() {
                   {items.map((it) => (
                     <li key={it.id}>
                       <Card className="flex items-center gap-3 p-3">
-                        <Checkbox
-                          checked={!!it.checked_at}
-                          disabled={!runActive}
-                          onCheckedChange={() => toggle(it)}
-                          aria-label="Toggle item"
-                        />
                         <div className="min-w-0 flex-1">
                           <p
                             className={`truncate font-medium ${
