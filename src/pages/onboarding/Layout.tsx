@@ -32,29 +32,31 @@ export default function OnboardingLayout({
 }: Props) {
   return (
     <div className="flex min-h-full flex-col px-5 pb-6 pt-6">
-      <div className="flex w-full gap-1.5">
-        {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-          <span
-            key={i}
-            className={cn(
-              "h-1.5 flex-1 rounded-full transition-colors",
-              i <= step ? "bg-primary" : "bg-border"
-            )}
-          />
-        ))}
-      </div>
-      <div className="mt-2 flex h-5 items-center justify-end">
-        {(skipTo || onSkip) && (
-          skipTo ? (
-            <Link to={skipTo} className="text-sm text-muted-foreground hover:text-foreground">
-              Skip
-            </Link>
-          ) : (
-            <button onClick={onSkip} className="text-sm text-muted-foreground hover:text-foreground">
-              Skip
-            </button>
-          )
-        )}
+      <div className="pt-4">
+        <div className="flex w-full gap-1.5">
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <span
+              key={i}
+              className={cn(
+                "h-1.5 flex-1 rounded-full transition-colors",
+                i <= step ? "bg-primary" : "bg-border"
+              )}
+            />
+          ))}
+        </div>
+        <div className="mt-2 flex h-5 items-center justify-end">
+          {(skipTo || onSkip) && (
+            skipTo ? (
+              <Link to={skipTo} className="text-sm text-muted-foreground hover:text-foreground">
+                Skip
+              </Link>
+            ) : (
+              <button onClick={onSkip} className="text-sm text-muted-foreground hover:text-foreground">
+                Skip
+              </button>
+            )
+          )}
+        </div>
       </div>
 
       {(title || subtitle) && (
@@ -65,6 +67,8 @@ export default function OnboardingLayout({
       )}
 
       <div className="flex-1 py-8">{children}</div>
+
+      {footer && <div className="mb-3">{footer}</div>}
 
       {onPrimary && (
         <Button size="lg" className="w-full" onClick={onPrimary} disabled={primaryDisabled}>
