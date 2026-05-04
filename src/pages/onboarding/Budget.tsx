@@ -23,7 +23,7 @@ export default function OnboardingBudget() {
   return (
     <OnboardingLayout
       step={3}
-      title="Set your monthly grocery budget"
+      title="Set your grocery budget"
       subtitle={`We'll track your spending against this goal in ${currency}.`}
       primaryLabel="Continue"
       primaryDisabled={!value.trim()}
