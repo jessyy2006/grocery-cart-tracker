@@ -256,7 +256,7 @@ export default function ListDetail() {
         )}
       </div>
 
-      <footer className="space-y-3 border-t border-border bg-card p-4 safe-bottom">
+      <footer className="space-y-3 border-t border-border bg-card p-4 safe-bottom mb-[16px]">
         <div className="flex gap-2">
           <Input
             placeholder="Add item (e.g. milk)"
