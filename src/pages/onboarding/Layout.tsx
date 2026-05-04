@@ -14,6 +14,7 @@ type Props = {
   primaryLabel?: string;
   onPrimary?: () => void;
   primaryDisabled?: boolean;
+  footer?: ReactNode;
   children: ReactNode;
 };
 
@@ -26,6 +27,7 @@ export default function OnboardingLayout({
   primaryLabel = "Continue",
   onPrimary,
   primaryDisabled,
+  footer,
   children,
 }: Props) {
   return (
