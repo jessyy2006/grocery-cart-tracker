@@ -111,8 +111,8 @@ export default function OnboardingFirstList() {
   return (
     <OnboardingLayout
       step={5}
-      title="Create your first grocery list"
-      subtitle="Edit this list, then jump straight into a shopping trip."
+      title="Ready to shop?"
+      subtitle="Edit your first grocery list, then start a grocery trip."
       onSkip={skip}
       primaryLabel={busy ? "Starting…" : "Start your first trip"}
       primaryDisabled={busy}
