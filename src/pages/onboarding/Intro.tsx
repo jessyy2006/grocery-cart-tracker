@@ -11,7 +11,7 @@ export default function OnboardingIntro() {
   const next = () => navigate(user ? "/onboarding/profile" : "/onboarding/signup");
 
   return (
-    <div className="relative flex min-h-full flex-col overflow-hidden bg-background px-5 pb-6 pt-12">
+    <div className="relative flex min-h-full flex-col overflow-hidden bg-background px-5 pb-6 pt-12 safe-bottom">
       <div className="text-center">
         <h1 className="text-5xl font-bold tracking-tight">Cartwise</h1>
         <p className="mt-3 text-base text-muted-foreground">
