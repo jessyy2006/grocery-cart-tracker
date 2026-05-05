@@ -31,7 +31,7 @@ export default function OnboardingLayout({
   children,
 }: Props) {
   return (
-    <div className="flex min-h-full flex-col px-5 pb-6 pt-6">
+    <div className="flex min-h-full flex-col px-5 pb-6 pt-6 safe-top">
       <div className="pt-4">
         <div className="flex w-full gap-1.5">
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
