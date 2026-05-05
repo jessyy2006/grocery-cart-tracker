@@ -96,9 +96,11 @@
 @layer base {
   * { @apply border-border; }
   html, body, #root { @apply h-full; }
+  html, body { overscroll-behavior-y: none; }
   body {
     @apply bg-background text-foreground antialiased;
     font-family: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+    min-height: 100dvh;
   }
 }
 
