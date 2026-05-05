@@ -1,65 +1,54 @@
-## 1. Stub bounce only after share dialog closes
+## Fixes
 
-**File:** `src/components/finance/ReceiptView.tsx`
+### 1. Profile header flash ("profile" → "Jessica's profile")
 
-Currently the reset effect (lines 331-341) runs `setTorn(false)` whenever the dialog closes — but the dialog opens 380ms *after* `torn` becomes true, and an `onOpenChange` flicker can fire too early. The actual issue: the effect's condition `!dialogOpen && torn` is true the entire time *before* the dialog opens (torn=true from t=0 to t=380ms), causing the immediate bounce-back the user is seeing.
+`src/pages/Profile.tsx` uses `useProfile()` but renders the header immediately. While `firstName` is loading, it falls through to the bare "Profile" label.
 
-Fix: track whether the dialog has been opened at least once for this tear, and only reset after it has been opened *and then* closed.
+**Fix:** Pull `loading` out of `useProfile` (already exposed) and render a skeleton placeholder for the H1 until `loading === false`. Use an invisible `<span className="invisible">Placeholder</span>` (or a `Skeleton` component) so the layout doesn't shift, then swap in `${firstName}'s Profile` or `Profile` once loaded. Same treatment for Home's "Welcome back" subtitle to keep behavior consistent.
 
-- Add `dialogShownRef = useRef(false)`.
-- In the `setTimeout(() => setDialogOpen(true), 380)` branch, set `dialogShownRef.current = true` when opening.
-- Change the reset effect to only fire when `!dialogOpen && torn && dialogShownRef.current && !previewOpen`, and reset the ref to false after restoring.
+### 2. Margins / safe-area spacing (match Rocket Money reference)
 
-## 2. Fully delete `/auth`
+Rocket Money sits content tighter to the status bar at the top and keeps the bottom nav close to the home indicator. Our current spacing has too much top padding inside pages and too much bottom padding under the nav.
 
-**Files:** `src/App.tsx`, `src/components/RequireAuth.tsx`
+**Fix:**
 
-- Remove the `<Route path="/auth" element={<Navigate .../>} />` line entirely. Unknown paths fall through to `NotFound`.
-- `RequireAuth` already redirects to `/onboarding/signup` — leave that. (See item 5 for the change to redirect to `/onboarding` instead.)
+- `src/components/BottomNav.tsx`: tighten the `<ul>` from `py-2` to `pt-1.5 pb-0` (the `safe-bottom` class on the `<nav>` already covers the home indicator). Result: nav hugs the indicator like Rocket Money.
+- `src/components/AppLayout.tsx`: keep `safe-top` on `<main>` but rely on per-page padding only — no extra change needed.
+- Page-level top padding: change `pt-6` → `pt-2` on Home, Lists, Profile, Finance, History (header already provides visual breathing room and matches Rocket Money's compact top).
+- `src/pages/onboarding/Layout.tsx`: 
+  - Outer container: `pt-6 safe-top` → `pt-2 safe-top` (move header up so it isn't pushed too far down).
+  - Inner wrapper around progress bar: change `pt-4` → `pt-6` (bumps the progress bar slightly down within the now-tighter container, giving it the small offset the user asked for).
+  - Reduce `mt-8` on the header block to `mt-6` so the title doesn't sit too low after the progress bar moves.
 
-## 3. Disable "Continue" on skippable pages until input given
+### 3. Light-gray strip between "Start grocery run" and bottom nav
 
-**Files:** `src/pages/onboarding/Goals.tsx`, `src/pages/onboarding/Budget.tsx`
+`src/pages/ListDetail.tsx` footer has `safe-bottom mb-[16px]`. The `mb-[16px]` plus the BottomNav's own `safe-bottom`/`py-2` creates the visible gray gap.
 
-The Layout already supports `primaryDisabled` (renders the Button with disabled state, which shadcn fades automatically).
+**Fix:** Remove `mb-[16px]` and remove `safe-bottom` from the footer (BottomNav already handles the safe area). Change `p-4` → `px-4 pt-3 pb-3`. The `border-t` will sit directly above the nav with no gray strip.
 
-- **Goals:** add `skipTo="/onboarding/budget"` and `primaryDisabled={draft.goals.length === 0}`.
-- **Budget:** already has `onSkip`. Add `primaryDisabled={!value.trim()}`.
-- **Behavior:** already disabled correctly; no skip exists on this screen — leave as-is (user must pick one). Confirm this is intended; if Behavior should also be skippable add `skipTo`/`onSkip`. *Assuming current no-skip behavior stays.*
-- **Profile:** already disabled correctly until first+last name entered. Has skip. No change.
+### 4. Onboarding intro "Today's list" demo card
 
-## 4. Intro page card layout
+`src/pages/onboarding/Intro.tsx` shows a flat 5-item list with no category headers. The user wants it to look like the real list UI (image-6): grouped by category with an emoji header per group, longer.
 
-**File:** `src/pages/onboarding/Intro.tsx`
+**Fix:** Replace the flat array with a grouped structure mirroring the real list page:
 
-Replace the bottom card stack so:
-- The **list card** is the bottom layer, sized to take ~60% of the available vertical area (tall rectangle anchored to bottom).
-- The **budget card** sits on top, same compact size as today, offset 32px to the right of the list card (i.e. list card has `-ml-8` shift left, budget card sits with its current padding) — net effect: budget card is horizontally offset by 32px from the list card, slightly higher.
-
-Approach: use absolute positioning inside the existing relative container.
-```tsx
-<div className="relative h-full">
-  <Card className="absolute inset-x-0 bottom-0 h-[60%] p-4 ...">{/* list */}</Card>
-  <Card className="absolute left-8 right-0 bottom-[55%] p-4 ...">{/* budget, 32px right offset, sits above list */}</Card>
-</div>
 ```
-Keep existing stagger animations. Verify on 402×716 viewport (current preview).
-
-## 5. New users land on Intro (not Signup)
-
-**File:** `src/components/RequireAuth.tsx`
-
-Currently unauthenticated visits to `/` redirect to `/onboarding/signup`, skipping the value-prop intro. Change the redirect to `/onboarding` so a brand-new user sees the two demo cards first; the Intro's "Start saving" button already routes them to `/onboarding/signup`.
-
-```diff
-- if (!user) return <Navigate to="/onboarding/signup" replace ... />;
-+ if (!user) return <Navigate to="/onboarding" replace ... />;
+🥛 DAIRY      → 1% Milk; Greek yogurt
+🥩 MEAT       → Chicken breast (Qty 2)
+🥬 PRODUCE    → Bananas; Spinach
+🍞 BAKERY     → Sourdough bread (Note: Get from bakery next door!)
+🥫 PANTRY     → Soy sauce, Chili oil
 ```
 
-## Risks
+Render each group with a small uppercase emoji+label header (matching the real ListDetail styling — `text-xs font-semibold uppercase tracking-wider text-muted-foreground`) and the items underneath. Keep the existing animation. Make the card slightly taller/scrollable-clipped if needed (use `overflow-hidden` with `h-[78%]`) so it visually feels longer like the screenshot.
 
-- Item 1: if the user closes the receipt dialog very quickly (<380ms) the ref logic still works because we set the ref *before* opening; `dialogShownRef` becomes true synchronously when the timer fires.
-- Item 4: absolute positioning inside the existing flex column needs the parent `relative mt-8 flex-1` to have a real height — it does (`flex-1` inside `min-h-full` flex col).
-- Item 5: deep-linked unauthed users to e.g. `/history` will now land on Intro, then Signup. Acceptable for the value-prop goal.
+## Files touched
 
-No DB or types changes. No new dependencies.
+- `src/pages/Profile.tsx` (loading guard on header)
+- `src/pages/Home.tsx` (loading guard on welcome text, `pt-6` → `pt-2`)
+- `src/pages/Lists.tsx`, `src/pages/Finance.tsx`, `src/pages/History.tsx` (`pt-6` → `pt-2`)
+- `src/components/BottomNav.tsx` (tighten padding)
+- `src/pages/onboarding/Layout.tsx` (top padding + progress bar offset + header margin)
+- `src/pages/ListDetail.tsx` (remove footer gap)
+- `src/pages/onboarding/Intro.tsx` (grouped list demo)
+- `src/hooks/useProfile.tsx` — already exposes `loading`, no change needed
