@@ -27,7 +27,7 @@ export default function Home() {
   const { user } = useAuth();
   useCurrency();
   const navigate = useNavigate();
-  const { firstName } = useProfile();
+  const { firstName, loading: profileLoading } = useProfile();
   const [searchParams, setSearchParams] = useSearchParams();
   const [introOpen, setIntroOpen] = useState(false);
   const [activeTrip, setActiveTrip] = useState<Trip | null>(null);
@@ -124,9 +124,17 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-6 px-5 pb-6 pt-6">
+    <div className="space-y-6 px-5 pb-6 pt-2">
       <header>
-        <p className="text-sm text-muted-foreground">{firstName ? `Welcome back, ${firstName}` : "Welcome back"}</p>
+        <p className="text-sm text-muted-foreground">
+          {profileLoading ? (
+            <span className="invisible">Welcome back</span>
+          ) : firstName ? (
+            `Welcome back, ${firstName}`
+          ) : (
+            "Welcome back"
+          )}
+        </p>
         <h1 className="text-3xl font-bold tracking-tight">Ready to shop?</h1>
       </header>
       <FeatureIntroDialog open={introOpen} onClose={() => setIntroOpen(false)} />
