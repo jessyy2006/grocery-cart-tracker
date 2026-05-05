@@ -87,8 +87,11 @@ export default function History() {
 
   return (
     <div className="space-y-4 px-5 pb-6 pt-2">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold tracking-tight">History</h1>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <p className="invisible select-none text-sm text-muted-foreground" aria-hidden>.</p>
+          <h1 className="text-3xl font-bold tracking-tight">History</h1>
+        </div>
         {monthOptions.length > 0 && (
           <Select value={month} onValueChange={setMonth}>
             <SelectTrigger className="h-9 w-[160px]">

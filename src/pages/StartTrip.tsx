@@ -117,6 +117,7 @@ export default function StartTrip() {
         .single();
       if (tErr) throw tErr;
       sessionStorage.removeItem("pendingTrip:listId");
+      sessionStorage.removeItem("trip:cameFromOnboarding");
       sessionStorage.setItem(`trip:${trip!.id}:store`, storeId!);
       navigate("/trip", { replace: true });
     } catch (e: any) {
