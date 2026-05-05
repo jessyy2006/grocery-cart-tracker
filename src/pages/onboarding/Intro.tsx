@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { Check, Receipt as ReceiptIcon } from "lucide-react";
+import { Receipt as ReceiptIcon } from "lucide-react";
 
 export default function OnboardingIntro() {
   const navigate = useNavigate();
@@ -22,30 +22,32 @@ export default function OnboardingIntro() {
       <div className="relative mt-8 flex-1">
         {/* List card — tall rectangle, bottom-right with left offset */}
         <Card
-          className="absolute left-8 right-0 bottom-0 h-[70%] p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
+          className="absolute left-8 right-0 bottom-0 h-[78%] overflow-hidden p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
           style={{ animationDelay: "100ms", animationFillMode: "backwards" }}
         >
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Today's list</p>
-          <ul className="mt-3 space-y-3 text-sm">
+          <div className="mt-3 space-y-3">
             {[
-              { name: "Whole milk", done: true },
-              { name: "Eggs (12 ct)", done: false },
-              { name: "Sourdough bread", done: false },
-              { name: "Bananas", done: false },
-              { name: "Greek yogurt", done: false },
-            ].map((it) => (
-              <li key={it.name} className="flex items-center gap-2">
-                <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                    it.done ? "border-primary bg-primary text-primary-foreground" : "border-border"
-                  }`}
-                >
-                  {it.done && <Check className="h-3 w-3" />}
-                </span>
-                <span className={it.done ? "line-through text-muted-foreground" : ""}>{it.name}</span>
-              </li>
+              { emoji: "🥬", label: "Produce", items: ["Bananas", "Spinach"] },
+              { emoji: "🥛", label: "Dairy", items: ["1% Milk", "Greek yogurt"] },
+              { emoji: "🍞", label: "Bakery", items: ["Sourdough bread"] },
+              { emoji: "🥩", label: "Meat & Seafood", items: ["Chicken breast"] },
+              { emoji: "🥫", label: "Pantry", items: ["Soy sauce"] },
+            ].map((g) => (
+              <div key={g.label}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {g.emoji} {g.label}
+                </p>
+                <ul className="mt-1 space-y-1 text-sm">
+                  {g.items.map((it) => (
+                    <li key={it} className="rounded-md border border-border/60 px-2 py-1 text-xs">
+                      {it}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         </Card>
 
         {/* Budget card — top-left, overlaps list card */}

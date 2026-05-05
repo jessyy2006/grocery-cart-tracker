@@ -86,7 +86,7 @@ export default function History() {
   );
 
   return (
-    <div className="space-y-4 px-5 pb-6 pt-6">
+    <div className="space-y-4 px-5 pb-6 pt-2">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-3xl font-bold tracking-tight">History</h1>
         {monthOptions.length > 0 && (

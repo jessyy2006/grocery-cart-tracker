@@ -19,7 +19,7 @@ type Store = { id: string; name: string; address: string | null };
 
 export default function Profile() {
   const { user } = useAuth();
-  const { firstName } = useProfile();
+  const { firstName, loading: profileLoading } = useProfile();
   const currency = useCurrency();
   const [stores, setStores] = useState<Store[]>([]);
 
@@ -38,9 +38,17 @@ export default function Profile() {
   };
 
   return (
-    <div className="space-y-6 px-5 pb-6 pt-6">
+    <div className="space-y-6 px-5 pb-6 pt-2">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight">{firstName ? `${firstName}'s Profile` : "Profile"}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {profileLoading ? (
+            <span className="invisible">Profile</span>
+          ) : firstName ? (
+            `${firstName}'s Profile`
+          ) : (
+            "Profile"
+          )}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">{user?.email}</p>
       </header>
 
