@@ -181,6 +181,7 @@ export default function OnboardingFirstList() {
         );
       }
       sessionStorage.setItem("pendingTrip:listId", listId ?? "none");
+      sessionStorage.setItem("trip:cameFromOnboarding", "1");
       navigate("/trip/new", { replace: true });
     } catch (e: any) {
       toast.error(e.message ?? "Couldn't start your first trip");

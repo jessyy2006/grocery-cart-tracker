@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ShoppingBasket } from "lucide-react";
 
 export default function OnboardingSignup() {
   const navigate = useNavigate();
@@ -57,8 +56,8 @@ export default function OnboardingSignup() {
   return (
     <div className="flex min-h-full flex-col items-center justify-center px-6 py-12">
       <div className="mb-8 flex flex-col items-center text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl gradient-hero shadow-elevated">
-          <ShoppingBasket className="h-8 w-8 text-primary-foreground" />
+        <div className="mb-4 h-16 w-16 overflow-hidden rounded-2xl shadow-elevated">
+          <img src="/icon-1024.png" alt="CartWise" className="h-full w-full object-cover" />
         </div>
         <h1 className="text-3xl font-bold tracking-tight">Create your account</h1>
         <p className="mt-1 text-sm text-muted-foreground">Takes less than a minute.</p>

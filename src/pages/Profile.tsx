@@ -40,6 +40,7 @@ export default function Profile() {
   return (
     <div className="space-y-6 px-5 pb-6 pt-2">
       <header>
+        <p className="invisible select-none text-sm text-muted-foreground" aria-hidden>.</p>
         <h1 className="text-3xl font-bold tracking-tight">
           {profileLoading ? (
             <span className="invisible">Profile</span>

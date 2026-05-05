@@ -297,9 +297,12 @@ export default function Finance() {
   const maxBar = Math.max(...derived.series.map((s) => s.cents), budgetCents ?? 0, 1);
 
   return (
-    <div className="space-y-5 p-4 pb-24">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Finance</h1>
+    <div className="space-y-5 px-5 pb-24 pt-2">
+      <header className="flex items-end justify-between">
+        <div>
+          <p className="invisible select-none text-sm text-muted-foreground" aria-hidden>.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Finance</h1>
+        </div>
         <div className="flex items-center gap-1">
           <ToggleGroup
             type="single"

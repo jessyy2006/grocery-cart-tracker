@@ -117,6 +117,7 @@ export default function StartTrip() {
         .single();
       if (tErr) throw tErr;
       sessionStorage.removeItem("pendingTrip:listId");
+      sessionStorage.removeItem("trip:cameFromOnboarding");
       sessionStorage.setItem(`trip:${trip!.id}:store`, storeId!);
       navigate("/trip", { replace: true });
     } catch (e: any) {
@@ -141,7 +142,17 @@ export default function StartTrip() {
 
   return (
     <div className="space-y-6 px-5 pb-6 pt-6">
-      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground">
+      <button
+        onClick={() => {
+          if (sessionStorage.getItem("trip:cameFromOnboarding") === "1") {
+            sessionStorage.removeItem("trip:cameFromOnboarding");
+            navigate("/", { replace: true });
+            return;
+          }
+          navigate(-1);
+        }}
+        className="flex items-center gap-1 text-sm text-muted-foreground"
+      >
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
       <header>
