@@ -1,54 +1,86 @@
-## Fixes
+# Fix 4 UI bugs
 
-### 1. Profile header flash ("profile" → "Jessica's profile")
+## 1. Onboarding "Continue" button too close to the bottom
 
-`src/pages/Profile.tsx` uses `useProfile()` but renders the header immediately. While `firstName` is loading, it falls through to the bare "Profile" label.
+`src/pages/onboarding/Layout.tsx` container is `flex min-h-full flex-col px-5 pb-6 pt-2 safe-top` — it has `safe-top` but no `safe-bottom`, so on iPhone the primary button sits in the home‑indicator zone, lower than where the bottom‑nav icons sit on in‑app pages.
 
-**Fix:** Pull `loading` out of `useProfile` (already exposed) and render a skeleton placeholder for the H1 until `loading === false`. Use an invisible `<span className="invisible">Placeholder</span>` (or a `Skeleton` component) so the layout doesn't shift, then swap in `${firstName}'s Profile` or `Profile` once loaded. Same treatment for Home's "Welcome back" subtitle to keep behavior consistent.
+Fix: add `safe-bottom` to the container so the button respects the same iOS bottom inset that `BottomNav` already uses (`safe-bottom` + `pt-1.5 pb-0` + nav‑item `py-2`). Result: container becomes `flex min-h-full flex-col px-5 pb-6 pt-2 safe-top safe-bottom`. The button bottom edge will then line up with where the nav icons render on every other screen, on every device size.
 
-### 2. Margins / safe-area spacing (match Rocket Money reference)
+## 2. Back from "Select a grocery store" should go Home when launched from onboarding
 
-Rocket Money sits content tighter to the status bar at the top and keeps the bottom nav close to the home indicator. Our current spacing has too much top padding inside pages and too much bottom padding under the nav.
+`src/pages/onboarding/FirstList.tsx` → `startTrip()` navigates to `/trip/new` (which renders `StartTrip.tsx`). `StartTrip.tsx` line 144 uses `navigate(-1)`, which pops back into the onboarding flow.
 
-**Fix:**
+Fix without breaking the normal Home → Start Trip → Back behavior:
 
-- `src/components/BottomNav.tsx`: tighten the `<ul>` from `py-2` to `pt-1.5 pb-0` (the `safe-bottom` class on the `<nav>` already covers the home indicator). Result: nav hugs the indicator like Rocket Money.
-- `src/components/AppLayout.tsx`: keep `safe-top` on `<main>` but rely on per-page padding only — no extra change needed.
-- Page-level top padding: change `pt-6` → `pt-2` on Home, Lists, Profile, Finance, History (header already provides visual breathing room and matches Rocket Money's compact top).
-- `src/pages/onboarding/Layout.tsx`: 
-  - Outer container: `pt-6 safe-top` → `pt-2 safe-top` (move header up so it isn't pushed too far down).
-  - Inner wrapper around progress bar: change `pt-4` → `pt-6` (bumps the progress bar slightly down within the now-tighter container, giving it the small offset the user asked for).
-  - Reduce `mt-8` on the header block to `mt-6` so the title doesn't sit too low after the progress bar moves.
+- In `FirstList.tsx` `startTrip()`, set a one‑shot flag alongside the existing `pendingTrip:listId`:
+  `sessionStorage.setItem("trip:cameFromOnboarding", "1");`
+- In `StartTrip.tsx`, replace the back button handler with:
+  ```ts
+  const goBack = () => {
+    if (sessionStorage.getItem("trip:cameFromOnboarding") === "1") {
+      sessionStorage.removeItem("trip:cameFromOnboarding");
+      navigate("/", { replace: true });
+      return;
+    }
+    navigate(-1);
+  };
+  ```
+  and wire the existing back button to `goBack`. Also clear the flag once a trip is actually started (in the existing `startWith` success path) so a future Back from a different entry isn't affected.
 
-### 3. Light-gray strip between "Start grocery run" and bottom nav
+## 3. Header alignment and sizing across tabs
 
-`src/pages/ListDetail.tsx` footer has `safe-bottom mb-[16px]`. The `mb-[16px]` plus the BottomNav's own `safe-bottom`/`py-2` creates the visible gray gap.
+Cause: Home (`Lists.tsx`, `Home.tsx`) renders a small eyebrow `<p>` above the `<h1>` (`"Welcome back"`, `"Plan your run"`). History and Profile have no eyebrow, so their `<h1>` sits ~20px higher even though their container padding (`px-5 pb-6 pt-2`) is identical. Finance also uses `text-2xl` instead of `text-3xl` and `p-4` instead of `px-5 … pt-2`.
 
-**Fix:** Remove `mb-[16px]` and remove `safe-bottom` from the footer (BottomNav already handles the safe area). Change `p-4` → `px-4 pt-3 pb-3`. The `border-t` will sit directly above the nav with no gray strip.
+Fix (no hard‑coded pixel offsets — relies on the same eyebrow line):
 
-### 4. Onboarding intro "Today's list" demo card
+- **`src/pages/Finance.tsx`** — Change container from `space-y-5 p-4 pb-24` to `space-y-5 px-5 pb-24 pt-2`. Change `<h1 className="text-2xl …">Finance</h1>` to `text-3xl`. Add an invisible eyebrow `<p>` above it so the title sits at the same Y as Home/Lists:
+  ```tsx
+  <header className="flex items-end justify-between">
+    <div>
+      <p className="text-sm text-muted-foreground invisible select-none" aria-hidden>.</p>
+      <h1 className="text-3xl font-bold tracking-tight">Finance</h1>
+    </div>
+    <div className="flex items-center gap-1"> … existing controls … </div>
+  </header>
+  ```
+- **`src/pages/History.tsx`** — Wrap the existing flex header so the `<h1>` gets the same invisible eyebrow above it (matching Home/Lists vertical position):
+  ```tsx
+  <div className="flex items-end justify-between gap-3">
+    <div>
+      <p className="text-sm text-muted-foreground invisible select-none" aria-hidden>.</p>
+      <h1 className="text-3xl font-bold tracking-tight">History</h1>
+    </div>
+    {monthOptions.length > 0 && ( … existing Select … )}
+  </div>
+  ```
+- **`src/pages/Profile.tsx`** — Add the same invisible eyebrow inside `<header>` directly above the `<h1>`:
+  ```tsx
+  <header>
+    <p className="text-sm text-muted-foreground invisible select-none" aria-hidden>.</p>
+    <h1 className="text-3xl font-bold tracking-tight"> … existing name logic … </h1>
+    <p className="mt-1 text-sm text-muted-foreground">{user?.email}</p>
+  </header>
+  ```
 
-`src/pages/onboarding/Intro.tsx` shows a flat 5-item list with no category headers. The user wants it to look like the real list UI (image-6): grouped by category with an emoji header per group, longer.
+Because the eyebrow uses the same `text-sm` line height as Home/Lists, the `<h1>` Y position will match automatically across all viewport sizes — no fixed pixel values.
 
-**Fix:** Replace the flat array with a grouped structure mirroring the real list page:
+## 4. Wrong app icon on Create Your Account screen
 
+`src/pages/onboarding/Signup.tsx` renders a hard‑coded `<ShoppingBasket>` lucide icon inside the gradient tile. Replace it with the actual app icon file referenced by `index.html` and `manifest.json` (`/icon-1024.png`):
+
+```tsx
+<div className="mb-4 h-16 w-16 overflow-hidden rounded-2xl shadow-elevated">
+  <img src="/icon-1024.png" alt="CartWise" className="h-full w-full object-cover" />
+</div>
 ```
-🥛 DAIRY      → 1% Milk; Greek yogurt
-🥩 MEAT       → Chicken breast (Qty 2)
-🥬 PRODUCE    → Bananas; Spinach
-🍞 BAKERY     → Sourdough bread (Note: Get from bakery next door!)
-🥫 PANTRY     → Soy sauce, Chili oil
-```
 
-Render each group with a small uppercase emoji+label header (matching the real ListDetail styling — `text-xs font-semibold uppercase tracking-wider text-muted-foreground`) and the items underneath. Keep the existing animation. Make the card slightly taller/scrollable-clipped if needed (use `overflow-hidden` with `h-[78%]`) so it visually feels longer like the screenshot.
+Also remove the now‑unused `ShoppingBasket` import. The path `/icon-1024.png` is the same canonical path used by `<link rel="apple-touch-icon">` and the PWA manifest, so swapping the icon file in `public/` will update this screen automatically with no further code changes.
 
 ## Files touched
-
-- `src/pages/Profile.tsx` (loading guard on header)
-- `src/pages/Home.tsx` (loading guard on welcome text, `pt-6` → `pt-2`)
-- `src/pages/Lists.tsx`, `src/pages/Finance.tsx`, `src/pages/History.tsx` (`pt-6` → `pt-2`)
-- `src/components/BottomNav.tsx` (tighten padding)
-- `src/pages/onboarding/Layout.tsx` (top padding + progress bar offset + header margin)
-- `src/pages/ListDetail.tsx` (remove footer gap)
-- `src/pages/onboarding/Intro.tsx` (grouped list demo)
-- `src/hooks/useProfile.tsx` — already exposes `loading`, no change needed
+- `src/pages/onboarding/Layout.tsx`
+- `src/pages/onboarding/FirstList.tsx`
+- `src/pages/StartTrip.tsx`
+- `src/pages/Finance.tsx`
+- `src/pages/History.tsx`
+- `src/pages/Profile.tsx`
+- `src/pages/onboarding/Signup.tsx`
