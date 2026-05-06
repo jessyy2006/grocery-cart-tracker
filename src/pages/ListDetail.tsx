@@ -112,6 +112,10 @@ export default function ListDetail() {
     setQtyText("1");
     setNotes("");
     setAutoCat(true);
+    setAddOpen(false);
+    requestAnimationFrame(() => {
+      endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    });
   };
 
   const openEdit = (it: Item) => {
