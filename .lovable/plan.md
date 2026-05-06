@@ -1,48 +1,32 @@
-# Fix three UI flashing/overlay bugs
+## Goal
+On the onboarding "Create your account" page, add a tabbed UI so existing users can sign in. After a successful sign-in, if the user has already completed onboarding, send them straight to `/` (Home), skipping the onboarding flow.
 
-## 1. Finance page flashes on every visit
+## Why this is straightforward
+The infrastructure already exists:
+- `RequireOnboarding` already checks `user_onboarding.completed_at` and `localStorage[ONBOARDED_KEY]` and routes accordingly.
+- `handle_new_user` trigger already creates a `profiles` row on signup.
+- We just need to surface a sign-in path inside the onboarding flow and branch the post-auth redirect.
 
-**Cause:** `Finance.tsx` returns a completely different layout while `loading` is true:
-```text
-loading view: <div className="space-y-4 p-4"> + skeletons
-loaded view : <div className="space-y-5 px-5 pb-24 pt-2"> + header + content
-```
-Different padding (`p-4` vs `px-5 pb-24 pt-2`), different vertical rhythm, and the header is missing from the skeleton — so the whole page visibly shifts when data arrives. That's the "flash".
+## Changes
 
-**Fix:** In `src/pages/Finance.tsx`, render the **header always** (it doesn't depend on data) and only swap the body for skeletons while loading. Use the exact same outer container (`space-y-5 px-5 pb-24 pt-2`) in both states so nothing reflows.
+### 1. `src/pages/onboarding/Signup.tsx` — only file that changes
+- Wrap the form in `<Tabs defaultValue="create">` from `@/components/ui/tabs` with two triggers:
+  - **Create account** (current behavior)
+  - **Sign in**
+- Header copy switches with the active tab ("Create your account" / "Welcome back"). App icon stays.
+- **Create account tab**: keep existing email + password form, "Create account" button, and "Sign up with Google" button below the divider. Behavior unchanged — on success, navigate to `/onboarding/profile`.
+- **Sign in tab**: new email + password form calling `supabase.auth.signInWithPassword`. Same Google button below the divider (Google flow is identical for new + returning users).
+- **Post-auth redirect logic** (shared): replace the current `useEffect` that always pushes to `/onboarding/profile` with a helper that, once `user` exists:
+  1. Reads `localStorage[ONBOARDED_KEY]`. If `"1"` → `navigate("/", { replace: true })`.
+  2. Otherwise queries `user_onboarding.completed_at` for `user.id`. If present → set `localStorage[ONBOARDED_KEY] = "1"` and go to `/`.
+  3. Else go to `/onboarding/profile`.
+- This means a returning user who signs in via either the password form OR the Google button skips onboarding automatically. New signups continue into onboarding.
 
-```text
-return (
-  <div className="space-y-5 px-5 pb-24 pt-2">
-    <header className="flex items-end justify-between"> … same header … </header>
-    {loading ? <FinanceSkeleton/> : (view === 'receipt' ? <ReceiptView…/> : <FinanceCardView…/>)}
-    <Dialog …/>
-  </div>
-);
-```
-`FinanceSkeleton` = the existing skeleton blocks (budget card, 3 signal tiles, chart) without the outer `p-4` wrapper.
+### 2. Nothing else to touch
+- No DB changes — `user_onboarding.completed_at` is already the "has onboarded" boolean source of truth.
+- `RequireOnboarding` already enforces the same rule for any other entry point.
+- `Intro.tsx` (the very first onboarding screen with "Sign in" already linking to `/onboarding/signup`) keeps working — the tab UI just gives users the option once they get there.
 
-## 2. Profile header flashes "Profile" before settling on "Jessica's Profile"
-
-**Cause:** `useProfile` does **not** reset `loading` to `true` when `user` changes. Initial render: `user=null`, the effect runs, hits the `if (!user)` branch and sets `loading=false`, `firstName=null`. The Profile page therefore renders the "Profile" fallback. A moment later `user` becomes defined, the effect re-runs and starts fetching — but `loading` is still `false` and `firstName` is still `null`, so "Profile" stays on screen until the fetch resolves and replaces it with "Jessica's Profile". That's the flash.
-
-**Fix:** In `src/hooks/useProfile.tsx`, set `setLoading(true)` at the **top** of the effect (before the `if (!user)` short‑circuit) so the consumer always sees `loading=true` while the hook is figuring out the new user's name. Profile.tsx already renders an invisible placeholder while `profileLoading` is true, so nothing else changes.
-
-While we're there: seed `firstName` synchronously from `user.user_metadata` (given_name / full_name) before the DB round‑trip so the visible text appears instantly on Google sign‑ups too.
-
-## 3. Top of screen is solid dark when the Finance intro dialog opens
-
-**Cause:** `index.html` declares `<meta name="apple-mobile-web-app-status-bar-style" content="default">`. On iOS PWA standalone, "default" makes the status bar **opaque**, painted with `theme-color` (`#0F2A1D`, dark green). The Radix Dialog overlay (`fixed inset-0 bg-black/80`) lives inside `<body>` and therefore cannot paint over the OS status bar. Result: the rest of the screen gets the translucent black‑80 wash, while the status bar stays a flat dark‑green block — exactly the "solid dark strip on top" the user described.
-
-**Fix:** In `index.html`, change the status bar style to **`black-translucent`**:
-```text
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-```
-With this, the OS status bar becomes transparent and the web view extends underneath it, so the dialog overlay (and any other full‑screen overlay/drawer/sheet) covers the status bar area uniformly. The existing `safe-top` padding on `<main>` already pushes content below the notch, so nothing visually shifts in normal screens.
-
-## Files touched
-- `src/pages/Finance.tsx` — keep header mounted, swap only body for skeleton, unify outer container.
-- `src/hooks/useProfile.tsx` — `setLoading(true)` at start of effect; seed `firstName` from `user_metadata` immediately.
-- `index.html` — status bar style → `black-translucent`.
-
-No DB / route / dependency changes.
+## Notes / risks
+- If email confirmation is required, `signInWithPassword` will fail until the user verifies; we'll surface the Supabase error via `toast` (same pattern as the existing signup form).
+- No change to validation rules, RLS, or routes.
