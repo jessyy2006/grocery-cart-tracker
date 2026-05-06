@@ -11,9 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SUPPORTED_CURRENCIES, useCurrency, setCurrency, Currency } from "@/lib/format";
+import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
 
 type Store = { id: string; name: string; address: string | null };
 
