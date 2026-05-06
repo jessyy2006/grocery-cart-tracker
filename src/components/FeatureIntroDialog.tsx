@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Receipt as ReceiptIcon } from "lucide-react";
@@ -5,7 +6,19 @@ import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
 
 type Props = { open: boolean; onClose: () => void };
 
+const DEFAULT_THEME_COLOR = "#0F2A1D";
+const DIALOG_THEME_COLOR = "#0a0a0a";
+
 export default function FeatureIntroDialog({ open, onClose }: Props) {
+  useEffect(() => {
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (!meta) return;
+    if (open) {
+      meta.setAttribute("content", DIALOG_THEME_COLOR);
+      return () => meta.setAttribute("content", DEFAULT_THEME_COLOR);
+    }
+  }, [open]);
+
   const dismiss = () => {
     localStorage.setItem(FEATURE_INTRO_KEY, "1");
     onClose();
