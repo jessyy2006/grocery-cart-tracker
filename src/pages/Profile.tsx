@@ -81,6 +81,19 @@ export default function Profile() {
       </section>
 
       <section>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Preferences
+        </h2>
+        <Card className="flex items-center justify-between p-4">
+          <div className="pr-3">
+            <p className="font-medium">Duplicate item alerts</p>
+            <p className="text-xs text-muted-foreground">Warn me before adding duplicate items.</p>
+          </div>
+          <Switch checked={dupAlerts} onCheckedChange={setDuplicateAlerts} />
+        </Card>
+      </section>
+
+      <section>
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">My stores</h2>
         {stores.length === 0 ? (
           <p className="text-sm text-muted-foreground">Stores you've shopped at will appear here.</p>
