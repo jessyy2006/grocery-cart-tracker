@@ -139,18 +139,48 @@ export default function StartTrip() {
     }
   };
 
-  const StoreCard = ({ s, dim }: { s: { name: string; address?: string | null }; dim?: boolean }) => (
-    <Card
-      onClick={() => !creating && startWith(s)}
-      className="flex cursor-pointer items-start gap-3 p-4 transition hover:border-primary"
-    >
-      <MapPin className={`mt-0.5 h-5 w-5 shrink-0 ${dim ? "text-muted-foreground" : "text-primary"}`} />
-      <div>
-        <p className="font-medium">{s.name}</p>
-        {s.address && <p className="text-xs text-muted-foreground">{s.address}</p>}
-      </div>
-    </Card>
-  );
+  const StoreCard = ({
+    s,
+    selectedKey,
+    onSelect,
+    dim,
+  }: {
+    s: { name: string; address?: string | null };
+    selectedKey: string;
+    onSelect: () => void;
+    dim?: boolean;
+  }) => {
+    const active = isSelected(selectedKey);
+    return (
+      <Card
+        onClick={onSelect}
+        className={`flex cursor-pointer items-start gap-3 p-4 transition ${
+          active ? "border-primary bg-primary/5" : "hover:border-primary"
+        }`}
+      >
+        <MapPin
+          className={`mt-0.5 h-5 w-5 shrink-0 ${
+            active ? "text-primary" : dim ? "text-muted-foreground" : "text-primary"
+          }`}
+        />
+        <div>
+          <p className="font-medium">{s.name}</p>
+          {s.address && <p className="text-xs text-muted-foreground">{s.address}</p>}
+        </div>
+      </Card>
+    );
+  };
+
+  const handleStartTrip = async () => {
+    if (!selected) return;
+    if (selected.kind === "saved") {
+      await startWith({ id: selected.id, name: selected.name, address: selected.address });
+    } else if (selected.kind === "found") {
+      await startWith({ name: selected.name, address: selected.address, lat: selected.lat, lng: selected.lng });
+    } else {
+      await startWith({ name: selected.name });
+    }
+  };
 
   return (
     <div className="space-y-6 px-5 pb-6 pt-6">
