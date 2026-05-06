@@ -309,7 +309,17 @@ export default function Finance() {
         </div>
       </header>
 
-      {view === "receipt" ? (
+      {loading ? (
+        <div className="space-y-4">
+          <Skeleton className="h-40 w-full rounded-2xl" />
+          <div className="grid grid-cols-3 gap-2">
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+            <Skeleton className="h-24 rounded-2xl" />
+          </div>
+          <Skeleton className="h-56 w-full rounded-2xl" />
+        </div>
+      ) : view === "receipt" ? (
         <ReceiptView
           budgetCents={budgetCents ?? 0}
           monthSpend={derived.monthSpend}
