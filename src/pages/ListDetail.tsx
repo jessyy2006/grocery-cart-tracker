@@ -46,6 +46,9 @@ export default function ListDetail() {
   const [editName, setEditName] = useState("");
   const [editQtyText, setEditQtyText] = useState("1");
   const [editNotes, setEditNotes] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!id || !user) return;
