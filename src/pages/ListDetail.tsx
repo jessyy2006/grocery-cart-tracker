@@ -58,6 +58,7 @@ export default function ListDetail() {
   const [editQtyText, setEditQtyText] = useState("1");
   const [editNotes, setEditNotes] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const [dupOpen, setDupOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
