@@ -172,14 +172,16 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
   }
 }
 
-export async function findNearbyStores(coords: Coords, radiusMeters = 600): Promise<NearbyStore[]> {
+export async function findNearbyStores(coords: Coords, radiusMeters = 5000): Promise<NearbyStore[]> {
+  const filter = `["shop"~"^(supermarket|greengrocer|grocery|health_food|farm)$"]`;
   const query = `
-    [out:json][timeout:10];
+    [out:json][timeout:15];
     (
-      node["shop"~"supermarket|convenience|greengrocer|grocery"](around:${radiusMeters},${coords.lat},${coords.lng});
-      way["shop"~"supermarket|convenience|greengrocer|grocery"](around:${radiusMeters},${coords.lat},${coords.lng});
+      node${filter}(around:${radiusMeters},${coords.lat},${coords.lng});
+      way${filter}(around:${radiusMeters},${coords.lat},${coords.lng});
+      relation${filter}(around:${radiusMeters},${coords.lat},${coords.lng});
     );
-    out center 25;
+    out center tags 50;
   `;
 
   let lastErr: unknown;
@@ -195,7 +197,33 @@ export async function findNearbyStores(coords: Coords, radiusMeters = 600): Prom
         continue;
       }
       const data = await res.json();
-      return parseOverpass(data);
+      const parsed = parseOverpass(data);
+      // Sort by distance and take closest 8 to limit reverse-geocode calls.
+      const sorted = parsed
+        .map((s) => ({ s, d: haversineMeters(coords, { lat: s.lat, lng: s.lng }) }))
+        .sort((a, b) => a.d - b.d)
+        .slice(0, 8)
+        .map((x) => x.s);
+
+      // Enrich missing addresses via Nominatim reverse geocode (free, rate-limited).
+      const enriched: NearbyStore[] = [];
+      for (const s of sorted) {
+        let street = s._street;
+        let city = s._city;
+        if (!street || !city) {
+          const rev = await reverseGeocode(s.lat, s.lng);
+          if (rev) {
+            street = street || rev.street;
+            city = city || rev.city;
+          }
+          // 1.1s spacing to respect Nominatim usage policy.
+          await new Promise((r) => setTimeout(r, 1100));
+        }
+        if (!city) continue; // skip if we still can't produce a meaningful address
+        const address = street ? `${street}, ${city}` : city;
+        enriched.push({ name: s.name, lat: s.lat, lng: s.lng, address });
+      }
+      return enriched;
     } catch (e) {
       lastErr = e;
     }
