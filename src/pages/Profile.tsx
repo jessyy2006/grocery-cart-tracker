@@ -11,9 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { LogOut, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SUPPORTED_CURRENCIES, useCurrency, setCurrency, Currency } from "@/lib/format";
+import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
 
 type Store = { id: string; name: string; address: string | null };
 
@@ -22,6 +24,7 @@ export default function Profile() {
   const { firstName, loading: profileLoading } = useProfile();
   const currency = useCurrency();
   const [stores, setStores] = useState<Store[]>([]);
+  const dupAlerts = useDuplicateAlerts();
 
   const load = async () => {
     const { data } = await supabase.from("stores").select("id, name, address").order("name");
@@ -74,6 +77,19 @@ export default function Profile() {
               ))}
             </SelectContent>
           </Select>
+        </Card>
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Preferences
+        </h2>
+        <Card className="flex items-center justify-between p-4">
+          <div className="pr-3">
+            <p className="font-medium">Duplicate item alerts</p>
+            <p className="text-xs text-muted-foreground">Warn me before adding duplicate items.</p>
+          </div>
+          <Switch checked={dupAlerts} onCheckedChange={setDuplicateAlerts} />
         </Card>
       </section>
 

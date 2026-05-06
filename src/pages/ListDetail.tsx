@@ -15,8 +15,19 @@ import {
 
 import { ArrowLeft, Plus, Trash2, ShoppingBasket, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatMoney } from "@/lib/format";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
+import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
 import { toast } from "sonner";
 
 type Item = {
@@ -47,6 +58,7 @@ export default function ListDetail() {
   const [editQtyText, setEditQtyText] = useState("1");
   const [editNotes, setEditNotes] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const [dupOpen, setDupOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -94,7 +106,7 @@ export default function ListDetail() {
   const total = items.length;
   const done = items.filter((i) => i.checked_at).length;
 
-  const addItem = async () => {
+  const performAdd = async () => {
     if (!id || !name.trim()) return;
     const slug = autoCat ? guessCategory(name) : category;
     const parsedQty = Math.max(1, parseInt(qtyText, 10) || 1);
@@ -116,6 +128,19 @@ export default function ListDetail() {
     requestAnimationFrame(() => {
       endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     });
+  };
+
+  const addItem = async () => {
+    if (!id || !name.trim()) return;
+    if (getDuplicateAlerts()) {
+      const target = normalizeItemName(name);
+      const dup = items.some((it) => normalizeItemName(it.name) === target);
+      if (dup) {
+        setDupOpen(true);
+        return;
+      }
+    }
+    await performAdd();
   };
 
   const openEdit = (it: Item) => {
@@ -332,6 +357,29 @@ export default function ListDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={dupOpen} onOpenChange={setDupOpen}>
+        <AlertDialogContent className="border-destructive/40">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Duplicate item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Heads up — this item is already on your list. Add it anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setDupOpen(false);
+                void performAdd();
+              }}
+            >
+              Yes, add it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
