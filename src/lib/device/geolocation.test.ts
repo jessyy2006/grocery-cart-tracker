@@ -58,9 +58,10 @@ describe("findNearbyStores", () => {
           {
             lat: 1,
             lon: 2,
-            tags: { name: "Test Mart", "addr:street": "Main St", "addr:city": "NYC" },
+            tags: { name: "Test Mart", shop: "supermarket", "addr:street": "Main St", "addr:city": "NYC" },
           },
-          { lat: 3, lon: 4, tags: {} }, // no name -> filtered
+          { lat: 3, lon: 4, tags: { shop: "supermarket" } }, // no name -> filtered
+          { lat: 5, lon: 6, tags: { name: "Gifty", shop: "gift", "addr:street": "X", "addr:city": "Y" } }, // wrong shop
         ],
       }),
     });
@@ -75,7 +76,15 @@ describe("findNearbyStores", () => {
       .mockResolvedValueOnce({ ok: false, status: 504, json: async () => ({}) })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ elements: [{ lat: 1, lon: 2, tags: { name: "Mirror Mart" } }] }),
+        json: async () => ({
+          elements: [
+            {
+              lat: 1,
+              lon: 2,
+              tags: { name: "Mirror Mart", shop: "supermarket", "addr:street": "Side St", "addr:city": "LA" },
+            },
+          ],
+        }),
       });
     vi.stubGlobal("fetch", fetchMock);
     const result = await findNearbyStores({ lat: 0, lng: 0 });
