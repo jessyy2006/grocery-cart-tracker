@@ -183,7 +183,7 @@ export default function StartTrip() {
   };
 
   return (
-    <div className="space-y-6 px-5 pb-6 pt-6">
+    <div className="space-y-6 px-5 pb-32 pt-6">
       <button
         onClick={() => {
           if (sessionStorage.getItem("trip:cameFromOnboarding") === "1") {
