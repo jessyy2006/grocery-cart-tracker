@@ -247,11 +247,20 @@ export default function StartTrip() {
 
         {nearby.kind === "ok" && nearby.stores.length > 0 && (
           <ul className="space-y-2">
-            {nearby.stores.map((s, i) => (
-              <li key={i}>
-                <StoreCard s={s} />
-              </li>
-            ))}
+            {nearby.stores.map((s, i) => {
+              const key = `${s.lat.toFixed(5)},${s.lng.toFixed(5)}:${s.name}`;
+              return (
+                <li key={i}>
+                  <StoreCard
+                    s={s}
+                    selectedKey={`found:${key}`}
+                    onSelect={() =>
+                      setSelected({ kind: "found", key, name: s.name, address: s.address, lat: s.lat, lng: s.lng })
+                    }
+                  />
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -262,7 +271,12 @@ export default function StartTrip() {
           <ul className="space-y-2">
             {savedStores.map((s) => (
               <li key={s.id}>
-                <StoreCard s={s} dim />
+                <StoreCard
+                  s={s}
+                  dim
+                  selectedKey={`saved:${s.id}`}
+                  onSelect={() => setSelected({ kind: "saved", id: s.id, name: s.name, address: s.address })}
+                />
               </li>
             ))}
           </ul>
@@ -286,11 +300,21 @@ export default function StartTrip() {
         </div>
         {searchResults && searchResults.length > 0 && (
           <ul className="mt-2 space-y-2">
-            {searchResults.map((s, i) => (
-              <li key={i}>
-                <StoreCard s={s} dim />
-              </li>
-            ))}
+            {searchResults.map((s, i) => {
+              const key = `${s.lat.toFixed(5)},${s.lng.toFixed(5)}:${s.name}`;
+              return (
+                <li key={i}>
+                  <StoreCard
+                    s={s}
+                    dim
+                    selectedKey={`found:${key}`}
+                    onSelect={() =>
+                      setSelected({ kind: "found", key, name: s.name, address: s.address, lat: s.lat, lng: s.lng })
+                    }
+                  />
+                </li>
+              );
+            })}
           </ul>
         )}
         {searchResults && searchResults.length === 0 && (
@@ -300,13 +324,28 @@ export default function StartTrip() {
 
       <section>
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Or type a name</h2>
-        <div className="flex gap-2">
-          <Input placeholder="e.g. Trader Joe's" value={custom} onChange={(e) => setCustom(e.target.value)} />
-          <Button disabled={!custom.trim() || creating} onClick={() => startWith({ name: custom.trim() })}>
-            Start
-          </Button>
-        </div>
+        <Input
+          placeholder="e.g. Trader Joe's"
+          value={custom}
+          onChange={(e) => {
+            const v = e.target.value;
+            setCustom(v);
+            if (v.trim()) setSelected({ kind: "custom", name: v.trim() });
+            else if (selected?.kind === "custom") setSelected(null);
+          }}
+        />
       </section>
+
+      <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 px-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 backdrop-blur">
+        <Button
+          className="w-full"
+          size="lg"
+          disabled={!selected || creating}
+          onClick={handleStartTrip}
+        >
+          {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : selected ? `Start trip at ${selected.name}` : "Select a store to start"}
+        </Button>
+      </div>
     </div>
   );
 }
