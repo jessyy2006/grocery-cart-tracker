@@ -36,6 +36,18 @@ export default function StartTrip() {
   const [searchResults, setSearchResults] = useState<NearbyStore[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [selected, setSelected] = useState<
+    | { kind: "saved"; id: string; name: string; address: string | null }
+    | { kind: "found"; key: string; name: string; address?: string | null; lat: number; lng: number }
+    | { kind: "custom"; name: string }
+    | null
+  >(null);
+
+  const isSelected = (key: string) => selected !== null && (
+    (selected.kind === "saved" && `saved:${selected.id}` === key) ||
+    (selected.kind === "found" && `found:${selected.key}` === key) ||
+    (selected.kind === "custom" && `custom:${selected.name}` === key)
+  );
 
   const loadNearby = useCallback(async () => {
     setNearby({ kind: "loading" });
