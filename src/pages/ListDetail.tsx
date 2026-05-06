@@ -14,17 +14,7 @@ import {
 } from "@/components/ui/select";
 
 import { ArrowLeft, Plus, Trash2, ShoppingBasket, Pencil } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/format";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
 import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
@@ -358,28 +348,36 @@ export default function ListDetail() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={dupOpen} onOpenChange={setDupOpen}>
-        <AlertDialogContent className="border-destructive/40">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-destructive">Duplicate item</AlertDialogTitle>
-            <AlertDialogDescription>
+      <Dialog open={dupOpen} onOpenChange={setDupOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Duplicate item</DialogTitle>
+            <DialogDescription className="text-center">
               Heads up — this item is already on your list. Add it anyway?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>No</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Button
+              size="lg"
+              variant="destructive"
+              className="w-full rounded-xl"
               onClick={() => {
                 setDupOpen(false);
                 void performAdd();
               }}
             >
               Yes, add it
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+            <Button
+              size="lg"
+              className="w-full rounded-xl bg-success text-success-foreground hover:bg-success/90"
+              onClick={() => setDupOpen(false)}
+            >
+              No
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>

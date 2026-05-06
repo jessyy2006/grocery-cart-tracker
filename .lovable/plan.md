@@ -1,32 +1,84 @@
-## Why iOS shows the grey "C" fallback
+## Goal
 
-iOS Safari "Add to Home Screen" picks an icon in this order:
-1. `<link rel="apple-touch-icon">` pointing to a **square PNG ≤ ~512px**, ideally **180×180**.
-2. `/apple-touch-icon.png` at the site root.
-3. If neither resolves cleanly → auto-generated letter tile on grey (what you're seeing).
+Make the "Duplicate item" alert visually match the other modals in the app (e.g. `Add item`, `FeatureIntroDialog`) — rounded, subtle borders, no harsh white card, no thick colored borders — and use the existing semantic color tokens (`destructive` for the danger action, `success` for the safe action) instead of ad-hoc reds/greens.
 
-Our current setup violates step 1:
-- `<link rel="apple-touch-icon" href="/icon-1024.png" />` — 1024px is too large; iOS often rejects it silently.
-- The `sizes="192x192"` / `sizes="512x512"` variants are the wrong dimensions for iOS (it wants 180).
-- No fallback at `/apple-touch-icon.png`.
+## What's wrong today
 
-Result: iOS can't resolve a usable icon and falls back to "C on grey".
+In `src/pages/ListDetail.tsx` (lines 361–382) the duplicate prompt:
 
-## Fix
+- Uses `AlertDialog`, which has square corners (`sm:rounded-lg`) and plain `bg-background` — clashing with the other dialogs that use `rounded-2xl` `Dialog`.
+- Has a loud `border-destructive/40` outline + red title.
+- Uses raw `bg-destructive` on the confirm button and the default outline on Cancel — neither matches the green/red tokens used elsewhere.
+- Footer is right-aligned row; the rest of the app uses full-width stacked buttons in modals (see `FeatureIntroDialog`, `Add item`).
 
-1. **Generate `public/apple-touch-icon.png` at 180×180** by downscaling `icon-1024.png` (ImageMagick, sRGB, no alpha — iOS prefers opaque).
-2. **Update `index.html`** apple-touch-icon links:
-   - Primary: `<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />`
-   - Drop the 1024 reference; keep 192/512 as secondary hints (Android/Chrome use them via the manifest anyway).
-3. **Leave `manifest.json` alone** — it already has 192/512/1024 entries which Android uses correctly.
-4. **Tell the user to fully remove the existing home-screen install and re-add it** — iOS caches the icon at install time; new icon won't appear on already-installed PWAs.
+## New design
 
-## Files touched
+Reuse the regular `Dialog` component (already imported) so it inherits the same rounded-2xl, soft-border, centered look as `Add item`:
 
-- `public/apple-touch-icon.png` — new, 180×180, generated from `icon-1024.png`.
-- `index.html` — lines 14–16, replace apple-touch-icon links.
+```text
+┌──────────────────────────────┐
+│         Duplicate item       │   ← DialogTitle (default foreground, centered)
+│                              │
+│  Heads up — this item is     │   ← DialogDescription (muted)
+│  already on your list. Add   │
+│     anyway?                  │
+│                              │
+│  ┌────────────────────────┐  │
+│  │      Yes, add it       │  │   ← destructive, full width, lg
+│  └────────────────────────┘  │
+│  ┌────────────────────────┐  │
+│  │          No            │  │   ← success, full width, lg
+│  └────────────────────────┘  │
+└──────────────────────────────┘
+```
+
+- Container: standard `DialogContent` (rounded-2xl, `bg-background`, subtle border — already styled).
+- Header: centered title + description, matching `FeatureIntroDialog`.
+- Buttons: stacked, full-width, `size="lg"`, `rounded-xl`. Primary danger uses `bg-destructive text-destructive-foreground`; safe choice uses `bg-success text-success-foreground` (tokens already defined in `src/index.css` and `tailwind.config.ts`). The safe "No" stays visually dominant by being the second/closer-to-thumb button — matching the screenshot intent — but both share equal weight.
+- No red title text, no red outer border — keeps the minimal aesthetic.
+
+## Implementation (single file, scoped change)
+
+Edit only `src/pages/ListDetail.tsx`, lines ~361–382. Replace the `AlertDialog` block with a `Dialog` block. No changes to `addItem`, `performAdd`, `dupOpen` state, or any other logic.
+
+```tsx
+<Dialog open={dupOpen} onOpenChange={setDupOpen}>
+  <DialogContent className="max-w-sm">
+    <DialogHeader>
+      <DialogTitle className="text-center">Duplicate item</DialogTitle>
+      <DialogDescription className="text-center">
+        Heads up — this item is already on your list. Add it anyway?
+      </DialogDescription>
+    </DialogHeader>
+    <div className="flex flex-col gap-2">
+      <Button
+        size="lg"
+        variant="destructive"
+        className="w-full rounded-xl"
+        onClick={() => { setDupOpen(false); void performAdd(); }}
+      >
+        Yes, add it
+      </Button>
+      <Button
+        size="lg"
+        className="w-full rounded-xl bg-success text-success-foreground hover:bg-success/90"
+        onClick={() => setDupOpen(false)}
+      >
+        No
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
+```
+
+Then remove the now-unused `AlertDialog*` imports (lines 19–26) since they aren't used elsewhere in the file.
+
+## Out of scope / untouched
+
+- Duplicate-detection logic in `addItem`/`performAdd`.
+- `getDuplicateAlerts` / `normalizeItemName` / Profile toggle.
+- Any other dialog in the app.
 
 ## Risks
 
-- None to app behavior. Pure metadata/asset change.
-- Caveat: existing installs on user's phone won't update — must delete + re-add after deploy.
+- Minor: `AlertDialog` traps focus slightly differently than `Dialog`, but since this is a simple confirm with two buttons and no destructive auto-dismiss requirement, `Dialog` is fine. The "X" close icon on `Dialog` will appear — equivalent to "Cancel/No", which is acceptable and consistent with `Add item`.
