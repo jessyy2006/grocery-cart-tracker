@@ -24,6 +24,7 @@ export default function Profile() {
   const { firstName, loading: profileLoading } = useProfile();
   const currency = useCurrency();
   const [stores, setStores] = useState<Store[]>([]);
+  const dupAlerts = useDuplicateAlerts();
 
   const load = async () => {
     const { data } = await supabase.from("stores").select("id, name, address").order("name");
