@@ -358,6 +358,29 @@ export default function ListDetail() {
         </DialogContent>
       </Dialog>
 
+      <AlertDialog open={dupOpen} onOpenChange={setDupOpen}>
+        <AlertDialogContent className="border-destructive/40">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Duplicate item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Heads up — this item is already on your list. Add it anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setDupOpen(false);
+                void performAdd();
+              }}
+            >
+              Yes, add it
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
           <DialogHeader>
