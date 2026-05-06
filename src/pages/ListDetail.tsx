@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,6 +46,9 @@ export default function ListDetail() {
   const [editName, setEditName] = useState("");
   const [editQtyText, setEditQtyText] = useState("1");
   const [editNotes, setEditNotes] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!id || !user) return;
@@ -109,6 +112,10 @@ export default function ListDetail() {
     setQtyText("1");
     setNotes("");
     setAutoCat(true);
+    setAddOpen(false);
+    requestAnimationFrame(() => {
+      endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    });
   };
 
   const openEdit = (it: Item) => {
@@ -188,120 +195,143 @@ export default function ListDetail() {
         </span>
       </header>
 
-      <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
-        {grouped.length === 0 ? (
+      <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+        {grouped.length === 0 && (
           <p className="py-10 text-center text-sm text-muted-foreground">
-            No items yet — add your first one below.
+            No items yet — tap the + below to add your first one.
           </p>
-        ) : (
-          grouped.map(({ slug, items }) => {
-            const meta = getCategory(slug);
-            return (
-              <section key={slug}>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {meta.emoji} {meta.label}
-                </h3>
-                <ul className="space-y-2">
-                  {items.map((it) => (
-                    <li key={it.id}>
-                      <Card className="flex items-center gap-3 p-3">
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className={`truncate font-medium ${
-                              it.checked_at ? "text-muted-foreground line-through" : ""
-                            }`}
-                          >
-                            {it.name}
-                          </p>
-                          {(it.qty > 1 || it.notes) && (
-                            <p className="truncate text-xs text-muted-foreground">
-                              {it.qty > 1 ? `Qty ${it.qty}` : ""}
-                              {it.qty > 1 && it.notes ? " · " : ""}
-                              {it.notes ?? ""}
-                            </p>
-                          )}
-                        </div>
-                        {it.price_cents != null && (
-                          <span className="shrink-0 text-sm font-semibold text-primary">
-                            {formatMoney(it.price_cents)}
-                          </span>
-                        )}
-                        <button
-                          onClick={() => openEdit(it)}
-                          className="text-muted-foreground hover:text-foreground"
-                          aria-label="Edit item"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => remove(it.id)}
-                          className="text-muted-foreground hover:text-destructive"
-                          aria-label="Delete item"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </Card>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            );
-          })
         )}
+        {grouped.map(({ slug, items }) => {
+          const meta = getCategory(slug);
+          return (
+            <section key={slug}>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {meta.emoji} {meta.label}
+              </h3>
+              <ul className="space-y-2">
+                {items.map((it) => (
+                  <li key={it.id}>
+                    <Card className="flex items-center gap-3 p-3">
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={`truncate font-medium ${
+                            it.checked_at ? "text-muted-foreground line-through" : ""
+                          }`}
+                        >
+                          {it.name}
+                        </p>
+                        {(it.qty > 1 || it.notes) && (
+                          <p className="truncate text-xs text-muted-foreground">
+                            {it.qty > 1 ? `Qty ${it.qty}` : ""}
+                            {it.qty > 1 && it.notes ? " · " : ""}
+                            {it.notes ?? ""}
+                          </p>
+                        )}
+                      </div>
+                      {it.price_cents != null && (
+                        <span className="shrink-0 text-sm font-semibold text-primary">
+                          {formatMoney(it.price_cents)}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => openEdit(it)}
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label="Edit item"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => remove(it.id)}
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="Delete item"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </Card>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() => setAddOpen(true)}
+          aria-label="Add item"
+          className="flex h-14 w-full items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/40 text-muted-foreground transition hover:border-muted-foreground hover:text-foreground"
+        >
+          <Plus className="h-5 w-5" />
+        </button>
+        <div ref={endRef} />
       </div>
 
-      <footer className="space-y-3 border-t border-border bg-card px-4 pt-3 pb-3">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Add item (e.g. milk)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addItem()}
-          />
-          <Input
-            type="number"
-            min={1}
-            inputMode="numeric"
-            value={qtyText}
-            onChange={(e) => setQtyText(e.target.value.replace(/[^\d]/g, ""))}
-            onBlur={() => setQtyText((v) => String(Math.max(1, parseInt(v, 10) || 1)))}
-            className="w-16"
-            aria-label="Quantity"
-          />
-        </div>
-        <Input
-          placeholder="Notes (e.g. 500 ml) — optional"
-          value={notes}
-          maxLength={25}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-        <div className="flex gap-2">
-          <Select
-            value={category}
-            onValueChange={(v) => {
-              setCategory(v as CategorySlug);
-              setAutoCat(false);
-            }}
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c.slug} value={c.slug}>
-                  {c.emoji} {c.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button onClick={addItem} disabled={!name.trim()}>
-            <Plus className="mr-1 h-4 w-4" /> Add
-          </Button>
-        </div>
+      <footer className="border-t border-border bg-card px-4 pt-3 pb-3">
         <Button size="lg" className="h-14 w-full text-base" onClick={startRun}>
           <ShoppingBasket className="mr-2 h-5 w-5" /> Start grocery run
         </Button>
       </footer>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add item</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Add item (e.g. milk)"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addItem()}
+                autoFocus
+              />
+              <Input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={qtyText}
+                onChange={(e) => setQtyText(e.target.value.replace(/[^\d]/g, ""))}
+                onBlur={() => setQtyText((v) => String(Math.max(1, parseInt(v, 10) || 1)))}
+                className="w-16"
+                aria-label="Quantity"
+              />
+            </div>
+            <Input
+              placeholder="Notes (e.g. 500 ml) — optional"
+              value={notes}
+              maxLength={25}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+            <Select
+              value={category}
+              onValueChange={(v) => {
+                setCategory(v as CategorySlug);
+                setAutoCat(false);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((c) => (
+                  <SelectItem key={c.slug} value={c.slug}>
+                    {c.emoji} {c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAddOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={addItem} disabled={!name.trim()}>
+              <Plus className="mr-1 h-4 w-4" /> Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent>
