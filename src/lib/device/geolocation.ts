@@ -81,24 +81,85 @@ const OVERPASS_ENDPOINTS = [
   "https://overpass.kumi.systems/api/interpreter",
 ];
 
-function parseOverpass(data: any): NearbyStore[] {
+const GROCERY_SHOPS = new Set([
+  "supermarket",
+  "greengrocer",
+  "grocery",
+  "health_food",
+  "farm",
+]);
+
+type ParsedStore = NearbyStore & { _street?: string; _city?: string };
+
+function parseOverpass(data: any): ParsedStore[] {
   return (data?.elements ?? [])
     .map((el: any) => {
       const lat = el.lat ?? el.center?.lat;
       const lng = el.lon ?? el.center?.lon;
       const name = el.tags?.name;
+      const shop = el.tags?.shop;
       if (!name || lat == null || lng == null) return null;
+      if (!shop || !GROCERY_SHOPS.has(shop)) return null;
       const street = [el.tags?.["addr:housenumber"], el.tags?.["addr:street"]]
         .filter(Boolean)
         .join(" ");
-      const city = el.tags?.["addr:city"];
-      const country = el.tags?.["addr:country"];
-      const address = [street, [city, country].filter(Boolean).join(", ")]
-        .filter(Boolean)
-        .join(", ") || undefined;
-      return { name, address, lat, lng };
+      const city =
+        el.tags?.["addr:city"] ||
+        el.tags?.["addr:town"] ||
+        el.tags?.["addr:village"] ||
+        el.tags?.["addr:suburb"];
+      const address = street && city ? `${street}, ${city}` : undefined;
+      return { name, address, lat, lng, _street: street || undefined, _city: city || undefined };
     })
-    .filter(Boolean) as NearbyStore[];
+    .filter(Boolean) as ParsedStore[];
+}
+
+function haversineMeters(a: Coords, b: Coords) {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+const REVERSE_CACHE_KEY = "geo:reverseCache";
+function getReverseCache(): Record<string, { street?: string; city?: string }> {
+  try {
+    return JSON.parse(sessionStorage.getItem(REVERSE_CACHE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function setReverseCache(cache: Record<string, { street?: string; city?: string }>) {
+  try {
+    sessionStorage.setItem(REVERSE_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // ignore
+  }
+}
+
+async function reverseGeocode(lat: number, lng: number): Promise<{ street?: string; city?: string } | null> {
+  const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+  const cache = getReverseCache();
+  if (cache[key]) return cache[key];
+  const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&zoom=18`;
+  try {
+    const res = await fetchWithTimeout(url, { headers: { Accept: "application/json" } }, FETCH_TIMEOUT_MS);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const a = data?.address ?? {};
+    const street = [a.house_number, a.road].filter(Boolean).join(" ") || undefined;
+    const city = a.city || a.town || a.village || a.hamlet || a.suburb || a.county || undefined;
+    const result = { street, city };
+    cache[key] = result;
+    setReverseCache(cache);
+    return result;
+  } catch {
+    return null;
+  }
 }
 
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number) {
