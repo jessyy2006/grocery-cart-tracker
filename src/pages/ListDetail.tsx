@@ -106,7 +106,7 @@ export default function ListDetail() {
   const total = items.length;
   const done = items.filter((i) => i.checked_at).length;
 
-  const addItem = async () => {
+  const performAdd = async () => {
     if (!id || !name.trim()) return;
     const slug = autoCat ? guessCategory(name) : category;
     const parsedQty = Math.max(1, parseInt(qtyText, 10) || 1);
@@ -128,6 +128,19 @@ export default function ListDetail() {
     requestAnimationFrame(() => {
       endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     });
+  };
+
+  const addItem = async () => {
+    if (!id || !name.trim()) return;
+    if (getDuplicateAlerts()) {
+      const target = normalizeItemName(name);
+      const dup = items.some((it) => normalizeItemName(it.name) === target);
+      if (dup) {
+        setDupOpen(true);
+        return;
+      }
+    }
+    await performAdd();
   };
 
   const openEdit = (it: Item) => {
