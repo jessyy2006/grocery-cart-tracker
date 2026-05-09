@@ -517,11 +517,6 @@ export default function ActiveTrip() {
           onClose={() => setScanning(false)}
           onManualEntry={() => {
             setScanning(false);
-            if (!activeStore) {
-              toast.error("Pick a store first");
-              setPickStoreOpen(true);
-              return;
-            }
             setPending({ barcode: null, name: "", price: "", qty: 1 });
           }}
         />
