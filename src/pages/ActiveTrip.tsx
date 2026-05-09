@@ -276,7 +276,17 @@ export default function ActiveTrip() {
   };
 
   const confirmAdd = async () => {
-    if (!pending || !tripId || !activeStore) return;
+    if (!pending || !tripId) return;
+    let storeForAdd = activeStore;
+    if (!storeForAdd) {
+      storeForAdd = stores[0] ?? null;
+      if (storeForAdd) setActiveStore(storeForAdd);
+    }
+    if (!storeForAdd) {
+      toast.error("Pick a store first");
+      setPickStoreOpen(true);
+      return;
+    }
     const price_cents = parsePriceToCents(pending.price);
     const errs: { name?: boolean; price?: boolean; qty?: boolean } = {};
     if (!pending.name.trim()) errs.name = true;
