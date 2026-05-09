@@ -433,13 +433,11 @@ export default function ActiveTrip() {
                   {lis.map((it) => (
                     <li key={it.id}>
                       <Card className="flex items-center gap-3 p-3">
-                        {!it.checked_at && (
-                          <Checkbox
-                            checked={false}
-                            onCheckedChange={() => openManualCheck(it)}
-                            aria-label="Toggle item"
-                          />
-                        )}
+                        <Checkbox
+                          checked={!!it.checked_at}
+                          onCheckedChange={() => (it.checked_at ? uncheckListItem(it) : openManualCheck(it))}
+                          aria-label="Toggle item"
+                        />
                         <div className="min-w-0 flex-1">
                           <p
                             className={`truncate font-medium ${
