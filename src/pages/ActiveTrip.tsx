@@ -127,7 +127,24 @@ export default function ActiveTrip() {
     })();
   }, [tripId, user]);
 
-  const total = useMemo(() => items.reduce((a, i) => a + i.price_cents * i.qty, 0), [items]);
+  const total = useMemo(() => {
+    const listSum = listItems.reduce(
+      (a, i) => (i.checked_at && i.price_cents != null ? a + i.price_cents * (i.qty || 1) : a),
+      0,
+    );
+    const extrasSum = extras.reduce((a, i) => a + i.price_cents * i.qty, 0);
+    return listSum + extrasSum;
+  }, [listItems, extras]);
+
+  const uncheckListItem = async (it: ListItem) => {
+    setListItems((c) =>
+      c.map((i) => (i.id === it.id ? { ...i, checked_at: null, price_cents: null } : i)),
+    );
+    await supabase
+      .from("shopping_list_items")
+      .update({ checked_at: null, price_cents: null })
+      .eq("id", it.id);
+  };
 
   const groupedList = useMemo(() => {
     const map = new Map<CategorySlug, ListItem[]>();
