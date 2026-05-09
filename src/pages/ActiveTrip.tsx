@@ -299,8 +299,8 @@ export default function ActiveTrip() {
     setPendingErrors({});
     const insert = {
       trip_id: tripId,
-      store_id: activeStore.id,
-      store_name_snapshot: activeStore.name,
+      store_id: storeForAdd.id,
+      store_name_snapshot: storeForAdd.name,
       barcode: pending.barcode,
       name_snapshot: pending.name.trim(),
       price_cents: price_cents as number,
