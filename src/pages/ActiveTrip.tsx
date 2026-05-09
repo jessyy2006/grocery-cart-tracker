@@ -127,7 +127,24 @@ export default function ActiveTrip() {
     })();
   }, [tripId, user]);
 
-  const total = useMemo(() => items.reduce((a, i) => a + i.price_cents * i.qty, 0), [items]);
+  const total = useMemo(() => {
+    const listSum = listItems.reduce(
+      (a, i) => (i.checked_at && i.price_cents != null ? a + i.price_cents * (i.qty || 1) : a),
+      0,
+    );
+    const extrasSum = extras.reduce((a, i) => a + i.price_cents * i.qty, 0);
+    return listSum + extrasSum;
+  }, [listItems, extras]);
+
+  const uncheckListItem = async (it: ListItem) => {
+    setListItems((c) =>
+      c.map((i) => (i.id === it.id ? { ...i, checked_at: null, price_cents: null } : i)),
+    );
+    await supabase
+      .from("shopping_list_items")
+      .update({ checked_at: null, price_cents: null })
+      .eq("id", it.id);
+  };
 
   const groupedList = useMemo(() => {
     const map = new Map<CategorySlug, ListItem[]>();
@@ -259,7 +276,17 @@ export default function ActiveTrip() {
   };
 
   const confirmAdd = async () => {
-    if (!pending || !tripId || !activeStore) return;
+    if (!pending || !tripId) return;
+    let storeForAdd = activeStore;
+    if (!storeForAdd) {
+      storeForAdd = stores[0] ?? null;
+      if (storeForAdd) setActiveStore(storeForAdd);
+    }
+    if (!storeForAdd) {
+      toast.error("Pick a store first");
+      setPickStoreOpen(true);
+      return;
+    }
     const price_cents = parsePriceToCents(pending.price);
     const errs: { name?: boolean; price?: boolean; qty?: boolean } = {};
     if (!pending.name.trim()) errs.name = true;
@@ -272,8 +299,8 @@ export default function ActiveTrip() {
     setPendingErrors({});
     const insert = {
       trip_id: tripId,
-      store_id: activeStore.id,
-      store_name_snapshot: activeStore.name,
+      store_id: storeForAdd.id,
+      store_name_snapshot: storeForAdd.name,
       barcode: pending.barcode,
       name_snapshot: pending.name.trim(),
       price_cents: price_cents as number,
@@ -416,13 +443,11 @@ export default function ActiveTrip() {
                   {lis.map((it) => (
                     <li key={it.id}>
                       <Card className="flex items-center gap-3 p-3">
-                        {!it.checked_at && (
-                          <Checkbox
-                            checked={false}
-                            onCheckedChange={() => openManualCheck(it)}
-                            aria-label="Toggle item"
-                          />
-                        )}
+                        <Checkbox
+                          checked={!!it.checked_at}
+                          onCheckedChange={() => (it.checked_at ? uncheckListItem(it) : openManualCheck(it))}
+                          aria-label="Toggle item"
+                        />
                         <div className="min-w-0 flex-1">
                           <p
                             className={`truncate font-medium ${
@@ -502,11 +527,6 @@ export default function ActiveTrip() {
           onClose={() => setScanning(false)}
           onManualEntry={() => {
             setScanning(false);
-            if (!activeStore) {
-              toast.error("Pick a store first");
-              setPickStoreOpen(true);
-              return;
-            }
             setPending({ barcode: null, name: "", price: "", qty: 1 });
           }}
         />

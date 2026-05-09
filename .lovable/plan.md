@@ -1,84 +1,51 @@
-## Goal
+## Grocery Trip Flow Fixes
 
-Make the "Duplicate item" alert visually match the other modals in the app (e.g. `Add item`, `FeatureIntroDialog`) — rounded, subtle borders, no harsh white card, no thick colored borders — and use the existing semantic color tokens (`destructive` for the danger action, `success` for the safe action) instead of ad-hoc reds/greens.
+Three targeted fixes scoped to `src/pages/ActiveTrip.tsx` (issues 1 & 2) and a verification of `src/pages/StartTrip.tsx` (issue 3).
 
-## What's wrong today
+---
 
-In `src/pages/ListDetail.tsx` (lines 361–382) the duplicate prompt:
+### 1. Cart total updates when items are checked off
 
-- Uses `AlertDialog`, which has square corners (`sm:rounded-lg`) and plain `bg-background` — clashing with the other dialogs that use `rounded-2xl` `Dialog`.
-- Has a loud `border-destructive/40` outline + red title.
-- Uses raw `bg-destructive` on the confirm button and the default outline on Cancel — neither matches the green/red tokens used elsewhere.
-- Footer is right-aligned row; the rest of the app uses full-width stacked buttons in modals (see `FeatureIntroDialog`, `Add item`).
+**Root cause:** `total` is computed from `items` (the `trip_items` table), but checking off a list item via the manual-check dialog only updates `shopping_list_items` (price + checked_at) — it never inserts a `trip_item`. So the cart total stays at $0 unless the user also scans something.
 
-## New design
+**Fix:** Make the cart total reflect the user's actual progress through the list.
 
-Reuse the regular `Dialog` component (already imported) so it inherits the same rounded-2xl, soft-border, centered look as `Add item`:
+- Recompute `total` as: sum of `price_cents * qty` for every `listItems` entry where `checked_at != null`, plus the existing `extras` (sum of `price_cents * qty`).
+- This makes checking/unchecking a list item update the total instantly (state already updates optimistically in `confirmManualCheck` and `handleMatchOrExtra`).
+- Unchecking: add an "uncheck" path on the checkbox for already-checked items that clears `checked_at` and `price_cents` locally + in DB. Total recomputes via `useMemo`.
+- Keep the existing `numer/denom` progress badge logic working with the same source of truth.
 
-```text
-┌──────────────────────────────┐
-│         Duplicate item       │   ← DialogTitle (default foreground, centered)
-│                              │
-│  Heads up — this item is     │   ← DialogDescription (muted)
-│  already on your list. Add   │
-│     anyway?                  │
-│                              │
-│  ┌────────────────────────┐  │
-│  │      Yes, add it       │  │   ← destructive, full width, lg
-│  └────────────────────────┘  │
-│  ┌────────────────────────┐  │
-│  │          No            │  │   ← success, full width, lg
-│  └────────────────────────┘  │
-└──────────────────────────────┘
-```
+**Files:** `src/pages/ActiveTrip.tsx` only.
 
-- Container: standard `DialogContent` (rounded-2xl, `bg-background`, subtle border — already styled).
-- Header: centered title + description, matching `FeatureIntroDialog`.
-- Buttons: stacked, full-width, `size="lg"`, `rounded-xl`. Primary danger uses `bg-destructive text-destructive-foreground`; safe choice uses `bg-success text-success-foreground` (tokens already defined in `src/index.css` and `tailwind.config.ts`). The safe "No" stays visually dominant by being the second/closer-to-thumb button — matching the screenshot intent — but both share equal weight.
-- No red title text, no red outer border — keeps the minimal aesthetic.
+---
 
-## Implementation (single file, scoped change)
+### 2. Barcode scanner "Add manually" opens the modal in-place
 
-Edit only `src/pages/ListDetail.tsx`, lines ~361–382. Replace the `AlertDialog` block with a `Dialog` block. No changes to `addItem`, `performAdd`, `dupOpen` state, or any other logic.
+**Root cause:** In the `Scanner`'s `onManualEntry` handler (lines 503–511), if `activeStore` is null we call `setPickStoreOpen(true)`, which opens the store-picker sheet — that's the "navigates to store selection" the PRD describes.
 
-```tsx
-<Dialog open={dupOpen} onOpenChange={setDupOpen}>
-  <DialogContent className="max-w-sm">
-    <DialogHeader>
-      <DialogTitle className="text-center">Duplicate item</DialogTitle>
-      <DialogDescription className="text-center">
-        Heads up — this item is already on your list. Add it anyway?
-      </DialogDescription>
-    </DialogHeader>
-    <div className="flex flex-col gap-2">
-      <Button
-        size="lg"
-        variant="destructive"
-        className="w-full rounded-xl"
-        onClick={() => { setDupOpen(false); void performAdd(); }}
-      >
-        Yes, add it
-      </Button>
-      <Button
-        size="lg"
-        className="w-full rounded-xl bg-success text-success-foreground hover:bg-success/90"
-        onClick={() => setDupOpen(false)}
-      >
-        No
-      </Button>
-    </div>
-  </DialogContent>
-</Dialog>
-```
+**Fix:**
+- Remove the `activeStore` guard from the manual-entry handler. Always `setPending({ barcode: null, name: "", price: "", qty: 1 })` after closing the scanner.
+- Defensive fallback: if `activeStore` happens to be null when `confirmAdd` runs, auto-select the first available store (or the trip's stashed store) before insert, instead of silently failing.
+- The existing `Dialog` rendered from the `pending` state already matches the standard add-item UI (name / price / qty), so no new modal is needed.
 
-Then remove the now-unused `AlertDialog*` imports (lines 19–26) since they aren't used elsewhere in the file.
+**Files:** `src/pages/ActiveTrip.tsx` only.
 
-## Out of scope / untouched
+---
 
-- Duplicate-detection logic in `addItem`/`performAdd`.
-- `getDuplicateAlerts` / `normalizeItemName` / Profile toggle.
-- Any other dialog in the app.
+### 3. Store selection "Start your trip" CTA
 
-## Risks
+**Status: already implemented.** `src/pages/StartTrip.tsx` already has:
+- A fixed bottom button (`fixed inset-x-0 bottom-0 ...`) labeled "Start trip at {store}" / "Select a store to start".
+- `disabled={!selected || creating}` — disabled until a store is picked.
+- `StoreCard onClick` only calls `setSelected(...)` — no navigation side effect.
+- Navigation happens only inside `handleStartTrip`, which is wired to the button's `onClick`.
 
-- Minor: `AlertDialog` traps focus slightly differently than `Dialog`, but since this is a simple confirm with two buttons and no destructive auto-dismiss requirement, `Dialog` is fine. The "X" close icon on `Dialog` will appear — equivalent to "Cancel/No", which is acceptable and consistent with `Add item`.
+**Action:** No code changes. Will spot-check in the preview after #1 and #2 ship to confirm behavior matches the PRD acceptance criteria. If you've seen a regression here, send a screenshot / repro and I'll dig in.
+
+---
+
+### Risks & rollback
+
+- Switching `total` to a list-derived sum changes the meaning of "cart total" when the trip has both list-driven check-offs and scanned extras. Plan keeps both: `Σ checked listItems + Σ extras`. Rollback = revert the `useMemo`.
+- Removing the `activeStore` guard is safe because trips are created from `StartTrip` with a store, and we add a fallback in `confirmAdd`.
+- No DB schema changes, no migrations.
