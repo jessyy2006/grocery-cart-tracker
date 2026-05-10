@@ -7,13 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Scanner } from "@/components/Scanner";
-import { ScanLine, Plus, MapPin, Trash2, Check, X } from "lucide-react";
+import { ScanLine, Plus, MapPin, Trash2, Check, X, Search, Loader2 } from "lucide-react";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
 import { findListMatch, getCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
+import {
+  findNearbyStores,
+  getCachedCoords,
+  getCurrentPosition,
+  NearbyStore,
+} from "@/lib/device/geolocation";
 import { toast } from "sonner";
 
 type TripItem = {
@@ -47,7 +52,6 @@ export default function ActiveTrip() {
   const [listName, setListName] = useState<string>("");
   const [listItems, setListItems] = useState<ListItem[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(null);
-  const [stores, setStores] = useState<Store[]>([]);
   const [items, setItems] = useState<TripItem[]>([]);
   const [extras, setExtras] = useState<TripItem[]>([]);
   const [extrasOpen, setExtrasOpen] = useState(false);
@@ -60,7 +64,11 @@ export default function ActiveTrip() {
     qty: number;
     image_url?: string;
   } | null>(null);
-  const [pickStoreOpen, setPickStoreOpen] = useState(false);
+  const [storeModalOpen, setStoreModalOpen] = useState(false);
+  const [storeQuery, setStoreQuery] = useState("");
+  const [nearbyStores, setNearbyStores] = useState<NearbyStore[] | null>(null);
+  const [loadingStores, setLoadingStores] = useState(false);
+  const [storeError, setStoreError] = useState<string | null>(null);
   const [pendingErrors, setPendingErrors] = useState<{ name?: boolean; price?: boolean; qty?: boolean }>({});
   const [manualCheck, setManualCheck] = useState<{ item: ListItem; qty: string; price: string } | null>(null);
   const [manualErrors, setManualErrors] = useState<{ qty?: boolean; price?: boolean }>({});
@@ -103,7 +111,7 @@ export default function ActiveTrip() {
     })();
   }, [listId]);
 
-  // Load items + stores
+  // Load items + restore stashed store
   useEffect(() => {
     if (!tripId || !user) return;
     (async () => {
@@ -114,15 +122,14 @@ export default function ActiveTrip() {
         .order("scanned_at", { ascending: true });
       setItems((itemRows ?? []) as TripItem[]);
 
-      const { data: storeRows } = await supabase.from("stores").select("id, name").order("name");
-      setStores(storeRows ?? []);
-
       const stashedId = sessionStorage.getItem(`trip:${tripId}:store`);
-      const last = (itemRows ?? []).at(-1)?.store_id;
-      const startId = stashedId || last || storeRows?.[0]?.id;
-      if (startId) {
-        const s = (storeRows ?? []).find((x) => x.id === startId);
-        if (s) setActiveStore(s);
+      if (stashedId) {
+        const { data: s } = await supabase
+          .from("stores")
+          .select("id, name")
+          .eq("id", stashedId)
+          .maybeSingle();
+        if (s) setActiveStore(s as Store);
       }
     })();
   }, [tripId, user]);
@@ -243,11 +250,6 @@ export default function ActiveTrip() {
 
   const onScanned = async (code: string) => {
     setScanning(false);
-    if (!activeStore) {
-      toast.error("Pick a store first");
-      setPickStoreOpen(true);
-      return;
-    }
     const { data: cached } = await supabase
       .from("products")
       .select("name, brand, image_url, default_price_cents")
@@ -277,16 +279,6 @@ export default function ActiveTrip() {
 
   const confirmAdd = async () => {
     if (!pending || !tripId) return;
-    let storeForAdd = activeStore;
-    if (!storeForAdd) {
-      storeForAdd = stores[0] ?? null;
-      if (storeForAdd) setActiveStore(storeForAdd);
-    }
-    if (!storeForAdd) {
-      toast.error("Pick a store first");
-      setPickStoreOpen(true);
-      return;
-    }
     const price_cents = parsePriceToCents(pending.price);
     const errs: { name?: boolean; price?: boolean; qty?: boolean } = {};
     if (!pending.name.trim()) errs.name = true;
@@ -299,8 +291,8 @@ export default function ActiveTrip() {
     setPendingErrors({});
     const insert = {
       trip_id: tripId,
-      store_id: storeForAdd.id,
-      store_name_snapshot: storeForAdd.name,
+      store_id: activeStore?.id ?? null,
+      store_name_snapshot: activeStore?.name ?? null,
       barcode: pending.barcode,
       name_snapshot: pending.name.trim(),
       price_cents: price_cents as number,
@@ -354,10 +346,56 @@ export default function ActiveTrip() {
     navigate(`/trip/${tripId}`, { replace: true });
   };
 
-  const pickStore = async (s: Store) => {
-    setActiveStore(s);
-    if (tripId) sessionStorage.setItem(`trip:${tripId}:store`, s.id);
-    setPickStoreOpen(false);
+  const openStoreModal = async () => {
+    setStoreModalOpen(true);
+    if (nearbyStores !== null || loadingStores) return;
+    setLoadingStores(true);
+    setStoreError(null);
+    try {
+      const coords = getCachedCoords() ?? (await getCurrentPosition());
+      const result = await findNearbyStores(coords, 5000);
+      setNearbyStores(result);
+    } catch (e: any) {
+      setStoreError("Couldn't find nearby stores. Check your location permissions.");
+    } finally {
+      setLoadingStores(false);
+    }
+  };
+
+  const pickStore = async (s: { name: string; address?: string | null; lat?: number; lng?: number }) => {
+    if (!user) return;
+    let storeId: string | undefined;
+    const { data: existing } = await supabase
+      .from("stores")
+      .select("id")
+      .eq("user_id", user.id)
+      .ilike("name", s.name)
+      .limit(1);
+    if (existing?.[0]) {
+      storeId = existing[0].id;
+    } else {
+      const { data: created, error } = await supabase
+        .from("stores")
+        .insert({
+          user_id: user.id,
+          name: s.name,
+          address: s.address ?? null,
+          lat: s.lat ?? null,
+          lng: s.lng ?? null,
+        })
+        .select("id")
+        .single();
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      storeId = created!.id;
+    }
+    const next = { id: storeId!, name: s.name };
+    setActiveStore(next);
+    if (tripId) sessionStorage.setItem(`trip:${tripId}:store`, next.id);
+    setStoreModalOpen(false);
+    setStoreQuery("");
   };
 
   const exitTrip = async () => {
@@ -369,14 +407,31 @@ export default function ActiveTrip() {
 
   if (!tripId) return null;
 
+  const filteredStores = (nearbyStores ?? []).filter((s) => {
+    const q = storeQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      s.name.toLowerCase().includes(q) ||
+      (s.address ?? "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-border bg-card px-5 py-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Shopping at</p>
-          <button onClick={() => setPickStoreOpen(true)} className="flex items-center gap-1 text-left">
-            <MapPin className="h-4 w-4 text-primary" />
-            <span className="font-semibold">{activeStore?.name ?? "Pick a store"}</span>
+          <button onClick={openStoreModal} className="flex items-center gap-1 text-left">
+            {activeStore ? (
+              <>
+                <MapPin className="h-4 w-4 text-primary" />
+                <span className="truncate font-semibold">{activeStore.name}</span>
+              </>
+            ) : (
+              <span className="text-sm text-muted-foreground underline-offset-2 hover:underline">
+                Add store (optional)
+              </span>
+            )}
           </button>
         </div>
         <div className="flex items-center gap-2">
@@ -645,28 +700,84 @@ export default function ActiveTrip() {
         </DialogContent>
       </Dialog>
 
-      <Sheet open={pickStoreOpen} onOpenChange={setPickStoreOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl">
-          <SheetHeader>
-            <SheetTitle>Choose store</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4 space-y-2">
-            {stores.map((s) => (
-              <Card
-                key={s.id}
-                onClick={() => pickStore(s)}
-                className="flex cursor-pointer items-center gap-3 p-4 transition hover:border-primary"
+      <Dialog
+        open={storeModalOpen}
+        onOpenChange={(o) => {
+          setStoreModalOpen(o);
+          if (!o) setStoreQuery("");
+        }}
+      >
+        <DialogContent className="max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>{activeStore ? "Change store" : "Add store"}</DialogTitle>
+            <DialogDescription>
+              Grocery stores within 5 km of you.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={storeQuery}
+                onChange={(e) => setStoreQuery(e.target.value)}
+                placeholder="Search nearby grocery stores"
+                className="pl-9"
+                autoFocus
+              />
+            </div>
+
+            {activeStore && (
+              <button
+                onClick={() => {
+                  setActiveStore(null);
+                  if (tripId) sessionStorage.removeItem(`trip:${tripId}:store`);
+                  setStoreModalOpen(false);
+                  setStoreQuery("");
+                }}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
               >
-                <MapPin className="h-5 w-5 text-primary" />
-                <span className="font-medium">{s.name}</span>
-              </Card>
-            ))}
-            <Button variant="outline" className="w-full" onClick={() => navigate("/trip/new")}>
-              <Plus className="mr-1 h-4 w-4" /> Add another store
-            </Button>
+                Remove current store
+              </button>
+            )}
+
+            <div className="max-h-[50vh] overflow-y-auto">
+              {loadingStores && (
+                <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Finding nearby stores…
+                </div>
+              )}
+              {!loadingStores && storeError && (
+                <p className="py-4 text-center text-sm text-muted-foreground">{storeError}</p>
+              )}
+              {!loadingStores && !storeError && nearbyStores !== null && filteredStores.length === 0 && (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  No grocery stores match.
+                </p>
+              )}
+              {!loadingStores && filteredStores.length > 0 && (
+                <ul className="space-y-2">
+                  {filteredStores.map((s, i) => (
+                    <li key={`${s.lat},${s.lng}:${i}`}>
+                      <button
+                        onClick={() => pickStore(s)}
+                        className="flex w-full items-start gap-3 rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary"
+                      >
+                        <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{s.name}</p>
+                          {s.address && (
+                            <p className="truncate text-xs text-muted-foreground">{s.address}</p>
+                          )}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
