@@ -710,22 +710,16 @@ function FinanceCardView(props: any) {
         )}
       </Card>
 
-      {/* Insights */}
-      {(insightsLoading || (insights && insights.length > 0)) && (
+      {/* Single rotating insight */}
+      {rotatingInsight && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4" /> Insights
+            <Sparkles className="h-4 w-4" /> Insight
           </div>
-          {insightsLoading ? (
-            <Skeleton className="h-20 rounded-2xl" />
-          ) : (
-            insights!.slice(0, 2).map((ins, i) => (
-              <Card key={i} className="p-4">
-                <div className="text-sm font-semibold">{ins.title}</div>
-                <div className="mt-1 text-sm text-muted-foreground">{ins.body}</div>
-              </Card>
-            ))
-          )}
+          <Card className="p-4">
+            <div className="text-sm font-semibold">{rotatingInsight.title}</div>
+            <div className="mt-1 text-sm text-muted-foreground">{rotatingInsight.body}</div>
+          </Card>
         </div>
       )}
 
