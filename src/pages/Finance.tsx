@@ -652,17 +652,38 @@ function FinanceCardView(props: any) {
               <TabsTrigger value="stores">Stores</TabsTrigger>
             </TabsList>
             <TabsContent value="categories" className="mt-3 space-y-2">
-              {derived.byCategory.map(([slug, cents]) => {
+              {derived.byCategory.map(([slug, cents]: [string, number]) => {
                 const cat = getCategory(slug);
                 const pct = Math.round((cents / derived.monthSpend) * 100);
+                const prevCents = derived.byCategoryPrev.get(slug) ?? 0;
+                const hasPrevData = derived.byCategoryPrev.size > 0;
+                const delta = cents - prevCents;
+                const showDelta = hasPrevData && delta !== 0;
+                const isUp = delta > 0;
                 return (
                   <div key={slug} className="rounded-xl border border-border p-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="text-sm font-medium">
                         <span className="mr-2">{cat.emoji}</span>
                         {cat.label}
                       </div>
-                      <div className="text-sm font-semibold">{formatMoney(cents)}</div>
+                      <div className="flex items-center gap-2 text-right">
+                        <div className="text-sm font-semibold">{formatMoney(cents)}</div>
+                        {showDelta && (
+                          <div
+                            className={`flex items-center gap-0.5 text-[11px] ${
+                              isUp ? "text-destructive" : "text-success"
+                            }`}
+                          >
+                            <span>{isUp ? "↑" : "↓"}</span>
+                            <span className="tabular-nums">
+                              {isUp ? "+" : "-"}
+                              {formatMoney(Math.abs(delta))}
+                            </span>
+                            <span className="text-muted-foreground">vs last mo</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <div
