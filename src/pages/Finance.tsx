@@ -62,8 +62,6 @@ export default function Finance() {
   const [listItems, setListItems] = useState<ListItem[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [budgetInput, setBudgetInput] = useState("");
-  const [insights, setInsights] = useState<Insight[] | null>(null);
-  const [insightsLoading, setInsightsLoading] = useState(false);
   const [view, setView] = useState<"card" | "receipt">(() => {
     if (typeof window === "undefined") return "card";
     return (localStorage.getItem("finance:view") as "card" | "receipt") || "card";
