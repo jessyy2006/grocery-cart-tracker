@@ -12,7 +12,7 @@ const items = [
 
 export const BottomNav = () => {
   const { pathname } = useLocation();
-  if (pathname === "/trip") return null;
+  if (pathname === "/trip" || pathname === "/trip/new") return null;
   return (
   <nav className="sticky bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur safe-bottom">
     <ul className="grid grid-cols-5 px-2 pt-1.5 pb-0">
