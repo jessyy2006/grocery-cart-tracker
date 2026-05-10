@@ -346,10 +346,56 @@ export default function ActiveTrip() {
     navigate(`/trip/${tripId}`, { replace: true });
   };
 
-  const pickStore = async (s: Store) => {
-    setActiveStore(s);
-    if (tripId) sessionStorage.setItem(`trip:${tripId}:store`, s.id);
-    setPickStoreOpen(false);
+  const openStoreModal = async () => {
+    setStoreModalOpen(true);
+    if (nearbyStores !== null || loadingStores) return;
+    setLoadingStores(true);
+    setStoreError(null);
+    try {
+      const coords = getCachedCoords() ?? (await getCurrentPosition());
+      const result = await findNearbyStores(coords, 5000);
+      setNearbyStores(result);
+    } catch (e: any) {
+      setStoreError("Couldn't find nearby stores. Check your location permissions.");
+    } finally {
+      setLoadingStores(false);
+    }
+  };
+
+  const pickStore = async (s: { name: string; address?: string | null; lat?: number; lng?: number }) => {
+    if (!user) return;
+    let storeId: string | undefined;
+    const { data: existing } = await supabase
+      .from("stores")
+      .select("id")
+      .eq("user_id", user.id)
+      .ilike("name", s.name)
+      .limit(1);
+    if (existing?.[0]) {
+      storeId = existing[0].id;
+    } else {
+      const { data: created, error } = await supabase
+        .from("stores")
+        .insert({
+          user_id: user.id,
+          name: s.name,
+          address: s.address ?? null,
+          lat: s.lat ?? null,
+          lng: s.lng ?? null,
+        })
+        .select("id")
+        .single();
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      storeId = created!.id;
+    }
+    const next = { id: storeId!, name: s.name };
+    setActiveStore(next);
+    if (tripId) sessionStorage.setItem(`trip:${tripId}:store`, next.id);
+    setStoreModalOpen(false);
+    setStoreQuery("");
   };
 
   const exitTrip = async () => {
@@ -361,14 +407,31 @@ export default function ActiveTrip() {
 
   if (!tripId) return null;
 
+  const filteredStores = (nearbyStores ?? []).filter((s) => {
+    const q = storeQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      s.name.toLowerCase().includes(q) ||
+      (s.address ?? "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-border bg-card px-5 py-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Shopping at</p>
-          <button onClick={() => setPickStoreOpen(true)} className="flex items-center gap-1 text-left">
-            <MapPin className="h-4 w-4 text-primary" />
-            <span className="font-semibold">{activeStore?.name ?? "Pick a store"}</span>
+          <button onClick={openStoreModal} className="flex items-center gap-1 text-left">
+            {activeStore ? (
+              <>
+                <MapPin className="h-4 w-4 text-primary" />
+                <span className="truncate font-semibold">{activeStore.name}</span>
+              </>
+            ) : (
+              <span className="text-sm text-muted-foreground underline-offset-2 hover:underline">
+                Add store (optional)
+              </span>
+            )}
           </button>
         </div>
         <div className="flex items-center gap-2">
