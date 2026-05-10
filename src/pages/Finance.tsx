@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { guessCategory, getCategory, tokens } from "@/lib/categories";
-import { Pencil, ArrowDown, ArrowUp, Sparkles, LayoutGrid, Receipt as ReceiptIcon } from "lucide-react";
+import { Pencil, ArrowDown, ArrowUp, Sparkles, LayoutGrid, Receipt as ReceiptIcon, Flame } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import ReceiptView from "@/components/finance/ReceiptView";
 import {
