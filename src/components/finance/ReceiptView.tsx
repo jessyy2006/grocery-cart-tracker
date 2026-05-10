@@ -462,8 +462,18 @@ export default function ReceiptView(props: Props) {
           <Divider />
           <Row label="Trips" value={String(tripCount)} />
           <Row label="Avg / Trip" value={formatMoney(avgTripCents, currency)} />
-          <Row label="Extras" value={formatMoney(extrasCents, currency)} />
-          <Row label="Extra Items" value={String(extrasCount)} />
+          <Row label="Impulse Spend" value={formatMoney(impulseCents, currency)} />
+          <Row label="Impulse Items" value={String(impulseCount)} />
+          <Row label="Impulse Rate" value={`${impulseRate}%`} />
+          {biggestCategory && biggestCategory.delta !== 0 && (
+            <Row
+              label="Biggest Change"
+              value={`${biggestCategory.label} ${biggestCategory.delta > 0 ? "+" : "-"}${formatMoney(Math.abs(biggestCategory.delta), currency)}`}
+            />
+          )}
+          {streak >= 2 && (
+            <Row label="Streak" value={`${streak} trips under budget`} />
+          )}
           {momDelta !== null && (
             <Row
               label="VS Last Month"
@@ -471,7 +481,7 @@ export default function ReceiptView(props: Props) {
             />
           )}
           <Divider />
-          <div className="my-2 text-center text-xs italic text-neutral-700">* {insight} *</div>
+          <div className="my-2 text-center text-xs italic text-neutral-700">* {personality} *</div>
           <div className="mt-3 text-center text-[10px] uppercase tracking-widest text-neutral-500">
             Generated {generated}
           </div>
