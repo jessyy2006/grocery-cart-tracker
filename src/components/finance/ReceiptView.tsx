@@ -147,11 +147,13 @@ export default function ReceiptView(props: Props) {
     monthSpend,
     tripCount,
     avgTripCents,
-    extrasCents,
-    extrasCount,
-    extrasPctOfSpend,
+    impulseCents,
+    impulseCount,
+    impulseRate,
+    biggestCategory,
+    streak,
+    personality,
     momDelta,
-    prevSpend,
     monthStart,
     monthEnd,
     currency,
@@ -184,7 +186,6 @@ export default function ReceiptView(props: Props) {
 
   const remaining = budgetCents - monthSpend;
   const over = budgetCents > 0 && remaining < 0;
-  const insight = buildInsight(monthSpend, prevSpend, budgetCents, extrasCents, extrasPctOfSpend, tripCount);
   const generated = new Date().toLocaleDateString(undefined, {
     year: "numeric",
     month: "long",
