@@ -11,7 +11,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { ShoppingBasket, Plus, MapPin, ListChecks, ShoppingCart } from "lucide-react";
+import { ShoppingBasket, Plus, MapPin, ListChecks, ShoppingCart, ArrowLeft } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -34,6 +35,7 @@ export default function Home() {
   const [recent, setRecent] = useState<(Trip & { stores: string[] })[]>([]);
   const [lifetime, setLifetime] = useState(0);
   const [startOpen, setStartOpen] = useState(false);
+  const [chooseListOpen, setChooseListOpen] = useState(false);
   const [lists, setLists] = useState<ShortList[]>([]);
   const [creating, setCreating] = useState(false);
 
@@ -185,25 +187,25 @@ export default function Home() {
           <DialogHeader>
             <DialogTitle>Start a new trip</DialogTitle>
             <DialogDescription>
-              Pick a shopping list to shop for, or shop freely without a list.
+              Shop with one of your lists, or shop freely.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
-            {lists.length > 0 && (
-              <ul className="space-y-2">
-                {lists.map((l) => (
-                  <li key={l.id}>
-                    <button
-                      disabled={creating}
-                      onClick={() => startTripWith(l.id)}
-                      className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary disabled:opacity-50"
-                    >
-                      <ListChecks className="h-5 w-5 text-primary" />
-                      <span className="font-medium">{l.name}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+            <Button
+              className="w-full"
+              size="lg"
+              disabled={creating || lists.length === 0}
+              onClick={() => {
+                setStartOpen(false);
+                setChooseListOpen(true);
+              }}
+            >
+              <ListChecks className="mr-2 h-4 w-4" /> Choose a list
+            </Button>
+            {lists.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center">
+                Create a list first from My shopping lists.
+              </p>
             )}
             <Button
               variant="outline"
@@ -214,6 +216,43 @@ export default function Home() {
               <ShoppingCart className="mr-2 h-4 w-4" /> Shop freely (no list)
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={chooseListOpen} onOpenChange={setChooseListOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Choose a list</DialogTitle>
+            <DialogDescription>
+              Pick the list you'll be shopping for.
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh] pr-2">
+            <ul className="space-y-2">
+              {lists.map((l) => (
+                <li key={l.id}>
+                  <button
+                    disabled={creating}
+                    onClick={() => startTripWith(l.id)}
+                    className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary disabled:opacity-50"
+                  >
+                    <ListChecks className="h-5 w-5 text-primary" />
+                    <span className="font-medium">{l.name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </ScrollArea>
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={() => {
+              setChooseListOpen(false);
+              setStartOpen(true);
+            }}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+          </Button>
         </DialogContent>
       </Dialog>
     </div>
