@@ -250,11 +250,6 @@ export default function ActiveTrip() {
 
   const onScanned = async (code: string) => {
     setScanning(false);
-    if (!activeStore) {
-      toast.error("Pick a store first");
-      setPickStoreOpen(true);
-      return;
-    }
     const { data: cached } = await supabase
       .from("products")
       .select("name, brand, image_url, default_price_cents")
@@ -284,16 +279,6 @@ export default function ActiveTrip() {
 
   const confirmAdd = async () => {
     if (!pending || !tripId) return;
-    let storeForAdd = activeStore;
-    if (!storeForAdd) {
-      storeForAdd = stores[0] ?? null;
-      if (storeForAdd) setActiveStore(storeForAdd);
-    }
-    if (!storeForAdd) {
-      toast.error("Pick a store first");
-      setPickStoreOpen(true);
-      return;
-    }
     const price_cents = parsePriceToCents(pending.price);
     const errs: { name?: boolean; price?: boolean; qty?: boolean } = {};
     if (!pending.name.trim()) errs.name = true;
@@ -306,8 +291,8 @@ export default function ActiveTrip() {
     setPendingErrors({});
     const insert = {
       trip_id: tripId,
-      store_id: storeForAdd.id,
-      store_name_snapshot: storeForAdd.name,
+      store_id: activeStore?.id ?? null,
+      store_name_snapshot: activeStore?.name ?? null,
       barcode: pending.barcode,
       name_snapshot: pending.name.trim(),
       price_cents: price_cents as number,
