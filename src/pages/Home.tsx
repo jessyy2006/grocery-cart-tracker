@@ -35,6 +35,7 @@ export default function Home() {
   const [recent, setRecent] = useState<(Trip & { stores: string[] })[]>([]);
   const [lifetime, setLifetime] = useState(0);
   const [startOpen, setStartOpen] = useState(false);
+  const [chooseListOpen, setChooseListOpen] = useState(false);
   const [lists, setLists] = useState<ShortList[]>([]);
   const [creating, setCreating] = useState(false);
 
