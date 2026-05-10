@@ -47,7 +47,7 @@ type TripItem = {
   barcode: string | null;
 };
 type ListItem = { list_id: string; name: string; barcode: string | null };
-type Insight = { title: string; body: string };
+
 
 const monthKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}`;
 const monthLabel = (d: Date) => d.toLocaleString(undefined, { month: "short" });
