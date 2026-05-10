@@ -111,7 +111,7 @@ export default function ActiveTrip() {
     })();
   }, [listId]);
 
-  // Load items + stores
+  // Load items + restore stashed store
   useEffect(() => {
     if (!tripId || !user) return;
     (async () => {
@@ -122,15 +122,14 @@ export default function ActiveTrip() {
         .order("scanned_at", { ascending: true });
       setItems((itemRows ?? []) as TripItem[]);
 
-      const { data: storeRows } = await supabase.from("stores").select("id, name").order("name");
-      setStores(storeRows ?? []);
-
       const stashedId = sessionStorage.getItem(`trip:${tripId}:store`);
-      const last = (itemRows ?? []).at(-1)?.store_id;
-      const startId = stashedId || last || storeRows?.[0]?.id;
-      if (startId) {
-        const s = (storeRows ?? []).find((x) => x.id === startId);
-        if (s) setActiveStore(s);
+      if (stashedId) {
+        const { data: s } = await supabase
+          .from("stores")
+          .select("id, name")
+          .eq("id", stashedId)
+          .maybeSingle();
+        if (s) setActiveStore(s as Store);
       }
     })();
   }, [tripId, user]);
