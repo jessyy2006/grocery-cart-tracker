@@ -503,11 +503,11 @@ function FinanceCardView(props: any) {
     over,
     pctUsed,
     openEditBudget,
-    extrasPctOfSpend,
+    impulseRate,
+    impulseClass,
     extrasDelta,
     maxBar,
-    insights,
-    insightsLoading,
+    rotatingInsight,
   } = props;
   return (
     <>
