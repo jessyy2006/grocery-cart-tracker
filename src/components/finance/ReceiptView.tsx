@@ -18,9 +18,12 @@ type Props = {
   monthSpend: number;
   tripCount: number;
   avgTripCents: number;
-  extrasCents: number;
-  extrasCount: number;
-  extrasPctOfSpend: number;
+  impulseCents: number;
+  impulseCount: number;
+  impulseRate: number;
+  biggestCategory: { label: string; delta: number } | null;
+  streak: number;
+  personality: string;
   momDelta: number | null;
   prevSpend: number;
   monthStart: Date;
