@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { guessCategory, getCategory, tokens } from "@/lib/categories";
-import { Pencil, ArrowDown, ArrowUp, Sparkles, LayoutGrid, Receipt as ReceiptIcon } from "lucide-react";
+import { Pencil, ArrowDown, ArrowUp, Sparkles, LayoutGrid, Receipt as ReceiptIcon, Flame } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import ReceiptView from "@/components/finance/ReceiptView";
 import {
@@ -47,7 +47,7 @@ type TripItem = {
   barcode: string | null;
 };
 type ListItem = { list_id: string; name: string; barcode: string | null };
-type Insight = { title: string; body: string };
+
 
 const monthKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}`;
 const monthLabel = (d: Date) => d.toLocaleString(undefined, { month: "short" });
@@ -62,8 +62,6 @@ export default function Finance() {
   const [listItems, setListItems] = useState<ListItem[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [budgetInput, setBudgetInput] = useState("");
-  const [insights, setInsights] = useState<Insight[] | null>(null);
-  const [insightsLoading, setInsightsLoading] = useState(false);
   const [view, setView] = useState<"card" | "receipt">(() => {
     if (typeof window === "undefined") return "card";
     return (localStorage.getItem("finance:view") as "card" | "receipt") || "card";
@@ -122,22 +120,6 @@ export default function Finance() {
       setLoading(false);
     })();
   }, [user]);
-
-  // Load AI insights once main data is ready
-  useEffect(() => {
-    if (loading || !trips.length) return;
-    setInsightsLoading(true);
-    supabase.functions
-      .invoke("finance-insights")
-      .then(({ data, error }) => {
-        if (error) {
-          setInsights(null);
-        } else if (data?.insights) {
-          setInsights(data.insights as Insight[]);
-        }
-      })
-      .finally(() => setInsightsLoading(false));
-  }, [loading, trips.length]);
 
   const derived = useMemo(() => {
     const now = new Date();
@@ -232,6 +214,52 @@ export default function Finance() {
       byStore.set(store, (byStore.get(store) ?? 0) + cents);
     }
 
+    // Previous month categories (for deltas)
+    const prevItems: TripItem[] = (tripsByMonth.get(prevKey) ?? []).flatMap(
+      (t) => itemsByTrip.get(t.id) ?? []
+    );
+    const byCategoryPrev = new Map<string, number>();
+    for (const it of prevItems) {
+      const cents = it.price_cents * it.qty;
+      const cat = guessCategory(it.name_snapshot);
+      byCategoryPrev.set(cat, (byCategoryPrev.get(cat) ?? 0) + cents);
+    }
+
+    // Total item count for impulse rate
+    const monthItemCount = monthItems.reduce((a, it) => a + (it.qty ?? 1), 0);
+
+    // Biggest category change vs last month (only if prev month has data)
+    let biggestCategoryChange: { slug: string; delta: number } | null = null;
+    if (prevItems.length > 0) {
+      const allCats = new Set<string>([...byCategory.keys(), ...byCategoryPrev.keys()]);
+      for (const slug of allCats) {
+        const delta = (byCategory.get(slug) ?? 0) - (byCategoryPrev.get(slug) ?? 0);
+        if (!biggestCategoryChange || Math.abs(delta) > Math.abs(biggestCategoryChange.delta)) {
+          biggestCategoryChange = { slug, delta };
+        }
+      }
+    }
+
+    // Streak: consecutive most-recent saved trips where running monthly total ≤ budget
+    let streak = 0;
+    if ((budgetCents ?? 0) > 0) {
+      const sorted = [...trips].sort(
+        (a, b) => +new Date(a.started_at) - +new Date(b.started_at)
+      );
+      const cumByTrip = new Map<string, number>();
+      const monthRunning = new Map<string, number>();
+      for (const t of sorted) {
+        const k = monthKey(new Date(t.started_at));
+        const sum = (monthRunning.get(k) ?? 0) + (t.total_cents ?? 0);
+        monthRunning.set(k, sum);
+        cumByTrip.set(t.id, sum);
+      }
+      for (const t of [...sorted].reverse()) {
+        if ((cumByTrip.get(t.id) ?? 0) <= (budgetCents ?? 0)) streak++;
+        else break;
+      }
+    }
+
     return {
       monthSpend,
       prevSpend,
@@ -240,11 +268,15 @@ export default function Finance() {
       momDelta: monthSpend - prevSpend,
       extrasNow,
       extrasPrev,
+      monthItemCount,
       series,
       byCategory: Array.from(byCategory.entries()).sort((a, b) => b[1] - a[1]),
+      byCategoryPrev,
+      biggestCategoryChange,
+      streak,
       byStore: Array.from(byStore.entries()).sort((a, b) => b[1] - a[1]),
     };
-  }, [trips, items, listItems]);
+  }, [trips, items, listItems, budgetCents]);
 
   const hasBudget = budgetCents !== null && budgetCents > 0;
   const remaining = (budgetCents ?? 0) - derived.monthSpend;
@@ -280,6 +312,69 @@ export default function Finance() {
     : 0;
   const extrasDelta = derived.extrasNow.cents - derived.extrasPrev.cents;
   const maxBar = Math.max(...derived.series.map((s) => s.cents), budgetCents ?? 0, 1);
+
+  // Impulse rate = impulse items / total items
+  const impulseRate = derived.monthItemCount
+    ? Math.round((derived.extrasNow.count / derived.monthItemCount) * 100)
+    : 0;
+  const impulseClass =
+    impulseRate <= 10 ? "Disciplined" : impulseRate <= 25 ? "Moderate" : "High impulse";
+
+  // Biggest category change for receipt summary
+  const biggestCat = derived.biggestCategoryChange
+    ? {
+        label: getCategory(derived.biggestCategoryChange.slug).label,
+        delta: derived.biggestCategoryChange.delta,
+      }
+    : null;
+
+  // Personality line (receipt) — strict priority
+  const nearLimit = hasBudget && !over && pctUsed >= 85;
+  const personality = (() => {
+    if (over) return "You've gone over budget.";
+    if (nearLimit) return "Getting close to your limit.";
+    if (impulseRate >= 26) return "Impulse spending is creeping up.";
+    if (biggestCat && biggestCat.delta > 0)
+      return `${biggestCat.label} are doing damage this month.`;
+    if (derived.streak >= 2) return "You're building a strong habit.";
+    return "You're staying under control.";
+  })();
+
+  // Single rotating insight (standard view) — same priority, richer copy
+  const rotatingInsight: { title: string; body: string } | null = (() => {
+    if (over) {
+      return {
+        title: "Over budget",
+        body: `You're ${formatMoney(Math.abs(remaining))} over your monthly budget.`,
+      };
+    }
+    if (nearLimit) {
+      return {
+        title: "Approaching your limit",
+        body: `You've used ${pctUsed}% of your monthly budget.`,
+      };
+    }
+    if (biggestCat && biggestCat.delta > 0) {
+      return {
+        title: `${biggestCat.label} are up`,
+        body: `${biggestCat.label} spend rose ${formatMoney(biggestCat.delta)} vs last month.`,
+      };
+    }
+    if (impulseRate >= 26) {
+      return {
+        title: "High impulse spending",
+        body: `${impulseRate}% of items this month weren't on your list.`,
+      };
+    }
+    if (derived.prevSpend > 0 && Math.abs(derived.momDelta) > 0) {
+      const dir = derived.momDelta > 0 ? "up" : "down";
+      return {
+        title: `Average trip trending ${dir}`,
+        body: `You've spent ${formatMoney(Math.abs(derived.momDelta))} ${dir === "up" ? "more" : "less"} than last month.`,
+      };
+    }
+    return null;
+  })();
 
   return (
     <div className="space-y-5 px-5 pb-24 pt-2">
@@ -325,9 +420,12 @@ export default function Finance() {
           monthSpend={derived.monthSpend}
           tripCount={derived.monthTrips}
           avgTripCents={derived.avgTrip}
-          extrasCents={derived.extrasNow.cents}
-          extrasCount={derived.extrasNow.count}
-          extrasPctOfSpend={extrasPctOfSpend}
+          impulseCents={derived.extrasNow.cents}
+          impulseCount={derived.extrasNow.count}
+          impulseRate={impulseRate}
+          biggestCategory={biggestCat}
+          streak={derived.streak}
+          personality={personality}
           momDelta={derived.prevSpend > 0 ? derived.momDelta : null}
           prevSpend={derived.prevSpend}
           monthStart={new Date(new Date().getFullYear(), new Date().getMonth(), 1)}
@@ -343,11 +441,11 @@ export default function Finance() {
           over={over}
           pctUsed={pctUsed}
           openEditBudget={openEditBudget}
-          extrasPctOfSpend={extrasPctOfSpend}
+          impulseRate={impulseRate}
+          impulseClass={impulseClass}
           extrasDelta={extrasDelta}
           maxBar={maxBar}
-          insights={insights}
-          insightsLoading={insightsLoading}
+          rotatingInsight={rotatingInsight}
         />
       )}
 
@@ -387,11 +485,11 @@ function FinanceCardView(props: any) {
     over,
     pctUsed,
     openEditBudget,
-    extrasPctOfSpend,
+    impulseRate,
+    impulseClass,
     extrasDelta,
     maxBar,
-    insights,
-    insightsLoading,
+    rotatingInsight,
   } = props;
   return (
     <>
@@ -440,12 +538,23 @@ function FinanceCardView(props: any) {
         )}
       </Card>
 
+      {/* Streak micro-element */}
+      {derived.streak >= 2 && (
+        <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
+          <Flame className="h-4 w-4 text-accent" />
+          <span>
+            <span className="font-semibold text-foreground">{derived.streak} trips under budget</span>
+            {" — you're building a strong habit"}
+          </span>
+        </div>
+      )}
+
       {/* Behavior signals */}
       <div className="grid grid-cols-3 gap-2">
         <SignalCard
-          label="Unplanned"
+          label="Impulse"
           value={formatMoney(derived.extrasNow.cents)}
-          sub={`${derived.extrasNow.count} items · ${extrasPctOfSpend}%`}
+          sub={`${derived.extrasNow.count} items · ${impulseRate}% · ${impulseClass}`}
           delta={extrasDelta}
           invert
         />
@@ -525,17 +634,38 @@ function FinanceCardView(props: any) {
               <TabsTrigger value="stores">Stores</TabsTrigger>
             </TabsList>
             <TabsContent value="categories" className="mt-3 space-y-2">
-              {derived.byCategory.map(([slug, cents]) => {
+              {derived.byCategory.map(([slug, cents]: [string, number]) => {
                 const cat = getCategory(slug);
                 const pct = Math.round((cents / derived.monthSpend) * 100);
+                const prevCents = derived.byCategoryPrev.get(slug) ?? 0;
+                const hasPrevData = derived.byCategoryPrev.size > 0;
+                const delta = cents - prevCents;
+                const showDelta = hasPrevData && delta !== 0;
+                const isUp = delta > 0;
                 return (
                   <div key={slug} className="rounded-xl border border-border p-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="text-sm font-medium">
                         <span className="mr-2">{cat.emoji}</span>
                         {cat.label}
                       </div>
-                      <div className="text-sm font-semibold">{formatMoney(cents)}</div>
+                      <div className="flex items-center gap-2 text-right">
+                        <div className="text-sm font-semibold">{formatMoney(cents)}</div>
+                        {showDelta && (
+                          <div
+                            className={`flex items-center gap-0.5 text-[11px] ${
+                              isUp ? "text-destructive" : "text-success"
+                            }`}
+                          >
+                            <span>{isUp ? "↑" : "↓"}</span>
+                            <span className="tabular-nums">
+                              {isUp ? "+" : "-"}
+                              {formatMoney(Math.abs(delta))}
+                            </span>
+                            <span className="text-muted-foreground">vs last mo</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <div
@@ -562,22 +692,16 @@ function FinanceCardView(props: any) {
         )}
       </Card>
 
-      {/* Insights */}
-      {(insightsLoading || (insights && insights.length > 0)) && (
+      {/* Single rotating insight */}
+      {rotatingInsight && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4" /> Insights
+            <Sparkles className="h-4 w-4" /> Insight
           </div>
-          {insightsLoading ? (
-            <Skeleton className="h-20 rounded-2xl" />
-          ) : (
-            insights!.slice(0, 2).map((ins, i) => (
-              <Card key={i} className="p-4">
-                <div className="text-sm font-semibold">{ins.title}</div>
-                <div className="mt-1 text-sm text-muted-foreground">{ins.body}</div>
-              </Card>
-            ))
-          )}
+          <Card className="p-4">
+            <div className="text-sm font-semibold">{rotatingInsight.title}</div>
+            <div className="mt-1 text-sm text-muted-foreground">{rotatingInsight.body}</div>
+          </Card>
         </div>
       )}
 

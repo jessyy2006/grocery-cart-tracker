@@ -18,9 +18,12 @@ type Props = {
   monthSpend: number;
   tripCount: number;
   avgTripCents: number;
-  extrasCents: number;
-  extrasCount: number;
-  extrasPctOfSpend: number;
+  impulseCents: number;
+  impulseCount: number;
+  impulseRate: number;
+  biggestCategory: { label: string; delta: number } | null;
+  streak: number;
+  personality: string;
   momDelta: number | null;
   prevSpend: number;
   monthStart: Date;
@@ -82,31 +85,6 @@ const JaggedEdge = ({ position }: { position: "top" | "bottom" }) => {
   );
 };
 
-function buildInsight(
-  monthSpend: number,
-  prevSpend: number,
-  budgetCents: number,
-  extrasCents: number,
-  extrasPct: number,
-  tripCount: number,
-): string {
-  if (tripCount < 2) return "Keep tracking to unlock insights.";
-  if (budgetCents > 0 && monthSpend > budgetCents) {
-    const over = Math.round(((monthSpend - budgetCents) / budgetCents) * 100);
-    return `Spending is ${over}% over budget.`;
-  }
-  if (prevSpend > 0) {
-    const delta = Math.round(((monthSpend - prevSpend) / prevSpend) * 100);
-    if (Math.abs(delta) >= 5) {
-      return delta < 0
-        ? `Spending decreased ${Math.abs(delta)}% vs last month.`
-        : `Spending increased ${delta}% vs last month.`;
-    }
-  }
-  if (extrasPct > 0) return `${extrasPct}% of spending was unplanned.`;
-  return "Steady spending — keep it up.";
-}
-
 function useBarcodePattern(seed: string) {
   return useMemo(() => {
     let h = 0;
@@ -144,11 +122,13 @@ export default function ReceiptView(props: Props) {
     monthSpend,
     tripCount,
     avgTripCents,
-    extrasCents,
-    extrasCount,
-    extrasPctOfSpend,
+    impulseCents,
+    impulseCount,
+    impulseRate,
+    biggestCategory,
+    streak,
+    personality,
     momDelta,
-    prevSpend,
     monthStart,
     monthEnd,
     currency,
@@ -181,7 +161,6 @@ export default function ReceiptView(props: Props) {
 
   const remaining = budgetCents - monthSpend;
   const over = budgetCents > 0 && remaining < 0;
-  const insight = buildInsight(monthSpend, prevSpend, budgetCents, extrasCents, extrasPctOfSpend, tripCount);
   const generated = new Date().toLocaleDateString(undefined, {
     year: "numeric",
     month: "long",
@@ -458,8 +437,18 @@ export default function ReceiptView(props: Props) {
           <Divider />
           <Row label="Trips" value={String(tripCount)} />
           <Row label="Avg / Trip" value={formatMoney(avgTripCents, currency)} />
-          <Row label="Extras" value={formatMoney(extrasCents, currency)} />
-          <Row label="Extra Items" value={String(extrasCount)} />
+          <Row label="Impulse Spend" value={formatMoney(impulseCents, currency)} />
+          <Row label="Impulse Items" value={String(impulseCount)} />
+          <Row label="Impulse Rate" value={`${impulseRate}%`} />
+          {biggestCategory && biggestCategory.delta !== 0 && (
+            <Row
+              label="Biggest Change"
+              value={`${biggestCategory.label} ${biggestCategory.delta > 0 ? "+" : "-"}${formatMoney(Math.abs(biggestCategory.delta), currency)}`}
+            />
+          )}
+          {streak >= 2 && (
+            <Row label="Streak" value={`${streak} trips under budget`} />
+          )}
           {momDelta !== null && (
             <Row
               label="VS Last Month"
@@ -467,7 +456,7 @@ export default function ReceiptView(props: Props) {
             />
           )}
           <Divider />
-          <div className="my-2 text-center text-xs italic text-neutral-700">* {insight} *</div>
+          <div className="my-2 text-center text-xs italic text-neutral-700">* {personality} *</div>
           <div className="mt-3 text-center text-[10px] uppercase tracking-widest text-neutral-500">
             Generated {generated}
           </div>
