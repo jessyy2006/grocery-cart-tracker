@@ -700,28 +700,84 @@ export default function ActiveTrip() {
         </DialogContent>
       </Dialog>
 
-      <Sheet open={pickStoreOpen} onOpenChange={setPickStoreOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl">
-          <SheetHeader>
-            <SheetTitle>Choose store</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4 space-y-2">
-            {stores.map((s) => (
-              <Card
-                key={s.id}
-                onClick={() => pickStore(s)}
-                className="flex cursor-pointer items-center gap-3 p-4 transition hover:border-primary"
+      <Dialog
+        open={storeModalOpen}
+        onOpenChange={(o) => {
+          setStoreModalOpen(o);
+          if (!o) setStoreQuery("");
+        }}
+      >
+        <DialogContent className="max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>{activeStore ? "Change store" : "Add store"}</DialogTitle>
+            <DialogDescription>
+              Grocery stores within 5 km of you.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={storeQuery}
+                onChange={(e) => setStoreQuery(e.target.value)}
+                placeholder="Search nearby grocery stores"
+                className="pl-9"
+                autoFocus
+              />
+            </div>
+
+            {activeStore && (
+              <button
+                onClick={() => {
+                  setActiveStore(null);
+                  if (tripId) sessionStorage.removeItem(`trip:${tripId}:store`);
+                  setStoreModalOpen(false);
+                  setStoreQuery("");
+                }}
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
               >
-                <MapPin className="h-5 w-5 text-primary" />
-                <span className="font-medium">{s.name}</span>
-              </Card>
-            ))}
-            <Button variant="outline" className="w-full" onClick={() => navigate("/trip/new")}>
-              <Plus className="mr-1 h-4 w-4" /> Add another store
-            </Button>
+                Remove current store
+              </button>
+            )}
+
+            <div className="max-h-[50vh] overflow-y-auto">
+              {loadingStores && (
+                <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Finding nearby stores…
+                </div>
+              )}
+              {!loadingStores && storeError && (
+                <p className="py-4 text-center text-sm text-muted-foreground">{storeError}</p>
+              )}
+              {!loadingStores && !storeError && nearbyStores !== null && filteredStores.length === 0 && (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  No grocery stores match.
+                </p>
+              )}
+              {!loadingStores && filteredStores.length > 0 && (
+                <ul className="space-y-2">
+                  {filteredStores.map((s, i) => (
+                    <li key={`${s.lat},${s.lng}:${i}`}>
+                      <button
+                        onClick={() => pickStore(s)}
+                        className="flex w-full items-start gap-3 rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary"
+                      >
+                        <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{s.name}</p>
+                          {s.address && (
+                            <p className="truncate text-xs text-muted-foreground">{s.address}</p>
+                          )}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
