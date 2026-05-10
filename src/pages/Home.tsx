@@ -11,7 +11,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { ShoppingBasket, Plus, MapPin, ListChecks, ShoppingCart } from "lucide-react";
+import { ShoppingBasket, Plus, MapPin, ListChecks, ShoppingCart, ArrowLeft } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 import { toast } from "sonner";

@@ -1,51 +1,35 @@
-## Grocery Trip Flow Fixes
+## Two-step "Start a new trip" flow
 
-Three targeted fixes scoped to `src/pages/ActiveTrip.tsx` (issues 1 & 2) and a verification of `src/pages/StartTrip.tsx` (issue 3).
+Restructure the start-trip dialog on `src/pages/Home.tsx` so the user picks an intent first, then optionally picks a list in a second dialog.
 
----
+### Current behavior
+The "Start a new trip" dialog renders all shopping lists inline as a vertical stack, with a "Shop freely (no list)" outline button below. Lots of lists = long dialog, and there's no clear primary action.
 
-### 1. Cart total updates when items are checked off
+### New behavior
 
-**Root cause:** `total` is computed from `items` (the `trip_items` table), but checking off a list item via the manual-check dialog only updates `shopping_list_items` (price + checked_at) — it never inserts a `trip_item`. So the cart total stays at $0 unless the user also scans something.
+**Dialog 1 — "Start a new trip"** (existing dialog, simplified):
+- Title: `Start a new trip`
+- Description: `Shop with one of your lists, or shop freely.`
+- Primary button (dark green, `variant="default"`, full width): **Choose a list**
+  - Disabled when the user has zero lists, with helper text `Create a list first from My shopping lists.`
+  - On click: close this dialog, open Dialog 2.
+- Secondary button (`variant="outline"`, full width): **Shop freely (no list)** — same `startTripWith(null)` behavior as today.
 
-**Fix:** Make the cart total reflect the user's actual progress through the list.
+**Dialog 2 — "Choose a list"** (new):
+- Title: `Choose a list`
+- Description: `Pick the list you'll be shopping for.`
+- Scrollable list of all shopping lists inside a `ScrollArea` capped at ~60vh so long collections don't blow out the dialog.
+- Each row: same card style as today (`ListChecks` icon + list name, hover highlight, `rounded-xl` border).
+- Click a row → call existing `startTripWith(listId)` (which already resets the list, stashes the id, and navigates to `/trip/new`).
+- Back affordance: a small `Back` ghost button in the footer that returns to Dialog 1 (so the user can switch to "Shop freely" without closing everything).
 
-- Recompute `total` as: sum of `price_cents * qty` for every `listItems` entry where `checked_at != null`, plus the existing `extras` (sum of `price_cents * qty`).
-- This makes checking/unchecking a list item update the total instantly (state already updates optimistically in `confirmManualCheck` and `handleMatchOrExtra`).
-- Unchecking: add an "uncheck" path on the checkbox for already-checked items that clears `checked_at` and `price_cents` locally + in DB. Total recomputes via `useMemo`.
-- Keep the existing `numer/denom` progress badge logic working with the same source of truth.
+### Implementation notes (Home.tsx only)
+- Add `chooseListOpen` state alongside existing `startOpen`.
+- Keep the existing `openStart` fetcher; lists are already loaded before Dialog 1 opens, so Dialog 2 just renders from `lists`.
+- Reuse `Dialog`/`DialogContent`/`DialogHeader` and import `ScrollArea` from `@/components/ui/scroll-area` (already in the codebase).
+- Primary "Choose a list" button uses default variant — the design system's `--primary` token is the app's dark green, so no custom color classes needed (keeps tokens-only rule).
+- No DB changes, no routing changes, no changes to `StartTrip.tsx` or `ActiveTrip.tsx`.
 
-**Files:** `src/pages/ActiveTrip.tsx` only.
-
----
-
-### 2. Barcode scanner "Add manually" opens the modal in-place
-
-**Root cause:** In the `Scanner`'s `onManualEntry` handler (lines 503–511), if `activeStore` is null we call `setPickStoreOpen(true)`, which opens the store-picker sheet — that's the "navigates to store selection" the PRD describes.
-
-**Fix:**
-- Remove the `activeStore` guard from the manual-entry handler. Always `setPending({ barcode: null, name: "", price: "", qty: 1 })` after closing the scanner.
-- Defensive fallback: if `activeStore` happens to be null when `confirmAdd` runs, auto-select the first available store (or the trip's stashed store) before insert, instead of silently failing.
-- The existing `Dialog` rendered from the `pending` state already matches the standard add-item UI (name / price / qty), so no new modal is needed.
-
-**Files:** `src/pages/ActiveTrip.tsx` only.
-
----
-
-### 3. Store selection "Start your trip" CTA
-
-**Status: already implemented.** `src/pages/StartTrip.tsx` already has:
-- A fixed bottom button (`fixed inset-x-0 bottom-0 ...`) labeled "Start trip at {store}" / "Select a store to start".
-- `disabled={!selected || creating}` — disabled until a store is picked.
-- `StoreCard onClick` only calls `setSelected(...)` — no navigation side effect.
-- Navigation happens only inside `handleStartTrip`, which is wired to the button's `onClick`.
-
-**Action:** No code changes. Will spot-check in the preview after #1 and #2 ship to confirm behavior matches the PRD acceptance criteria. If you've seen a regression here, send a screenshot / repro and I'll dig in.
-
----
-
-### Risks & rollback
-
-- Switching `total` to a list-derived sum changes the meaning of "cart total" when the trip has both list-driven check-offs and scanned extras. Plan keeps both: `Σ checked listItems + Σ extras`. Rollback = revert the `useMemo`.
-- Removing the `activeStore` guard is safe because trips are created from `StartTrip` with a store, and we add a fallback in `confirmAdd`.
-- No DB schema changes, no migrations.
+### Risks
+- None functional — `startTripWith` is unchanged. Only UI restructuring.
+- Edge case: zero lists → "Choose a list" disabled with hint, "Shop freely" still works.
