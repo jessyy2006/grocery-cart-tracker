@@ -7,13 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Scanner } from "@/components/Scanner";
-import { ScanLine, Plus, MapPin, Trash2, Check, X } from "lucide-react";
+import { ScanLine, Plus, MapPin, Trash2, Check, X, Search, Loader2 } from "lucide-react";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
 import { findListMatch, getCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
+import {
+  findNearbyStores,
+  getCachedCoords,
+  getCurrentPosition,
+  NearbyStore,
+} from "@/lib/device/geolocation";
 import { toast } from "sonner";
 
 type TripItem = {
