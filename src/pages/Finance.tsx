@@ -121,22 +121,6 @@ export default function Finance() {
     })();
   }, [user]);
 
-  // Load AI insights once main data is ready
-  useEffect(() => {
-    if (loading || !trips.length) return;
-    setInsightsLoading(true);
-    supabase.functions
-      .invoke("finance-insights")
-      .then(({ data, error }) => {
-        if (error) {
-          setInsights(null);
-        } else if (data?.insights) {
-          setInsights(data.insights as Insight[]);
-        }
-      })
-      .finally(() => setInsightsLoading(false));
-  }, [loading, trips.length]);
-
   const derived = useMemo(() => {
     const now = new Date();
     const currentKey = monthKey(now);
