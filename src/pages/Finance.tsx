@@ -331,6 +331,69 @@ export default function Finance() {
   const extrasDelta = derived.extrasNow.cents - derived.extrasPrev.cents;
   const maxBar = Math.max(...derived.series.map((s) => s.cents), budgetCents ?? 0, 1);
 
+  // Impulse rate = impulse items / total items
+  const impulseRate = derived.monthItemCount
+    ? Math.round((derived.extrasNow.count / derived.monthItemCount) * 100)
+    : 0;
+  const impulseClass =
+    impulseRate <= 10 ? "Disciplined" : impulseRate <= 25 ? "Moderate" : "High impulse";
+
+  // Biggest category change for receipt summary
+  const biggestCat = derived.biggestCategoryChange
+    ? {
+        label: getCategory(derived.biggestCategoryChange.slug).label,
+        delta: derived.biggestCategoryChange.delta,
+      }
+    : null;
+
+  // Personality line (receipt) — strict priority
+  const nearLimit = hasBudget && !over && pctUsed >= 85;
+  const personality = (() => {
+    if (over) return "You've gone over budget.";
+    if (nearLimit) return "Getting close to your limit.";
+    if (impulseRate >= 26) return "Impulse spending is creeping up.";
+    if (biggestCat && biggestCat.delta > 0)
+      return `${biggestCat.label} are doing damage this month.`;
+    if (derived.streak >= 2) return "You're building a strong habit.";
+    return "You're staying under control.";
+  })();
+
+  // Single rotating insight (standard view) — same priority, richer copy
+  const rotatingInsight: { title: string; body: string } | null = (() => {
+    if (over) {
+      return {
+        title: "Over budget",
+        body: `You're ${formatMoney(Math.abs(remaining))} over your monthly budget.`,
+      };
+    }
+    if (nearLimit) {
+      return {
+        title: "Approaching your limit",
+        body: `You've used ${pctUsed}% of your monthly budget.`,
+      };
+    }
+    if (biggestCat && biggestCat.delta > 0) {
+      return {
+        title: `${biggestCat.label} are up`,
+        body: `${biggestCat.label} spend rose ${formatMoney(biggestCat.delta)} vs last month.`,
+      };
+    }
+    if (impulseRate >= 26) {
+      return {
+        title: "High impulse spending",
+        body: `${impulseRate}% of items this month weren't on your list.`,
+      };
+    }
+    if (derived.prevSpend > 0 && Math.abs(derived.momDelta) > 0) {
+      const dir = derived.momDelta > 0 ? "up" : "down";
+      return {
+        title: `Average trip trending ${dir}`,
+        body: `You've spent ${formatMoney(Math.abs(derived.momDelta))} ${dir === "up" ? "more" : "less"} than last month.`,
+      };
+    }
+    return null;
+  })();
+
   return (
     <div className="space-y-5 px-5 pb-24 pt-2">
       <header className="flex items-end justify-between">
@@ -375,9 +438,12 @@ export default function Finance() {
           monthSpend={derived.monthSpend}
           tripCount={derived.monthTrips}
           avgTripCents={derived.avgTrip}
-          extrasCents={derived.extrasNow.cents}
-          extrasCount={derived.extrasNow.count}
-          extrasPctOfSpend={extrasPctOfSpend}
+          impulseCents={derived.extrasNow.cents}
+          impulseCount={derived.extrasNow.count}
+          impulseRate={impulseRate}
+          biggestCategory={biggestCat}
+          streak={derived.streak}
+          personality={personality}
           momDelta={derived.prevSpend > 0 ? derived.momDelta : null}
           prevSpend={derived.prevSpend}
           monthStart={new Date(new Date().getFullYear(), new Date().getMonth(), 1)}
@@ -393,11 +459,11 @@ export default function Finance() {
           over={over}
           pctUsed={pctUsed}
           openEditBudget={openEditBudget}
-          extrasPctOfSpend={extrasPctOfSpend}
+          impulseRate={impulseRate}
+          impulseClass={impulseClass}
           extrasDelta={extrasDelta}
           maxBar={maxBar}
-          insights={insights}
-          insightsLoading={insightsLoading}
+          rotatingInsight={rotatingInsight}
         />
       )}
 
