@@ -232,6 +232,52 @@ export default function Finance() {
       byStore.set(store, (byStore.get(store) ?? 0) + cents);
     }
 
+    // Previous month categories (for deltas)
+    const prevItems: TripItem[] = (tripsByMonth.get(prevKey) ?? []).flatMap(
+      (t) => itemsByTrip.get(t.id) ?? []
+    );
+    const byCategoryPrev = new Map<string, number>();
+    for (const it of prevItems) {
+      const cents = it.price_cents * it.qty;
+      const cat = guessCategory(it.name_snapshot);
+      byCategoryPrev.set(cat, (byCategoryPrev.get(cat) ?? 0) + cents);
+    }
+
+    // Total item count for impulse rate
+    const monthItemCount = monthItems.reduce((a, it) => a + (it.qty ?? 1), 0);
+
+    // Biggest category change vs last month (only if prev month has data)
+    let biggestCategoryChange: { slug: string; delta: number } | null = null;
+    if (prevItems.length > 0) {
+      const allCats = new Set<string>([...byCategory.keys(), ...byCategoryPrev.keys()]);
+      for (const slug of allCats) {
+        const delta = (byCategory.get(slug) ?? 0) - (byCategoryPrev.get(slug) ?? 0);
+        if (!biggestCategoryChange || Math.abs(delta) > Math.abs(biggestCategoryChange.delta)) {
+          biggestCategoryChange = { slug, delta };
+        }
+      }
+    }
+
+    // Streak: consecutive most-recent saved trips where running monthly total ≤ budget
+    let streak = 0;
+    if ((budgetCents ?? 0) > 0) {
+      const sorted = [...trips].sort(
+        (a, b) => +new Date(a.started_at) - +new Date(b.started_at)
+      );
+      const cumByTrip = new Map<string, number>();
+      const monthRunning = new Map<string, number>();
+      for (const t of sorted) {
+        const k = monthKey(new Date(t.started_at));
+        const sum = (monthRunning.get(k) ?? 0) + (t.total_cents ?? 0);
+        monthRunning.set(k, sum);
+        cumByTrip.set(t.id, sum);
+      }
+      for (const t of [...sorted].reverse()) {
+        if ((cumByTrip.get(t.id) ?? 0) <= (budgetCents ?? 0)) streak++;
+        else break;
+      }
+    }
+
     return {
       monthSpend,
       prevSpend,
@@ -240,11 +286,15 @@ export default function Finance() {
       momDelta: monthSpend - prevSpend,
       extrasNow,
       extrasPrev,
+      monthItemCount,
       series,
       byCategory: Array.from(byCategory.entries()).sort((a, b) => b[1] - a[1]),
+      byCategoryPrev,
+      biggestCategoryChange,
+      streak,
       byStore: Array.from(byStore.entries()).sort((a, b) => b[1] - a[1]),
     };
-  }, [trips, items, listItems]);
+  }, [trips, items, listItems, budgetCents]);
 
   const hasBudget = budgetCents !== null && budgetCents > 0;
   const remaining = (budgetCents ?? 0) - derived.monthSpend;
