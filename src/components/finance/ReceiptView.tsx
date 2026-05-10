@@ -85,31 +85,6 @@ const JaggedEdge = ({ position }: { position: "top" | "bottom" }) => {
   );
 };
 
-function buildInsight(
-  monthSpend: number,
-  prevSpend: number,
-  budgetCents: number,
-  extrasCents: number,
-  extrasPct: number,
-  tripCount: number,
-): string {
-  if (tripCount < 2) return "Keep tracking to unlock insights.";
-  if (budgetCents > 0 && monthSpend > budgetCents) {
-    const over = Math.round(((monthSpend - budgetCents) / budgetCents) * 100);
-    return `Spending is ${over}% over budget.`;
-  }
-  if (prevSpend > 0) {
-    const delta = Math.round(((monthSpend - prevSpend) / prevSpend) * 100);
-    if (Math.abs(delta) >= 5) {
-      return delta < 0
-        ? `Spending decreased ${Math.abs(delta)}% vs last month.`
-        : `Spending increased ${delta}% vs last month.`;
-    }
-  }
-  if (extrasPct > 0) return `${extrasPct}% of spending was unplanned.`;
-  return "Steady spending — keep it up.";
-}
-
 function useBarcodePattern(seed: string) {
   return useMemo(() => {
     let h = 0;
