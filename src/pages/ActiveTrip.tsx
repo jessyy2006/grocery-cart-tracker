@@ -52,7 +52,6 @@ export default function ActiveTrip() {
   const [listName, setListName] = useState<string>("");
   const [listItems, setListItems] = useState<ListItem[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(null);
-  const [stores, setStores] = useState<Store[]>([]);
   const [items, setItems] = useState<TripItem[]>([]);
   const [extras, setExtras] = useState<TripItem[]>([]);
   const [extrasOpen, setExtrasOpen] = useState(false);
@@ -65,7 +64,11 @@ export default function ActiveTrip() {
     qty: number;
     image_url?: string;
   } | null>(null);
-  const [pickStoreOpen, setPickStoreOpen] = useState(false);
+  const [storeModalOpen, setStoreModalOpen] = useState(false);
+  const [storeQuery, setStoreQuery] = useState("");
+  const [nearbyStores, setNearbyStores] = useState<NearbyStore[] | null>(null);
+  const [loadingStores, setLoadingStores] = useState(false);
+  const [storeError, setStoreError] = useState<string | null>(null);
   const [pendingErrors, setPendingErrors] = useState<{ name?: boolean; price?: boolean; qty?: boolean }>({});
   const [manualCheck, setManualCheck] = useState<{ item: ListItem; qty: string; price: string } | null>(null);
   const [manualErrors, setManualErrors] = useState<{ qty?: boolean; price?: boolean }>({});
