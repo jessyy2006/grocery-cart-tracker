@@ -1,35 +1,29 @@
-## Two-step "Start a new trip" flow
+## Goal
+When the user types in the store search modal, fetch top 5 matching stores from the global geocoder (Nominatim) — not just filter the cached 5 km nearby list. Empty query keeps showing the nearby list.
 
-Restructure the start-trip dialog on `src/pages/Home.tsx` so the user picks an intent first, then optionally picks a list in a second dialog.
+## Changes (all in `src/pages/ActiveTrip.tsx`)
 
-### Current behavior
-The "Start a new trip" dialog renders all shopping lists inline as a vertical stack, with a "Shop freely (no list)" outline button below. Lots of lists = long dialog, and there's no clear primary action.
+1. **New state**
+   - `searchResults: NearbyStore[] | null`
+   - `searching: boolean`
+   - `searchError: string | null`
 
-### New behavior
+2. **Debounced search effect**
+   - Watch `storeQuery` while modal is open.
+   - If trimmed query length < 2 → clear `searchResults`, fall back to nearby list.
+   - Else after ~350 ms debounce, call `searchStoresByName(query)` (already exported from `src/lib/device/geolocation.ts`).
+   - Slice top 5; set `searchResults`. Handle `StoreSearchError` → `searchError`.
 
-**Dialog 1 — "Start a new trip"** (existing dialog, simplified):
-- Title: `Start a new trip`
-- Description: `Shop with one of your lists, or shop freely.`
-- Primary button (dark green, `variant="default"`, full width): **Choose a list**
-  - Disabled when the user has zero lists, with helper text `Create a list first from My shopping lists.`
-  - On click: close this dialog, open Dialog 2.
-- Secondary button (`variant="outline"`, full width): **Shop freely (no list)** — same `startTripWith(null)` behavior as today.
+3. **Render logic in modal**
+   - If `storeQuery.trim().length >= 2`:
+     - Show `searching` spinner, `searchError`, or `searchResults` (top 5).
+     - Header label: "Search results".
+   - Else:
+     - Show existing nearby list (unchanged), header "Nearby stores".
+   - Remove the current client-side `filteredStores` filter — it conflated the two modes.
 
-**Dialog 2 — "Choose a list"** (new):
-- Title: `Choose a list`
-- Description: `Pick the list you'll be shopping for.`
-- Scrollable list of all shopping lists inside a `ScrollArea` capped at ~60vh so long collections don't blow out the dialog.
-- Each row: same card style as today (`ListChecks` icon + list name, hover highlight, `rounded-xl` border).
-- Click a row → call existing `startTripWith(listId)` (which already resets the list, stashes the id, and navigates to `/trip/new`).
-- Back affordance: a small `Back` ghost button in the footer that returns to Dialog 1 (so the user can switch to "Shop freely" without closing everything).
+4. **No backend / schema changes.** `pickStore` already handles arbitrary `{name, address, lat, lng}` and upserts into `stores`, so global results work as-is.
 
-### Implementation notes (Home.tsx only)
-- Add `chooseListOpen` state alongside existing `startOpen`.
-- Keep the existing `openStart` fetcher; lists are already loaded before Dialog 1 opens, so Dialog 2 just renders from `lists`.
-- Reuse `Dialog`/`DialogContent`/`DialogHeader` and import `ScrollArea` from `@/components/ui/scroll-area` (already in the codebase).
-- Primary "Choose a list" button uses default variant — the design system's `--primary` token is the app's dark green, so no custom color classes needed (keeps tokens-only rule).
-- No DB changes, no routing changes, no changes to `StartTrip.tsx` or `ActiveTrip.tsx`.
-
-### Risks
-- None functional — `startTripWith` is unchanged. Only UI restructuring.
-- Edge case: zero lists → "Choose a list" disabled with hint, "Shop freely" still works.
+## Risks
+- Nominatim has a ~1 req/s usage policy; debounce + min 2 chars keeps us well under.
+- Results may include non-grocery POIs (Nominatim isn't shop-filtered). Acceptable per PRD ("no matter if outside 5 km radius") — user explicitly typed it. If noise becomes a problem we can add a later filter.
