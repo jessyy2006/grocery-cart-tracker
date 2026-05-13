@@ -735,7 +735,9 @@ export default function ActiveTrip() {
           <DialogHeader>
             <DialogTitle>{activeStore ? "Change store" : "Add store"}</DialogTitle>
             <DialogDescription>
-              Grocery stores within 5 km of you.
+              {isSearching
+                ? "Top matches for your search."
+                : "Grocery stores within 5 km of you."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -744,7 +746,7 @@ export default function ActiveTrip() {
               <Input
                 value={storeQuery}
                 onChange={(e) => setStoreQuery(e.target.value)}
-                placeholder="Search nearby grocery stores"
+                placeholder="Search any store name or address"
                 className="pl-9"
                 autoFocus
               />
@@ -765,22 +767,40 @@ export default function ActiveTrip() {
             )}
 
             <div className="max-h-[50vh] overflow-y-auto">
-              {loadingStores && (
-                <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Finding nearby stores…
-                </div>
+              {isSearching ? (
+                <>
+                  {searching && (
+                    <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Searching…
+                    </div>
+                  )}
+                  {!searching && searchError && (
+                    <p className="py-4 text-center text-sm text-muted-foreground">{searchError}</p>
+                  )}
+                  {!searching && !searchError && searchResults !== null && displayStores.length === 0 && (
+                    <p className="py-4 text-center text-sm text-muted-foreground">No matches found.</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  {loadingStores && (
+                    <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Finding nearby stores…
+                    </div>
+                  )}
+                  {!loadingStores && storeError && (
+                    <p className="py-4 text-center text-sm text-muted-foreground">{storeError}</p>
+                  )}
+                  {!loadingStores && !storeError && nearbyStores !== null && displayStores.length === 0 && (
+                    <p className="py-4 text-center text-sm text-muted-foreground">
+                      No nearby grocery stores. Try searching by name.
+                    </p>
+                  )}
+                </>
               )}
-              {!loadingStores && storeError && (
-                <p className="py-4 text-center text-sm text-muted-foreground">{storeError}</p>
-              )}
-              {!loadingStores && !storeError && nearbyStores !== null && filteredStores.length === 0 && (
-                <p className="py-4 text-center text-sm text-muted-foreground">
-                  No grocery stores match.
-                </p>
-              )}
-              {!loadingStores && filteredStores.length > 0 && (
+              {displayStores.length > 0 && (
                 <ul className="space-y-2">
-                  {filteredStores.map((s, i) => (
+                  {displayStores.map((s, i) => (
                     <li key={`${s.lat},${s.lng}:${i}`}>
                       <button
                         onClick={() => pickStore(s)}
