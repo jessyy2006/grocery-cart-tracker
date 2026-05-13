@@ -70,6 +70,9 @@ export default function ActiveTrip() {
   const [nearbyStores, setNearbyStores] = useState<NearbyStore[] | null>(null);
   const [loadingStores, setLoadingStores] = useState(false);
   const [storeError, setStoreError] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<NearbyStore[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [pendingErrors, setPendingErrors] = useState<{ name?: boolean; price?: boolean; qty?: boolean }>({});
   const [manualCheck, setManualCheck] = useState<{ item: ListItem; qty: string; price: string } | null>(null);
   const [manualErrors, setManualErrors] = useState<{ qty?: boolean; price?: boolean }>({});
