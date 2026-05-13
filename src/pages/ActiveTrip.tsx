@@ -411,14 +411,8 @@ export default function ActiveTrip() {
 
   if (!tripId) return null;
 
-  const filteredStores = (nearbyStores ?? []).filter((s) => {
-    const q = storeQuery.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      s.name.toLowerCase().includes(q) ||
-      (s.address ?? "").toLowerCase().includes(q)
-    );
-  });
+  const isSearching = storeQuery.trim().length >= 2;
+  const displayStores = isSearching ? (searchResults ?? []) : (nearbyStores ?? []);
 
   return (
     <div className="flex h-full flex-col">
