@@ -409,6 +409,32 @@ export default function ActiveTrip() {
     navigate("/", { replace: true });
   };
 
+  // Debounced global search when user types in store modal
+  useEffect(() => {
+    if (!storeModalOpen) return;
+    const q = storeQuery.trim();
+    if (q.length < 2) {
+      setSearchResults(null);
+      setSearchError(null);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    setSearchError(null);
+    const handle = setTimeout(async () => {
+      try {
+        const res = await searchStoresByName(q);
+        setSearchResults(res.slice(0, 5));
+      } catch {
+        setSearchError("Search failed. Try again.");
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+    return () => clearTimeout(handle);
+  }, [storeQuery, storeModalOpen]);
+
   if (!tripId) return null;
 
   const isSearching = storeQuery.trim().length >= 2;
