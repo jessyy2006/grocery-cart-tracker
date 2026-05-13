@@ -17,6 +17,7 @@ import {
   findNearbyStores,
   getCachedCoords,
   getCurrentPosition,
+  searchStoresByName,
   NearbyStore,
 } from "@/lib/device/geolocation";
 import { toast } from "sonner";
