@@ -45,6 +45,7 @@ type TripItem = {
   qty: number;
   store_name_snapshot: string | null;
   barcode: string | null;
+  substitutes_list_item_id: string | null;
 };
 type ListItem = { list_id: string; name: string; barcode: string | null };
 
