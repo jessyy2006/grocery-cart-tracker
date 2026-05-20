@@ -593,13 +593,24 @@ export default function ActiveTrip() {
                           >
                             {it.name}
                           </p>
-                          {(it.qty > 1 || it.notes) && (
-                            <p className="truncate text-xs text-muted-foreground">
-                              {it.qty > 1 ? `Qty ${it.qty}` : ""}
-                              {it.qty > 1 && it.notes ? " · " : ""}
-                              {it.notes ?? ""}
-                            </p>
-                          )}
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {(it.qty > 1 || it.notes) && (
+                              <p className="truncate text-xs text-muted-foreground">
+                                {it.qty > 1 ? `Qty ${it.qty}` : ""}
+                                {it.qty > 1 && it.notes ? " · " : ""}
+                                {it.notes ?? ""}
+                              </p>
+                            )}
+                            {it.tag && <TagPill tag={it.tag} size="xs" />}
+                            {(() => {
+                              const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
+                              return sub ? (
+                                <span className="truncate text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                                  ↔ {sub.name_snapshot}
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
                         </div>
                         {it.price_cents != null && (
                           <span className="shrink-0 text-right text-sm font-semibold text-primary">
