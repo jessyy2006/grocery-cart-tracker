@@ -108,11 +108,19 @@ export default function ActiveTrip() {
     if (!listId) {
       setListItems([]);
       setListName("");
+      setListHidden(false);
       return;
     }
     (async () => {
-      const { data: l } = await supabase.from("shopping_lists").select("name").eq("id", listId).maybeSingle();
-      if (l) setListName(l.name);
+      const { data: l } = await supabase
+        .from("shopping_lists")
+        .select("name, hidden")
+        .eq("id", listId)
+        .maybeSingle();
+      if (l) {
+        setListName(l.name);
+        setListHidden(!!(l as any).hidden);
+      }
       const { data } = await supabase
         .from("shopping_list_items")
         .select("*")
