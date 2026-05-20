@@ -181,6 +181,7 @@ export default function ListDetail() {
     setEditName(it.name);
     setEditQtyText(String(it.qty));
     setEditNotes(it.notes ?? "");
+    setEditTag(it.tag ?? null);
   };
 
   const saveEdit = async () => {
@@ -189,12 +190,13 @@ export default function ListDetail() {
     if (!newName) return toast.error("Name can't be empty");
     const newQty = Math.max(1, parseInt(editQtyText, 10) || 1);
     const newNotes = editNotes.trim() ? editNotes.trim().slice(0, 25) : null;
+    const newTag = editTag;
     setItems((c) =>
-      c.map((i) => (i.id === editing.id ? { ...i, name: newName, qty: newQty, notes: newNotes } : i))
+      c.map((i) => (i.id === editing.id ? { ...i, name: newName, qty: newQty, notes: newNotes, tag: newTag } : i))
     );
     await supabase
       .from("shopping_list_items")
-      .update({ name: newName, qty: newQty, notes: newNotes })
+      .update({ name: newName, qty: newQty, notes: newNotes, tag: newTag })
       .eq("id", editing.id);
     setEditing(null);
   };
