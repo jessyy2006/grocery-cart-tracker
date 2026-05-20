@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { formatMoney } from "@/lib/format";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
 import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
+import { TagPill } from "@/components/TagPill";
+import { TagSelector } from "@/components/TagSelector";
 import { toast } from "sonner";
 
 type Item = {
@@ -29,6 +31,7 @@ type Item = {
   checked_at: string | null;
   notes: string | null;
   price_cents: number | null;
+  tag: string | null;
 };
 
 export default function ListDetail() {
