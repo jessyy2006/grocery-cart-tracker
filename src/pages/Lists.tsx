@@ -27,6 +27,7 @@ export default function Lists() {
     const { data } = await supabase
       .from("shopping_lists")
       .select("id, name, updated_at, shopping_list_items(id, checked_at)")
+      .eq("hidden", false)
       .order("updated_at", { ascending: false });
     setLists((data as any) ?? []);
   };
