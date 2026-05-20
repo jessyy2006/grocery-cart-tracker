@@ -793,6 +793,74 @@ export default function ActiveTrip() {
         </DialogContent>
       </Dialog>
 
+
+      <Dialog open={!!offList && !subPickerOpen} onOpenChange={(o) => { if (!o) setOffList(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Not on your list</DialogTitle>
+            <DialogDescription className="text-center">
+              "{offList?.productName}" isn't on your shopping list. How should we count it?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Button
+              size="lg"
+              className="w-full rounded-xl"
+              variant="outline"
+              onClick={confirmAsExtra}
+            >
+              Add as Extra
+            </Button>
+            <Button
+              size="lg"
+              className="w-full rounded-xl"
+              onClick={openSubstitutePicker}
+              disabled={!listItems.some((i) => !i.checked_at)}
+            >
+              Mark as Substitute
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={subPickerOpen} onOpenChange={(o) => { setSubPickerOpen(o); if (!o) setSubQuery(""); }}>
+        <DialogContent className="max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Replace which item?</DialogTitle>
+            <DialogDescription>
+              Pick the planned item that "{offList?.productName}" substitutes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              autoFocus
+              placeholder="Search planned items"
+              value={subQuery}
+              onChange={(e) => setSubQuery(e.target.value)}
+            />
+            <ul className="max-h-[50vh] space-y-2 overflow-y-auto">
+              {listItems
+                .filter((i) => !i.checked_at)
+                .filter((i) => i.name.toLowerCase().includes(subQuery.trim().toLowerCase()))
+                .map((i) => (
+                  <li key={i.id}>
+                    <button
+                      onClick={() => confirmAsSubstitute(i)}
+                      className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{i.name}</p>
+                        {i.tag && <TagPill tag={i.tag} size="xs" className="mt-1" />}
+                      </div>
+                      <span className="text-xs text-muted-foreground">Qty {i.qty}</span>
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog
         open={storeModalOpen}
         onOpenChange={(o) => {
