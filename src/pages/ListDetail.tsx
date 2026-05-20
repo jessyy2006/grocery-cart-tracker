@@ -476,6 +476,7 @@ export default function ListDetail() {
                 placeholder="Notes (e.g. 500 ml)"
               />
             </div>
+            <TagSelector value={editTag} suggestions={tagSuggestions} onChange={setEditTag} />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setEditing(null)}>
