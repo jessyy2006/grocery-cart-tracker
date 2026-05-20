@@ -601,7 +601,9 @@ export default function ActiveTrip() {
 
         {listItems.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted-foreground">
-            No shopping list linked to this trip.
+            {listHidden
+              ? "Scan or add items as you shop — we'll sort them by category."
+              : "No shopping list linked to this trip."}
           </p>
         ) : (
           groupedList.map(({ slug, items: lis }) => {
