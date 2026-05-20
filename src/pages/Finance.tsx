@@ -100,7 +100,7 @@ export default function Finance() {
         const ids = tripRows.map((t) => t.id);
         const { data: itemsData } = await supabase
           .from("trip_items")
-          .select("trip_id, name_snapshot, price_cents, qty, store_name_snapshot, barcode")
+          .select("trip_id, name_snapshot, price_cents, qty, store_name_snapshot, barcode, substitutes_list_item_id")
           .in("trip_id", ids);
         setItems((itemsData ?? []) as TripItem[]);
 
