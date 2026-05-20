@@ -253,9 +253,50 @@ export default function ActiveTrip() {
         .eq("id", matchId);
       toast.success(`Checked off: ${productName}`);
     } else {
-      setExtras((c) => [...c, tripItem]);
-      toast("Added to Extras", { icon: "✨" });
+      // Not on list — ask the user: extra or substitute
+      setOffList({ tripItem, productName });
     }
+  };
+
+  const confirmAsExtra = async () => {
+    if (!offList) return;
+    setExtras((c) => [...c, offList.tripItem]);
+    toast("Added to Extras", { icon: "✨" });
+    setOffList(null);
+  };
+
+  const openSubstitutePicker = () => {
+    setSubQuery("");
+    setSubPickerOpen(true);
+  };
+
+  const confirmAsSubstitute = async (planned: ListItem) => {
+    if (!offList) return;
+    const tripItemId = offList.tripItem.id;
+    const checked_at = new Date().toISOString();
+    // Persist on trip_item + check off planned item
+    const [{ error: e1 }, { error: e2 }] = await Promise.all([
+      supabase.from("trip_items").update({ substitutes_list_item_id: planned.id }).eq("id", tripItemId),
+      supabase
+        .from("shopping_list_items")
+        .update({ checked_at, price_cents: offList.tripItem.price_cents })
+        .eq("id", planned.id),
+    ]);
+    if (e1 || e2) {
+      toast.error((e1 ?? e2)!.message);
+      return;
+    }
+    setItems((c) =>
+      c.map((i) => (i.id === tripItemId ? { ...i, substitutes_list_item_id: planned.id } : i))
+    );
+    setListItems((c) =>
+      c.map((i) =>
+        i.id === planned.id ? { ...i, checked_at, price_cents: offList.tripItem.price_cents } : i,
+      ),
+    );
+    toast.success(`Substituted ${planned.name} → ${offList.productName}`);
+    setSubPickerOpen(false);
+    setOffList(null);
   };
 
   const onScanned = async (code: string) => {
