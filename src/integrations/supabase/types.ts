@@ -78,6 +78,7 @@ export type Database = {
           position: number
           price_cents: number | null
           qty: number
+          tag: string | null
         }
         Insert: {
           barcode?: string | null
@@ -91,6 +92,7 @@ export type Database = {
           position?: number
           price_cents?: number | null
           qty?: number
+          tag?: string | null
         }
         Update: {
           barcode?: string | null
@@ -104,6 +106,7 @@ export type Database = {
           position?: number
           price_cents?: number | null
           qty?: number
+          tag?: string | null
         }
         Relationships: [
           {
@@ -179,6 +182,7 @@ export type Database = {
           scanned_at: string
           store_id: string | null
           store_name_snapshot: string | null
+          substitutes_list_item_id: string | null
           trip_id: string
         }
         Insert: {
@@ -190,6 +194,7 @@ export type Database = {
           scanned_at?: string
           store_id?: string | null
           store_name_snapshot?: string | null
+          substitutes_list_item_id?: string | null
           trip_id: string
         }
         Update: {
@@ -201,6 +206,7 @@ export type Database = {
           scanned_at?: string
           store_id?: string | null
           store_name_snapshot?: string | null
+          substitutes_list_item_id?: string | null
           trip_id?: string
         }
         Relationships: [
@@ -209,6 +215,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_items_substitutes_list_item_id_fkey"
+            columns: ["substitutes_list_item_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list_items"
             referencedColumns: ["id"]
           },
           {

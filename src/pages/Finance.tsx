@@ -45,6 +45,7 @@ type TripItem = {
   qty: number;
   store_name_snapshot: string | null;
   barcode: string | null;
+  substitutes_list_item_id: string | null;
 };
 type ListItem = { list_id: string; name: string; barcode: string | null };
 
@@ -99,7 +100,7 @@ export default function Finance() {
         const ids = tripRows.map((t) => t.id);
         const { data: itemsData } = await supabase
           .from("trip_items")
-          .select("trip_id, name_snapshot, price_cents, qty, store_name_snapshot, barcode")
+          .select("trip_id, name_snapshot, price_cents, qty, store_name_snapshot, barcode, substitutes_list_item_id")
           .in("trip_id", ids);
         setItems((itemsData ?? []) as TripItem[]);
 
@@ -156,6 +157,7 @@ export default function Finance() {
     }
 
     const isExtra = (it: TripItem, list: ListItem[] | undefined) => {
+      if (it.substitutes_list_item_id) return false;
       if (!list || !list.length) return false;
       if (it.barcode && list.some((l) => l.barcode && l.barcode === it.barcode)) return false;
       const t = new Set(tokens(it.name_snapshot));

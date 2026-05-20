@@ -20,6 +20,7 @@ import {
   searchStoresByName,
   NearbyStore,
 } from "@/lib/device/geolocation";
+import { TagPill } from "@/components/TagPill";
 import { toast } from "sonner";
 
 type TripItem = {
@@ -30,6 +31,7 @@ type TripItem = {
   name_snapshot: string;
   price_cents: number;
   qty: number;
+  substitutes_list_item_id?: string | null;
 };
 type Store = { id: string; name: string };
 
@@ -42,6 +44,7 @@ type ListItem = {
   checked_at: string | null;
   price_cents: number | null;
   notes: string | null;
+  tag: string | null;
 };
 
 export default function ActiveTrip() {
@@ -76,6 +79,9 @@ export default function ActiveTrip() {
   const [pendingErrors, setPendingErrors] = useState<{ name?: boolean; price?: boolean; qty?: boolean }>({});
   const [manualCheck, setManualCheck] = useState<{ item: ListItem; qty: string; price: string } | null>(null);
   const [manualErrors, setManualErrors] = useState<{ qty?: boolean; price?: boolean }>({});
+  const [offList, setOffList] = useState<{ tripItem: TripItem; productName: string } | null>(null);
+  const [subPickerOpen, setSubPickerOpen] = useState(false);
+  const [subQuery, setSubQuery] = useState("");
 
   // Load active trip
   useEffect(() => {
@@ -148,6 +154,7 @@ export default function ActiveTrip() {
   }, [listItems, extras]);
 
   const uncheckListItem = async (it: ListItem) => {
+    const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
     setListItems((c) =>
       c.map((i) => (i.id === it.id ? { ...i, checked_at: null, price_cents: null } : i)),
     );
@@ -155,6 +162,10 @@ export default function ActiveTrip() {
       .from("shopping_list_items")
       .update({ checked_at: null, price_cents: null })
       .eq("id", it.id);
+    if (sub) {
+      setItems((c) => c.filter((i) => i.id !== sub.id));
+      await supabase.from("trip_items").delete().eq("id", sub.id);
+    }
   };
 
   const groupedList = useMemo(() => {
@@ -247,9 +258,56 @@ export default function ActiveTrip() {
         .eq("id", matchId);
       toast.success(`Checked off: ${productName}`);
     } else {
-      setExtras((c) => [...c, tripItem]);
-      toast("Added to Extras", { icon: "✨" });
+      // Not on list — ask the user: extra or substitute
+      setOffList({ tripItem, productName });
     }
+  };
+
+  const confirmAsExtra = async () => {
+    if (!offList) return;
+    setExtras((c) => [...c, offList.tripItem]);
+    toast("Added to Extras", { icon: "✨" });
+    setOffList(null);
+  };
+
+  const openSubstitutePicker = () => {
+    setSubQuery("");
+    setSubPickerOpen(true);
+  };
+
+  const confirmAsSubstitute = async (planned: ListItem) => {
+    if (!offList) return;
+    const tripItemId = offList.tripItem.id;
+    const checked_at = new Date().toISOString();
+    // Persist on trip_item + check off planned item
+    const [{ error: e1 }, { error: e2 }] = await Promise.all([
+      supabase.from("trip_items").update({ substitutes_list_item_id: planned.id }).eq("id", tripItemId),
+      supabase
+        .from("shopping_list_items")
+        .update({
+          checked_at,
+          price_cents: offList.tripItem.price_cents,
+          qty: offList.tripItem.qty,
+        })
+        .eq("id", planned.id),
+    ]);
+    if (e1 || e2) {
+      toast.error((e1 ?? e2)!.message);
+      return;
+    }
+    setItems((c) =>
+      c.map((i) => (i.id === tripItemId ? { ...i, substitutes_list_item_id: planned.id } : i))
+    );
+    setListItems((c) =>
+      c.map((i) =>
+        i.id === planned.id
+          ? { ...i, checked_at, price_cents: offList.tripItem.price_cents, qty: offList.tripItem.qty }
+          : i,
+      ),
+    );
+    toast.success(`Substituted ${planned.name} → ${offList.productName}`);
+    setSubPickerOpen(false);
+    setOffList(null);
   };
 
   const onScanned = async (code: string) => {
@@ -535,13 +593,24 @@ export default function ActiveTrip() {
                           >
                             {it.name}
                           </p>
-                          {(it.qty > 1 || it.notes) && (
-                            <p className="truncate text-xs text-muted-foreground">
-                              {it.qty > 1 ? `Qty ${it.qty}` : ""}
-                              {it.qty > 1 && it.notes ? " · " : ""}
-                              {it.notes ?? ""}
-                            </p>
-                          )}
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {(it.qty > 1 || it.notes) && (
+                              <p className="truncate text-xs text-muted-foreground">
+                                {it.qty > 1 ? `Qty ${it.qty}` : ""}
+                                {it.qty > 1 && it.notes ? " · " : ""}
+                                {it.notes ?? ""}
+                              </p>
+                            )}
+                            {it.tag && <TagPill tag={it.tag} size="xs" />}
+                            {(() => {
+                              const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
+                              return sub ? (
+                                <span className="truncate text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                                  ↔ {sub.name_snapshot}
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
                         </div>
                         {it.price_cents != null && (
                           <span className="shrink-0 text-right text-sm font-semibold text-primary">
@@ -721,6 +790,74 @@ export default function ActiveTrip() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+
+      <Dialog open={!!offList && !subPickerOpen} onOpenChange={(o) => { if (!o) setOffList(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Not on your list</DialogTitle>
+            <DialogDescription className="text-center">
+              "{offList?.productName}" isn't on your shopping list. How should we count it?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Button
+              size="lg"
+              className="w-full rounded-xl"
+              variant="outline"
+              onClick={confirmAsExtra}
+            >
+              Add as Extra
+            </Button>
+            <Button
+              size="lg"
+              className="w-full rounded-xl"
+              onClick={openSubstitutePicker}
+              disabled={!listItems.some((i) => !i.checked_at)}
+            >
+              Mark as Substitute
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={subPickerOpen} onOpenChange={(o) => { setSubPickerOpen(o); if (!o) setSubQuery(""); }}>
+        <DialogContent className="max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Replace which item?</DialogTitle>
+            <DialogDescription>
+              Pick the planned item that "{offList?.productName}" substitutes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              autoFocus
+              placeholder="Search planned items"
+              value={subQuery}
+              onChange={(e) => setSubQuery(e.target.value)}
+            />
+            <ul className="max-h-[50vh] space-y-2 overflow-y-auto">
+              {listItems
+                .filter((i) => !i.checked_at)
+                .filter((i) => i.name.toLowerCase().includes(subQuery.trim().toLowerCase()))
+                .map((i) => (
+                  <li key={i.id}>
+                    <button
+                      onClick={() => confirmAsSubstitute(i)}
+                      className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{i.name}</p>
+                        {i.tag && <TagPill tag={i.tag} size="xs" className="mt-1" />}
+                      </div>
+                      <span className="text-xs text-muted-foreground">Qty {i.qty}</span>
+                    </button>
+                  </li>
+                ))}
+            </ul>
+          </div>
         </DialogContent>
       </Dialog>
 
