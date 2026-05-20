@@ -20,6 +20,7 @@ import {
   searchStoresByName,
   NearbyStore,
 } from "@/lib/device/geolocation";
+import { TagPill } from "@/components/TagPill";
 import { toast } from "sonner";
 
 type TripItem = {
