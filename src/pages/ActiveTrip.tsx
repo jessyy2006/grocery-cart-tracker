@@ -79,6 +79,9 @@ export default function ActiveTrip() {
   const [pendingErrors, setPendingErrors] = useState<{ name?: boolean; price?: boolean; qty?: boolean }>({});
   const [manualCheck, setManualCheck] = useState<{ item: ListItem; qty: string; price: string } | null>(null);
   const [manualErrors, setManualErrors] = useState<{ qty?: boolean; price?: boolean }>({});
+  const [offList, setOffList] = useState<{ tripItem: TripItem; productName: string } | null>(null);
+  const [subPickerOpen, setSubPickerOpen] = useState(false);
+  const [subQuery, setSubQuery] = useState("");
 
   // Load active trip
   useEffect(() => {
