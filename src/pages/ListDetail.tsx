@@ -147,6 +147,7 @@ export default function ListDetail() {
       qty: parsedQty,
       category: slug,
       notes: notes.trim() ? notes.trim().slice(0, 25) : null,
+      tag: tag,
     };
     const { data, error } = await supabase.from("shopping_list_items").insert(insert).select("*").single();
     if (error) return toast.error(error.message);
@@ -154,6 +155,7 @@ export default function ListDetail() {
     setName("");
     setQtyText("1");
     setNotes("");
+    setTag(null);
     setAutoCat(true);
     setAddOpen(false);
     requestAnimationFrame(() => {
