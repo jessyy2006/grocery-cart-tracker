@@ -279,7 +279,11 @@ export default function ActiveTrip() {
       supabase.from("trip_items").update({ substitutes_list_item_id: planned.id }).eq("id", tripItemId),
       supabase
         .from("shopping_list_items")
-        .update({ checked_at, price_cents: offList.tripItem.price_cents })
+        .update({
+          checked_at,
+          price_cents: offList.tripItem.price_cents,
+          qty: offList.tripItem.qty,
+        })
         .eq("id", planned.id),
     ]);
     if (e1 || e2) {
@@ -291,7 +295,9 @@ export default function ActiveTrip() {
     );
     setListItems((c) =>
       c.map((i) =>
-        i.id === planned.id ? { ...i, checked_at, price_cents: offList.tripItem.price_cents } : i,
+        i.id === planned.id
+          ? { ...i, checked_at, price_cents: offList.tripItem.price_cents, qty: offList.tripItem.qty }
+          : i,
       ),
     );
     toast.success(`Substituted ${planned.name} → ${offList.productName}`);
