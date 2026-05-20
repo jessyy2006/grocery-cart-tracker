@@ -154,6 +154,7 @@ export default function ActiveTrip() {
   }, [listItems, extras]);
 
   const uncheckListItem = async (it: ListItem) => {
+    const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
     setListItems((c) =>
       c.map((i) => (i.id === it.id ? { ...i, checked_at: null, price_cents: null } : i)),
     );
@@ -161,6 +162,10 @@ export default function ActiveTrip() {
       .from("shopping_list_items")
       .update({ checked_at: null, price_cents: null })
       .eq("id", it.id);
+    if (sub) {
+      setItems((c) => c.filter((i) => i.id !== sub.id));
+      await supabase.from("trip_items").delete().eq("id", sub.id);
+    }
   };
 
   const groupedList = useMemo(() => {
