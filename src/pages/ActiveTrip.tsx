@@ -54,6 +54,7 @@ export default function ActiveTrip() {
   const [tripId, setTripId] = useState<string | null>(null);
   const [listId, setListId] = useState<string | null>(null);
   const [listName, setListName] = useState<string>("");
+  const [listHidden, setListHidden] = useState<boolean>(false);
   const [listItems, setListItems] = useState<ListItem[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [items, setItems] = useState<TripItem[]>([]);
