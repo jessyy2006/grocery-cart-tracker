@@ -50,8 +50,11 @@ export default function ListDetail() {
   const [editName, setEditName] = useState("");
   const [editQtyText, setEditQtyText] = useState("1");
   const [editNotes, setEditNotes] = useState("");
+  const [editTag, setEditTag] = useState<string | null>(null);
+  const [tag, setTag] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [dupOpen, setDupOpen] = useState(false);
+  const [groupBy, setGroupBy] = useState<"category" | "tag">("category");
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
