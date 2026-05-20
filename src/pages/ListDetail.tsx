@@ -408,6 +408,7 @@ export default function ListDetail() {
                 ))}
               </SelectContent>
             </Select>
+            <TagSelector value={tag} suggestions={tagSuggestions} onChange={setTag} />
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setAddOpen(false)}>
