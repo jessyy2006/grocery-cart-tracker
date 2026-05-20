@@ -30,6 +30,7 @@ type TripItem = {
   name_snapshot: string;
   price_cents: number;
   qty: number;
+  substitutes_list_item_id?: string | null;
 };
 type Store = { id: string; name: string };
 
@@ -42,6 +43,7 @@ type ListItem = {
   checked_at: string | null;
   price_cents: number | null;
   notes: string | null;
+  tag: string | null;
 };
 
 export default function ActiveTrip() {
