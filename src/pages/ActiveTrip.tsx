@@ -12,7 +12,7 @@ import { Scanner } from "@/components/Scanner";
 import { ScanLine, Plus, MapPin, Trash2, Check, X, Search, Loader2 } from "lucide-react";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
-import { findListMatch, getCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
+import { findListMatch, getCategory, guessCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
 import {
   findNearbyStores,
   getCachedCoords,
