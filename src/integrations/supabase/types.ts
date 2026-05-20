@@ -121,6 +121,7 @@ export type Database = {
       shopping_lists: {
         Row: {
           created_at: string
+          hidden: boolean
           id: string
           name: string
           updated_at: string
@@ -128,6 +129,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          hidden?: boolean
           id?: string
           name: string
           updated_at?: string
@@ -135,6 +137,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          hidden?: boolean
           id?: string
           name?: string
           updated_at?: string
