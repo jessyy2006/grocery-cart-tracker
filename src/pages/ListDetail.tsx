@@ -256,30 +256,56 @@ export default function ListDetail() {
       </header>
 
       <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
-        {grouped.length === 0 && (
+        {items.length > 0 && (
+          <div className="flex items-center justify-end gap-1 text-xs">
+            <span className="mr-1 text-muted-foreground">Group by</span>
+            <button
+              onClick={() => setGroupBy("category")}
+              className={`rounded-full px-2 py-0.5 font-medium ${
+                groupBy === "category" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              Category
+            </button>
+            <button
+              onClick={() => setGroupBy("tag")}
+              className={`rounded-full px-2 py-0.5 font-medium ${
+                groupBy === "tag" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              Tag
+            </button>
+          </div>
+        )}
+
+        {items.length === 0 && (
           <p className="py-10 text-center text-sm text-muted-foreground">
             No items yet — tap the + below to add your first one.
           </p>
         )}
-        {grouped.map(({ slug, items }) => {
-          const meta = getCategory(slug);
-          return (
-            <section key={slug}>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {meta.emoji} {meta.label}
-              </h3>
-              <ul className="space-y-2">
-                {items.map((it) => (
-                  <li key={it.id}>
-                    <Card className="flex items-center gap-3 p-3">
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className={`truncate font-medium ${
-                            it.checked_at ? "text-muted-foreground line-through" : ""
-                          }`}
-                        >
-                          {it.name}
-                        </p>
+
+        {(groupBy === "category" ? groupedByCategory : groupedByTag).map((group) => (
+          <section key={group.key}>
+            <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {groupBy === "category"
+                ? `${(group as any).emoji} ${group.label}`
+                : (group as any).isTag
+                ? <TagPill tag={group.label} />
+                : "Other"}
+            </h3>
+            <ul className="space-y-2">
+              {group.items.map((it) => (
+                <li key={it.id}>
+                  <Card className="flex items-center gap-3 p-3">
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`truncate font-medium ${
+                          it.checked_at ? "text-muted-foreground line-through" : ""
+                        }`}
+                      >
+                        {it.name}
+                      </p>
+                      <div className="flex items-center gap-1.5">
                         {(it.qty > 1 || it.notes) && (
                           <p className="truncate text-xs text-muted-foreground">
                             {it.qty > 1 ? `Qty ${it.qty}` : ""}
@@ -287,33 +313,34 @@ export default function ListDetail() {
                             {it.notes ?? ""}
                           </p>
                         )}
+                        {groupBy === "category" && it.tag && <TagPill tag={it.tag} size="xs" />}
                       </div>
-                      {it.price_cents != null && (
-                        <span className="shrink-0 text-sm font-semibold text-primary">
-                          {formatMoney(it.price_cents)}
-                        </span>
-                      )}
-                      <button
-                        onClick={() => openEdit(it)}
-                        className="text-muted-foreground hover:text-foreground"
-                        aria-label="Edit item"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => remove(it.id)}
-                        className="text-muted-foreground hover:text-destructive"
-                        aria-label="Delete item"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </Card>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          );
-        })}
+                    </div>
+                    {it.price_cents != null && (
+                      <span className="shrink-0 text-sm font-semibold text-primary">
+                        {formatMoney(it.price_cents)}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => openEdit(it)}
+                      className="text-muted-foreground hover:text-foreground"
+                      aria-label="Edit item"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => remove(it.id)}
+                      className="text-muted-foreground hover:text-destructive"
+                      aria-label="Delete item"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </Card>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
 
         <button
           type="button"
