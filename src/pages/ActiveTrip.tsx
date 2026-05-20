@@ -266,6 +266,34 @@ export default function ActiveTrip() {
         .update({ checked_at, barcode: code ?? undefined, name: newName, price_cents: newPrice })
         .eq("id", matchId);
       toast.success(`Checked off: ${productName}`);
+    } else if (listHidden && listId) {
+      // Free-shop mode: silently add as a planned (pre-checked) list item,
+      // categorized so it groups nicely. No extras prompt.
+      const checked_at = new Date().toISOString();
+      const slug = guessCategory(productName);
+      const { data: row, error } = await supabase
+        .from("shopping_list_items")
+        .insert({
+          list_id: listId,
+          name: productName,
+          qty: tripItem.qty,
+          category: slug,
+          barcode: code ?? null,
+          price_cents: tripItem.price_cents,
+          checked_at,
+        })
+        .select("*")
+        .single();
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      setListItems((c) => [...c, row as ListItem]);
+      // The trip_item created by confirmAdd is redundant in free mode
+      // (cart total comes from listItems), so drop it to keep receipts clean.
+      setItems((c) => c.filter((i) => i.id !== tripItem.id));
+      await supabase.from("trip_items").delete().eq("id", tripItem.id);
+      toast.success(`Added: ${productName}`);
     } else {
       // Not on list — ask the user: extra or substitute
       setOffList({ tripItem, productName });
