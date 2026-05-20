@@ -157,6 +157,7 @@ export default function Finance() {
     }
 
     const isExtra = (it: TripItem, list: ListItem[] | undefined) => {
+      if (it.substitutes_list_item_id) return false;
       if (!list || !list.length) return false;
       if (it.barcode && list.some((l) => l.barcode && l.barcode === it.barcode)) return false;
       const t = new Set(tokens(it.name_snapshot));
