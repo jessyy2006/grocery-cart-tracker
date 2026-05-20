@@ -83,7 +83,19 @@ export default function ListDetail() {
     if (autoCat && name.trim()) setCategory(guessCategory(name));
   }, [name, autoCat]);
 
-  const grouped = useMemo(() => {
+  const tagSuggestions = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const it of items) {
+      if (it.tag && !seen.has(it.tag.toLowerCase())) {
+        seen.add(it.tag.toLowerCase());
+        out.push(it.tag);
+      }
+    }
+    return out;
+  }, [items]);
+
+  const groupedByCategory = useMemo(() => {
     const map = new Map<CategorySlug, Item[]>();
     for (const it of items) {
       const slug = (CATEGORY_ORDER.includes(it.category as CategorySlug)
@@ -92,11 +104,34 @@ export default function ListDetail() {
       if (!map.has(slug)) map.set(slug, []);
       map.get(slug)!.push(it);
     }
-    // sort: unchecked first, then checked; preserve creation order otherwise
     for (const arr of map.values()) {
       arr.sort((a, b) => Number(!!a.checked_at) - Number(!!b.checked_at));
     }
-    return CATEGORY_ORDER.filter((s) => map.has(s)).map((s) => ({ slug: s, items: map.get(s)! }));
+    return CATEGORY_ORDER.filter((s) => map.has(s)).map((s) => ({ key: s as string, label: getCategory(s).label, emoji: getCategory(s).emoji, items: map.get(s)! }));
+  }, [items]);
+
+  const groupedByTag = useMemo(() => {
+    const map = new Map<string, Item[]>();
+    const order: string[] = [];
+    for (const it of items) {
+      const k = it.tag ?? "__none";
+      if (!map.has(k)) {
+        map.set(k, []);
+        order.push(k);
+      }
+      map.get(k)!.push(it);
+    }
+    for (const arr of map.values()) {
+      arr.sort((a, b) => Number(!!a.checked_at) - Number(!!b.checked_at));
+    }
+    const sortedKeys = order.filter((k) => k !== "__none");
+    if (map.has("__none")) sortedKeys.push("__none");
+    return sortedKeys.map((k) => ({
+      key: k,
+      label: k === "__none" ? "Other" : k,
+      isTag: k !== "__none",
+      items: map.get(k)!,
+    }));
   }, [items]);
 
   const total = items.length;
