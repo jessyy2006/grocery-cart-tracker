@@ -1,109 +1,54 @@
-## Scope
+## Problem
 
-Two features, shipped together:
+When the user starts a trip via **Shop freely (no list)**, `trips.list_id` is `null` → `listItems` is empty → every added item falls through `handleMatchOrExtra` into `setOffList`, which routes to the **Extras** modal. Visually they live in the red "Extras" strip instead of being grouped by category like a normal list.
 
-1. **Per-list item tags** (one tag per item, grouped display)
-2. **Substitute item flow** during live trips (replaces "extra" decision with a 2-choice modal)
+Note: Finance already excludes these from impulse stats (`isExtra` returns false when the trip has no list), so this is purely an in-trip UX bug — but it makes the live view feel wrong.
 
----
+## Approach
 
-## 1. Item Tags
+**Auto-create a hidden shopping list on freely-shop trips.** All add-item paths then go through the existing planned-item flow with category grouping, tags, edit, etc. No new UI code paths, no special-casing.
 
-### Data model
+Why hidden: we don't want every spontaneous trip to clutter `/lists` or the "Choose a list" picker.
 
-Add one nullable column — no separate tag table needed since tags are per-list and "create inline" means the tag set is just the distinct values used.
-
-```sql
--- UP
-ALTER TABLE public.shopping_list_items ADD COLUMN tag text;
-CREATE INDEX idx_shopping_list_items_list_tag ON public.shopping_list_items (list_id, tag);
--- DOWN
-DROP INDEX IF EXISTS idx_shopping_list_items_list_tag;
-ALTER TABLE public.shopping_list_items DROP COLUMN tag;
-```
-
-Tag suggestions per list = `SELECT DISTINCT tag FROM shopping_list_items WHERE list_id = ? AND tag IS NOT NULL`.
-
-### UI
-
-- New `TagPill` component: rounded-full, muted bg, color derived from `hash(tagName) % palette[N]` (palette defined in `index.css` as semantic muted tokens — e.g. `--tag-1` through `--tag-6`, all HSL).
-- Add-item modal (`ListDetail.tsx` + same modal in `ActiveTrip.tsx` if present): tag selector below name. Combobox-style: shows existing tags as pills, free-text input creates a new one on Enter. Single-select; selecting a second replaces the first. "Clear tag" option.
-- Edit-item modal: same control.
-
-### Grouping
-
-category stay as the primary group and tag be a secondary chip users can toggle to sort by.
-
-- `src/pages/ListDetail.tsx` (`grouped` memo)
-- `src/pages/ActiveTrip.tsx` (planned-items list rendering)
-
-Group order: tags sorted by first-use (creation order of first item in group) → `OTHER` (untagged) last. Category emoji still shown per-item as a small inline marker; tag becomes the section header.
-
----
-
-## 2. Substitute Flow
-
-### Data model
+### Schema
 
 ```sql
 -- UP
-ALTER TABLE public.trip_items
-  ADD COLUMN substitutes_list_item_id uuid REFERENCES public.shopping_list_items(id) ON DELETE SET NULL;
-CREATE INDEX idx_trip_items_substitutes ON public.trip_items (substitutes_list_item_id);
+ALTER TABLE public.shopping_lists ADD COLUMN hidden boolean NOT NULL DEFAULT false;
+CREATE INDEX idx_shopping_lists_user_hidden ON public.shopping_lists (user_id, hidden);
 -- DOWN
-DROP INDEX IF EXISTS idx_trip_items_substitutes;
-ALTER TABLE public.trip_items DROP COLUMN substitutes_list_item_id;
+DROP INDEX IF EXISTS idx_shopping_lists_user_hidden;
+ALTER TABLE public.shopping_lists DROP COLUMN hidden;
 ```
 
-Semantics:
+### Code changes
 
-- `substitutes_list_item_id IS NULL` + item not matched to list → **extra/impulse** (unchanged)
-- `substitutes_list_item_id IS NOT NULL` → **substitute** (fulfills planned item, NOT extra, NOT impulse)
-- Matched-by-barcode/name to a list item → **planned** (unchanged)
+1. **`src/pages/StartTrip.tsx`** — when `pendingTrip:listId === "none"`, before inserting the trip:
+   - Insert a `shopping_lists` row with `name = "Free trip · {date}"`, `hidden = true`.
+   - Use that new id as the trip's `list_id`.
 
-### Flow change in `ActiveTrip.tsx`
+2. **`src/pages/ActiveTrip.tsx`** — when the linked list is `hidden`:
+   - Hide the list title in the header (or show "Shopping" generically).
+   - Replace empty-state copy "No shopping list linked to this trip" with "Tap + to add items as you shop."
+   - Everything else (grouping by category, tag selector, check-off) just works.
+   - `handleMatchOrExtra` still runs; since the list starts empty, scanned/manual items won't match — so we change the behavior: **when `list.hidden`, skip the OffList modal and directly insert a new `shopping_list_items` row (checked off, with the snapshot price), instead of routing to `setExtras`.** This makes spontaneous additions look identical to "I added it then checked it off."
 
-Current `handleMatchOrExtra` auto-adds unmatched items to Extras. New behavior:
+3. **`src/pages/Lists.tsx`** — append `.eq("hidden", false)` to the list query so hidden lists never appear.
 
-1. Unmatched item → open `OffListModal` with two CTAs: **Add as Extra** / **Mark as Substitute**.
-2. **Add as Extra** → current extras path.
-3. **Mark as Substitute** → open `SubstitutePickerModal`:
-  - Searchable list of unchecked planned items (filtered client-side).
-  - On select: insert trip_item with `substitutes_list_item_id = planned.id`, qty/price = scanned/entered values, then mark planned item `checked_at = now()`.
-  - UI shows the substituted item under its planned tag/group with a small "↔ substitute" label.
+4. **`src/pages/Home.tsx`** — same filter on the "Choose a list" dialog query.
 
-### Finance impact (`src/pages/Finance.tsx`)
+5. **`src/pages/Finance.tsx`** — no change needed. `isExtra` already returns false for these items (now even more correct: they live as planned items in the hidden list).
 
-Update `isExtra(it, list)` to also return `false` when `it.substitutes_list_item_id` is set. That alone fixes impulse rate, extras spend, and the impulse insight — no other changes needed.
+### Edge cases
 
----
+- **Existing free-shop trips** with `list_id = null` and items in `extras`: leave alone. Migration only affects new trips. The old extras stay where they are.
+- **User clicks "End trip"**: hidden list stays in DB (cheap, audit trail). If we want cleanup, a later sweep can delete hidden lists with no remaining trip references — out of scope here.
+- **TripDetail / receipts**: read from `trip_items` (not `shopping_list_items`), so unaffected. Items added in free mode currently aren't in `trip_items` at all (they're only `extras` state) — that's actually another bug, but fixing it via the planned-item path means they correctly become `trip_items` with `price_cents` set when checked off, like any planned item.
 
-## File changes
+Wait — clarification needed. Right now in **list mode**, when a planned item is checked off, does it create a `trip_items` row, or only update `shopping_list_items.checked_at`?
 
-- `supabase/migrations/*` — one migration with both schema changes
-- `src/integrations/supabase/types.ts` — auto-regenerated
-- `src/lib/tagColor.ts` (new) — hash → semantic token
-- `src/components/TagPill.tsx` (new)
-- `src/components/TagSelector.tsx` (new) — combobox used in add/edit modals
-- `src/index.css` — add `--tag-1..6` HSL tokens
-- `src/pages/ListDetail.tsx` — modal wiring, grouping by tag
-- `src/pages/ActiveTrip.tsx` — modal wiring, grouping, off-list modal, substitute picker, persist `substitutes_list_item_id`
-- `src/pages/Finance.tsx` — exclude substitutes from `isExtra`
+## Open question
 
-No changes to RLS (inherits via existing list_id / trip_id policies).
+Looking at `openManualCheck` flow vs `confirmAdd`: planned-item check-off appears to only update `shopping_list_items` (no `trip_items` insert), while extras create `trip_items`. Trip totals depend on which source. Before I implement, I want to verify: **do planned check-offs already write a `trip_items` row?** If not, free-trip items added through this new path will show in the cart total (which reads `listItems` price_cents) but won't appear in receipt/finance breakdowns (which read `trip_items`).
 
----
-
-## Risks / notes
-
-- **Existing data**: `tag` defaults NULL → all current items land in "OTHER" until tagged. Acceptable.
-- **Substitute deletion**: if user deletes the substitute trip_item, the planned item stays checked. Add a small rollback: on delete of a substitute trip_item, set its planned item `checked_at = null`. Cheap to do client-side.
-- **History/TripDetail view**: substitute label should also surface there for clarity. I'll add a minimal "↔" badge — low effort, prevents confusion in receipts.
-
----
-
-## Open question before I build
-
-**Tag vs category grouping** — confirm full replacement (tag becomes the primary grouping, category becomes a per-item emoji only). If you want both, say "keep category groups, tag is secondary chip" and I'll adjust.
-
-Once you confirm, I'll run the migration, wait for approval, then ship the code in one pass.
+If that's the case, the right fix is slightly bigger: on planned check-off, also insert a `trip_items` row. That would also fix receipts for normal list trips. Want me to include that, or keep this PR scoped to just the free-trip flag?
