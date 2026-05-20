@@ -289,10 +289,8 @@ export default function ActiveTrip() {
         return;
       }
       setListItems((c) => [...c, row as ListItem]);
-      // The trip_item created by confirmAdd is redundant in free mode
-      // (cart total comes from listItems), so drop it to keep receipts clean.
-      setItems((c) => c.filter((i) => i.id !== tripItem.id));
-      await supabase.from("trip_items").delete().eq("id", tripItem.id);
+      // Keep the trip_item: it backs trips.total_cents (via DB trigger) and
+      // surfaces in receipts. UI cart total reads listItems, so no double count.
       toast.success(`Added: ${productName}`);
     } else {
       // Not on list — ask the user: extra or substitute
