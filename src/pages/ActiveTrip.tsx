@@ -12,7 +12,7 @@ import { Scanner } from "@/components/Scanner";
 import { ScanLine, Plus, MapPin, Trash2, Check, X, Search, Loader2 } from "lucide-react";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
-import { findListMatch, getCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
+import { findListMatch, getCategory, guessCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
 import {
   findNearbyStores,
   getCachedCoords,
@@ -54,6 +54,7 @@ export default function ActiveTrip() {
   const [tripId, setTripId] = useState<string | null>(null);
   const [listId, setListId] = useState<string | null>(null);
   const [listName, setListName] = useState<string>("");
+  const [listHidden, setListHidden] = useState<boolean>(false);
   const [listItems, setListItems] = useState<ListItem[]>([]);
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [items, setItems] = useState<TripItem[]>([]);
@@ -107,11 +108,19 @@ export default function ActiveTrip() {
     if (!listId) {
       setListItems([]);
       setListName("");
+      setListHidden(false);
       return;
     }
     (async () => {
-      const { data: l } = await supabase.from("shopping_lists").select("name").eq("id", listId).maybeSingle();
-      if (l) setListName(l.name);
+      const { data: l } = await supabase
+        .from("shopping_lists")
+        .select("name, hidden")
+        .eq("id", listId)
+        .maybeSingle();
+      if (l) {
+        setListName(l.name);
+        setListHidden(!!(l as any).hidden);
+      }
       const { data } = await supabase
         .from("shopping_list_items")
         .select("*")
@@ -257,6 +266,32 @@ export default function ActiveTrip() {
         .update({ checked_at, barcode: code ?? undefined, name: newName, price_cents: newPrice })
         .eq("id", matchId);
       toast.success(`Checked off: ${productName}`);
+    } else if (listHidden && listId) {
+      // Free-shop mode: silently add as a planned (pre-checked) list item,
+      // categorized so it groups nicely. No extras prompt.
+      const checked_at = new Date().toISOString();
+      const slug = guessCategory(productName);
+      const { data: row, error } = await supabase
+        .from("shopping_list_items")
+        .insert({
+          list_id: listId,
+          name: productName,
+          qty: tripItem.qty,
+          category: slug,
+          barcode: code ?? null,
+          price_cents: tripItem.price_cents,
+          checked_at,
+        })
+        .select("*")
+        .single();
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      setListItems((c) => [...c, row as ListItem]);
+      // Keep the trip_item: it backs trips.total_cents (via DB trigger) and
+      // surfaces in receipts. UI cart total reads listItems, so no double count.
+      toast.success(`Added: ${productName}`);
     } else {
       // Not on list — ask the user: extra or substitute
       setOffList({ tripItem, productName });
@@ -566,7 +601,9 @@ export default function ActiveTrip() {
 
         {listItems.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted-foreground">
-            No shopping list linked to this trip.
+            {listHidden
+              ? "Scan or add items as you shop — we'll sort them by category."
+              : "No shopping list linked to this trip."}
           </p>
         ) : (
           groupedList.map(({ slug, items: lis }) => {

@@ -91,6 +91,7 @@ export default function Home() {
     const { data } = await supabase
       .from("shopping_lists")
       .select("id, name")
+      .eq("hidden", false)
       .order("updated_at", { ascending: false });
     setLists(data ?? []);
     setStartOpen(true);

@@ -36,7 +36,26 @@ export default function StartTrip() {
         }
 
         const pendingList = sessionStorage.getItem("pendingTrip:listId");
-        const listId = pendingList && pendingList !== "none" ? pendingList : null;
+        let listId = pendingList && pendingList !== "none" ? pendingList : null;
+
+        // Free-shop mode: spin up a hidden backing list so items flow through
+        // the normal planned/category UX instead of being flagged as extras.
+        if (!listId) {
+          const stamp = new Date().toLocaleString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          });
+          const { data: hl, error: hlErr } = await supabase
+            .from("shopping_lists")
+            .insert({ user_id: user.id, name: `Free trip · ${stamp}`, hidden: true })
+            .select("id")
+            .single();
+          if (hlErr) throw hlErr;
+          listId = hl.id;
+        }
+
         const { data: trip, error } = await supabase
           .from("trips")
           .insert({ user_id: user.id, list_id: listId })
