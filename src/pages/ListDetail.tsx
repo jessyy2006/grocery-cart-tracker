@@ -54,6 +54,8 @@ export default function ListDetail() {
   const [tag, setTag] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [dupOpen, setDupOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
   const [groupBy, setGroupBy] = useState<"category" | "tag">("category");
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -246,10 +248,21 @@ export default function ListDetail() {
         <button onClick={() => navigate("/lists")} className="flex items-center gap-2">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="text-center">
+        <button
+          type="button"
+          onClick={() => {
+            setRenameValue(listName);
+            setRenameOpen(true);
+          }}
+          className="flex flex-col items-center text-center"
+          aria-label="Rename list"
+        >
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Shopping list</p>
-          <h1 className="font-semibold">{listName}</h1>
-        </div>
+          <span className="inline-flex items-center gap-1 font-semibold">
+            {listName}
+            <Pencil className="h-3 w-3 text-muted-foreground" />
+          </span>
+        </button>
         <span className="text-xs text-muted-foreground">
           {done}/{total}
         </span>
@@ -483,6 +496,58 @@ export default function ListDetail() {
               Cancel
             </Button>
             <Button onClick={saveEdit}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename list</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={renameValue}
+            autoFocus
+            maxLength={60}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void (async () => {
+                  const next = renameValue.trim();
+                  if (!next || !id || next === listName) return setRenameOpen(false);
+                  setListName(next);
+                  setRenameOpen(false);
+                  const { error } = await supabase
+                    .from("shopping_lists")
+                    .update({ name: next })
+                    .eq("id", id);
+                  if (error) toast.error(error.message);
+                })();
+              }
+            }}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                const next = renameValue.trim();
+                if (!next || !id) return;
+                if (next === listName) return setRenameOpen(false);
+                setListName(next);
+                setRenameOpen(false);
+                const { error } = await supabase
+                  .from("shopping_lists")
+                  .update({ name: next })
+                  .eq("id", id);
+                if (error) toast.error(error.message);
+              }}
+              disabled={!renameValue.trim()}
+            >
+              Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
