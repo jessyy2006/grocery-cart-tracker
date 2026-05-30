@@ -248,10 +248,21 @@ export default function ListDetail() {
         <button onClick={() => navigate("/lists")} className="flex items-center gap-2">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="text-center">
+        <button
+          type="button"
+          onClick={() => {
+            setRenameValue(listName);
+            setRenameOpen(true);
+          }}
+          className="flex flex-col items-center text-center"
+          aria-label="Rename list"
+        >
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Shopping list</p>
-          <h1 className="font-semibold">{listName}</h1>
-        </div>
+          <span className="inline-flex items-center gap-1 font-semibold">
+            {listName}
+            <Pencil className="h-3 w-3 text-muted-foreground" />
+          </span>
+        </button>
         <span className="text-xs text-muted-foreground">
           {done}/{total}
         </span>
