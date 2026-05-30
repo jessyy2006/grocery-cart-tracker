@@ -10,12 +10,14 @@ const PALETTE = [
   "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-200",
 ] as const;
 
+// FNV-1a — better low-bit distribution than (h*31+c) for small palette modulos.
 function hash(str: string): number {
-  let h = 0;
+  let h = 2166136261;
   for (let i = 0; i < str.length; i++) {
-    h = (h * 31 + str.charCodeAt(i)) | 0;
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
   }
-  return Math.abs(h);
+  return h >>> 0;
 }
 
 export function tagColorClass(tag: string): string {
