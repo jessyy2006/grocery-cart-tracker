@@ -54,6 +54,8 @@ export default function ListDetail() {
   const [tag, setTag] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [dupOpen, setDupOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
   const [groupBy, setGroupBy] = useState<"category" | "tag">("category");
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
