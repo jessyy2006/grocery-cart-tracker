@@ -499,6 +499,58 @@ export default function ListDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Rename list</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={renameValue}
+            autoFocus
+            maxLength={60}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void (async () => {
+                  const next = renameValue.trim();
+                  if (!next || !id || next === listName) return setRenameOpen(false);
+                  setListName(next);
+                  setRenameOpen(false);
+                  const { error } = await supabase
+                    .from("shopping_lists")
+                    .update({ name: next })
+                    .eq("id", id);
+                  if (error) toast.error(error.message);
+                })();
+              }
+            }}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={async () => {
+                const next = renameValue.trim();
+                if (!next || !id) return;
+                if (next === listName) return setRenameOpen(false);
+                setListName(next);
+                setRenameOpen(false);
+                const { error } = await supabase
+                  .from("shopping_lists")
+                  .update({ name: next })
+                  .eq("id", id);
+                if (error) toast.error(error.message);
+              }}
+              disabled={!renameValue.trim()}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
