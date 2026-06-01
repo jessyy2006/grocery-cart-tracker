@@ -1,3 +1,5 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.0";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -8,17 +10,40 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { scannedName, listItems } = await req.json();
-    if (!scannedName || !Array.isArray(listItems) || listItems.length === 0) {
-      return new Response(JSON.stringify({ matchId: null }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ matchId: null, error: "Unauthorized" }, 401);
+    }
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims) {
+      return json({ matchId: null, error: "Unauthorized" }, 401);
+    }
+
+    const body = await req.json().catch(() => null);
+    const scannedName = typeof body?.scannedName === "string" ? body.scannedName.slice(0, 200) : "";
+    const rawItems = Array.isArray(body?.listItems) ? body.listItems.slice(0, 50) : [];
+    const listItems = rawItems
+      .filter((i: any) => i && typeof i.id === "string" && typeof i.name === "string")
+      .map((i: any) => ({ id: i.id.slice(0, 100), name: i.name.slice(0, 100) }));
+
+    if (!scannedName || listItems.length === 0) {
+      return json({ matchId: null });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY not configured");
+      return json({ matchId: null, error: "Service unavailable" }, 500);
+    }
 
-    const ids = listItems.map((i: any) => i.id);
+    const ids = listItems.map((i) => i.id);
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -37,7 +62,7 @@ Deno.serve(async (req) => {
           {
             role: "user",
             content: `Scanned: ${scannedName}\nList:\n${listItems
-              .map((i: any) => `- ${i.id}: ${i.name}`)
+              .map((i) => `- ${i.id}: ${i.name}`)
               .join("\n")}`,
           },
         ],
@@ -66,10 +91,10 @@ Deno.serve(async (req) => {
       const status = resp.status;
       const text = await resp.text();
       console.error("AI gateway error", status, text);
-      return new Response(JSON.stringify({ matchId: null, error: `gateway ${status}` }), {
-        status: status === 429 || status === 402 ? status : 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (status === 429 || status === 402) {
+        return json({ matchId: null, error: status === 429 ? "Rate limited" : "Out of credits" }, status);
+      }
+      return json({ matchId: null });
     }
 
     const data = await resp.json();
@@ -82,14 +107,16 @@ Deno.serve(async (req) => {
       } catch (_) {}
     }
 
-    return new Response(JSON.stringify({ matchId }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ matchId });
   } catch (e) {
     console.error("match-list-item error", e);
-    return new Response(
-      JSON.stringify({ matchId: null, error: e instanceof Error ? e.message : "unknown" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ matchId: null, error: "Internal error" }, 500);
   }
 });
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
