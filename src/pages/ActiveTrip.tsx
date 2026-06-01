@@ -556,7 +556,7 @@ export default function ActiveTrip() {
             <button
               onClick={() => setExtrasOpen((o) => !o)}
               aria-label="Show extras"
-              className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white shadow-md"
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground shadow-md"
             >
               {extras.length}
             </button>
@@ -569,16 +569,16 @@ export default function ActiveTrip() {
 
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
         {extrasOpen && extras.length > 0 && (
-          <section className="rounded-2xl border border-red-500 bg-red-500/15 p-3">
+          <section className="rounded-2xl border border-destructive bg-destructive/10 p-3">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-red-700">Extras</h3>
-              <span className="text-xs font-medium text-red-700">{extras.length}</span>
+              <h3 className="text-sm font-semibold text-destructive">Extras</h3>
+              <span className="text-xs font-medium text-destructive">{extras.length}</span>
             </div>
             <ul className="space-y-2">
               {extras.map((ex) => (
                 <li
                   key={ex.id}
-                  className="flex items-center justify-between rounded-xl border border-red-500 bg-card p-2"
+                  className="flex items-center justify-between rounded-xl border border-destructive bg-card p-2"
                 >
                   <div className="min-w-0 flex-1 pr-2">
                     <p className="truncate text-sm font-medium">{ex.name_snapshot}</p>
@@ -642,7 +642,7 @@ export default function ActiveTrip() {
                             {(() => {
                               const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
                               return sub ? (
-                                <span className="truncate text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                                <span className="truncate text-[10px] font-medium text-warning">
                                   ↔ {sub.name_snapshot}
                                 </span>
                               ) : null;
@@ -676,7 +676,7 @@ export default function ActiveTrip() {
                 const numer = checked + extras.length;
                 const cls =
                   numer > denom
-                    ? "bg-red-500 text-white"
+                    ? "bg-destructive text-destructive-foreground"
                     : numer === denom && denom > 0
                     ? "bg-accent text-accent-foreground"
                     : "bg-muted text-muted-foreground";
@@ -730,21 +730,21 @@ export default function ActiveTrip() {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="iname">Name</Label>
-                  {pendingErrors.name && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                  {pendingErrors.name && <span className="text-xs font-medium text-destructive">Incomplete</span>}
                 </div>
                 <Input
                   id="iname"
                   value={pending.name}
                   onChange={(e) => { setPending({ ...pending, name: e.target.value }); if (pendingErrors.name) setPendingErrors({ ...pendingErrors, name: false }); }}
                   placeholder="Item name"
-                  className={pendingErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  className={pendingErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="iprice">Price</Label>
-                    {pendingErrors.price && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                    {pendingErrors.price && <span className="text-xs font-medium text-destructive">Incomplete</span>}
                   </div>
                   <Input
                     id="iprice"
@@ -754,13 +754,13 @@ export default function ActiveTrip() {
                     onChange={(e) => { setPending({ ...pending, price: e.target.value }); if (pendingErrors.price) setPendingErrors({ ...pendingErrors, price: false }); }}
                     placeholder="0.00"
                     autoFocus={!pending.price}
-                    className={pendingErrors.price ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    className={pendingErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="iqty">Qty</Label>
-                    {pendingErrors.qty && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                    {pendingErrors.qty && <span className="text-xs font-medium text-destructive">Incomplete</span>}
                   </div>
                   <Input
                     id="iqty"
@@ -768,7 +768,7 @@ export default function ActiveTrip() {
                     min={1}
                     value={pending.qty || ""}
                     onChange={(e) => { const n = parseInt(e.target.value, 10); setPending({ ...pending, qty: isNaN(n) ? 0 : n }); if (pendingErrors.qty) setPendingErrors({ ...pendingErrors, qty: false }); }}
-                    className={pendingErrors.qty ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    className={pendingErrors.qty ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
                 </div>
               </div>
@@ -794,7 +794,7 @@ export default function ActiveTrip() {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="mprice">Price</Label>
-                    {manualErrors.price && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                    {manualErrors.price && <span className="text-xs font-medium text-destructive">Incomplete</span>}
                   </div>
                   <Input
                     id="mprice"
@@ -804,13 +804,13 @@ export default function ActiveTrip() {
                     onChange={(e) => { setManualCheck({ ...manualCheck, price: e.target.value }); if (manualErrors.price) setManualErrors({ ...manualErrors, price: false }); }}
                     placeholder="0.00"
                     autoFocus
-                    className={manualErrors.price ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    className={manualErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="mqty">Qty</Label>
-                    {manualErrors.qty && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                    {manualErrors.qty && <span className="text-xs font-medium text-destructive">Incomplete</span>}
                   </div>
                   <Input
                     id="mqty"
@@ -818,7 +818,7 @@ export default function ActiveTrip() {
                     min={1}
                     value={manualCheck.qty}
                     onChange={(e) => { setManualCheck({ ...manualCheck, qty: e.target.value.replace(/[^\d]/g, "") }); if (manualErrors.qty) setManualErrors({ ...manualErrors, qty: false }); }}
-                    className={manualErrors.qty ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    className={manualErrors.qty ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
                 </div>
               </div>

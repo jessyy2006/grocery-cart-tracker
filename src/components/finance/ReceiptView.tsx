@@ -31,7 +31,7 @@ type Props = {
   currency: Currency;
 };
 
-const PAPER = "#fdfaf1";
+const PAPER = "hsl(var(--paper))";
 
 const fmtRange = (a: Date, b: Date) => {
   const m = a.toLocaleString(undefined, { month: "long" });
@@ -45,7 +45,7 @@ const Row = ({ label, value, strong }: { label: string; value: string; strong?: 
   </div>
 );
 
-const Divider = () => <div className="my-2 border-t border-dashed border-neutral-500/60" />;
+const Divider = () => <div className="my-2 border-t border-dashed border-perforation" />;
 
 /** Transparent torn-paper edges. Polygon fills only the paper region. */
 const JaggedEdge = ({ position }: { position: "top" | "bottom" }) => {
@@ -109,7 +109,7 @@ const Barcode = ({ seed }: { seed: string }) => {
     <div className="flex h-16 w-full items-stretch justify-center gap-0">
       {bars.map((b, i) => (
         <div key={i} className="flex items-stretch" style={{ marginRight: `${b.gap}px` }}>
-          <div style={{ width: `${b.w}px`, backgroundColor: "#111" }} />
+          <div style={{ width: `${b.w}px`, backgroundColor: "hsl(var(--foreground))" }} />
         </div>
       ))}
     </div>
@@ -411,14 +411,14 @@ export default function ReceiptView(props: Props) {
 
         {/* Body */}
         <div
-          className="px-6 py-5 font-mono text-[13px] leading-snug text-neutral-900"
+          className="px-6 py-5 font-mono text-[13px] leading-snug text-foreground"
           style={{ backgroundColor: PAPER }}
         >
           <div className="text-center">
             <div className="text-base font-bold uppercase tracking-widest">
               Monthly Grocery Summary
             </div>
-            <div className="mt-1 text-xs text-neutral-600">{fmtRange(monthStart, monthEnd)}</div>
+            <div className="mt-1 text-xs text-muted-foreground">{fmtRange(monthStart, monthEnd)}</div>
           </div>
 
           <Divider />
@@ -456,15 +456,15 @@ export default function ReceiptView(props: Props) {
             />
           )}
           <Divider />
-          <div className="my-2 text-center text-xs italic text-neutral-700">* {personality} *</div>
-          <div className="mt-3 text-center text-[10px] uppercase tracking-widest text-neutral-500">
+          <div className="my-2 text-center text-xs italic text-muted-foreground">* {personality} *</div>
+          <div className="mt-3 text-center text-[10px] uppercase tracking-widest text-muted-foreground">
             Generated {generated}
           </div>
         </div>
 
         {/* Perforation line — same dotted weight as the dividers above */}
         <div style={{ backgroundColor: PAPER }}>
-          <div className="border-t border-dashed border-neutral-500/60" />
+          <div className="border-t border-dashed border-perforation" />
         </div>
 
         {/* Stub container — collapses height when torn so the receipt above settles, but doesn't clip the flying stub */}

@@ -6,7 +6,7 @@ import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
 
 type Props = { open: boolean; onClose: () => void };
 
-const DEFAULT_THEME_COLOR = "#0F2A1D";
+const DEFAULT_THEME_COLOR = "#ffffff";
 const DIALOG_THEME_COLOR = "#0a0a0a";
 
 export default function FeatureIntroDialog({ open, onClose }: Props) {

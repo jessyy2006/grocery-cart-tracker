@@ -2,94 +2,105 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Grocery Tracker design system — fresh-market vibes.
+/* Cartwise design system — receipt-inspired, Flighty-restrained.
+   Receipt-white base, near-black ink, one green accent, status colors only.
    All colors are HSL. Use semantic tokens, never raw colors. */
 
 @layer base {
   :root {
-    /* Surfaces — neutral white */
-    --background: 0 0% 99%;
-    --foreground: 150 35% 10%;
+    /* Receipt white base + near-black ink */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 150 35% 10%;
+    --card-foreground: 0 0% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 150 35% 10%;
+    --popover-foreground: 0 0% 12%;
 
-    /* Brand: dark forest green */
-    --primary: 150 50% 18%;
-    --primary-foreground: 0 0% 99%;
-    --primary-glow: 145 50% 30%;
+    /* Brand stamp: one green */
+    --primary: 150 50% 22%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 150 45% 32%;
 
-    /* Accent: light spring green */
-    --accent: 130 55% 65%;
-    --accent-foreground: 150 50% 12%;
+    /* Same-hue lighter green for fills/highlights */
+    --accent: 150 45% 45%;
+    --accent-foreground: 0 0% 100%;
 
-    --secondary: 140 25% 95%;
-    --secondary-foreground: 150 40% 16%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 12%;
 
-    --muted: 140 15% 95%;
-    --muted-foreground: 150 10% 38%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 42%;
 
-    --destructive: 0 75% 50%;
+    /* Status — meaning only */
+    --destructive: 4 74% 47%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 70% 38%;
+    --warning: 38 92% 45%;
+    --warning-foreground: 0 0% 12%;
+
+    --success: 150 55% 34%;
     --success-foreground: 0 0% 100%;
 
-    --border: 140 15% 88%;
-    --input: 140 15% 88%;
-    --ring: 150 50% 18%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 150 50% 22%;
 
-    --radius: 1rem;
+    /* Receipt-specific */
+    --perforation: 0 0% 80%;
+    --paper: 0 0% 98%;
+
+    --radius: 0.75rem;
+
+    /* Typography */
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Menlo", "Consolas", monospace;
 
     --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --shadow-elevated: 0 12px 32px -12px hsl(var(--primary) / 0.35);
-    --shadow-soft: 0 2px 8px -2px hsl(150 25% 12% / 0.08);
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --shadow-soft: 0 1px 2px hsl(0 0% 0% / 0.05), 0 1px 3px hsl(0 0% 0% / 0.06);
+    --shadow-elevated: 0 8px 24px -12px hsl(0 0% 0% / 0.18);
   }
 
   .dark {
-    --background: 150 20% 8%;
-    --foreground: 60 20% 96%;
+    /* Carbon-copy receipt at night (defined for future; no toggle shipped yet) */
+    --background: 0 0% 7%;
+    --foreground: 0 0% 92%;
 
-    --card: 150 18% 11%;
-    --card-foreground: 60 20% 96%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 92%;
 
-    --popover: 150 18% 11%;
-    --popover-foreground: 60 20% 96%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 92%;
 
-    --primary: 130 55% 65%;
-    --primary-foreground: 150 35% 10%;
-    --primary-glow: 130 60% 75%;
+    --primary: 150 45% 55%;
+    --primary-foreground: 0 0% 8%;
+    --primary-glow: 150 50% 65%;
 
-    --accent: 145 50% 40%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 150 45% 50%;
+    --accent-foreground: 0 0% 8%;
 
-    --secondary: 150 15% 18%;
-    --secondary-foreground: 60 20% 96%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 92%;
 
-    --muted: 150 15% 16%;
-    --muted-foreground: 150 8% 65%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
 
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 4 70% 58%;
+    --destructive-foreground: 0 0% 8%;
 
-    --success: 142 60% 50%;
-    --success-foreground: 0 0% 100%;
+    --warning: 38 90% 55%;
+    --warning-foreground: 0 0% 8%;
 
-    --border: 150 15% 20%;
-    --input: 150 15% 20%;
-    --ring: 150 55% 55%;
+    --success: 150 50% 50%;
+    --success-foreground: 0 0% 8%;
+
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 150 45% 50%;
+
+    --perforation: 0 0% 30%;
+    --paper: 0 0% 12%;
   }
 }
 
@@ -99,7 +110,7 @@
   html, body { overscroll-behavior-y: none; }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+    font-family: var(--font-sans);
     min-height: 100dvh;
   }
 }
@@ -110,6 +121,10 @@
   .gradient-hero { background-image: var(--gradient-hero); }
   .shadow-elevated { box-shadow: var(--shadow-elevated); }
   .shadow-soft { box-shadow: var(--shadow-soft); }
+  /* Printed label style — the receipt's signage convention */
+  .label { @apply font-mono text-xs uppercase tracking-wider text-muted-foreground; }
+  /* Dashed perforation rule */
+  .perforation { border-top: 1.5px dashed hsl(var(--perforation)); }
 }
 
 @keyframes confetti-bounce {
