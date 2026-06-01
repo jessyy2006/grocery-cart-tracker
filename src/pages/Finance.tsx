@@ -20,6 +20,7 @@ import { guessCategory, getCategory, tokens } from "@/lib/categories";
 import { Pencil, ArrowDown, ArrowUp, Sparkles, LayoutGrid, Receipt as ReceiptIcon, Flame } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import ReceiptView from "@/components/finance/ReceiptView";
+import { PrintedAmount } from "@/components/PrintedAmount";
 import {
   BarChart,
   Bar,
@@ -493,6 +494,7 @@ function FinanceCardView(props: any) {
     maxBar,
     rotatingInsight,
   } = props;
+  const nearLimit = hasBudget && !over && pctUsed >= 85;
   return (
     <>
 
@@ -510,29 +512,31 @@ function FinanceCardView(props: any) {
           </div>
         ) : (
           <>
-            <div className="flex items-baseline justify-between">
-              <div>
-                <div className="text-3xl font-bold tracking-tight">
-                  {formatMoney(Math.abs(remaining))}{" "}
-                  <span className={over ? "text-destructive" : "text-muted-foreground"}>
-                    {over ? "over" : "left"}
-                  </span>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  of {formatMoney(budgetCents!)} monthly budget
-                </div>
-              </div>
-              <div
-                className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                  over ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
+            <p className="label">{over ? "Over budget" : "Left this month"}</p>
+            <div className="mt-1 flex items-baseline justify-between gap-3">
+              <PrintedAmount
+                cents={Math.abs(remaining)}
+                tone={over ? "destructive" : nearLimit ? "warning" : "default"}
+                className="text-5xl font-bold tracking-tight"
+              />
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-xs font-medium ${
+                  over
+                    ? "bg-destructive/10 text-destructive"
+                    : nearLimit
+                    ? "bg-warning/10 text-warning"
+                    : "bg-muted text-muted-foreground"
                 }`}
               >
                 {pctUsed}% used
-              </div>
+              </span>
+            </div>
+            <div className="mt-1 text-sm text-muted-foreground">
+              of <PrintedAmount cents={budgetCents!} className="text-muted-foreground" /> monthly budget
             </div>
             <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className={`h-full ${over ? "bg-destructive" : "bg-accent"}`}
+                className={`h-full ${over ? "bg-destructive" : nearLimit ? "bg-warning" : "bg-accent"}`}
                 style={{ width: `${Math.min(100, pctUsed)}%` }}
               />
             </div>
@@ -551,8 +555,8 @@ function FinanceCardView(props: any) {
         </div>
       )}
 
-      {/* Behavior signals */}
-      <div className="grid grid-cols-3 gap-2">
+      {/* Behavior signals — one light row, subordinate to the budget hero */}
+      <Card className="grid grid-cols-3 divide-x divide-border p-0 shadow-soft">
         <SignalCard
           label="Impulse"
           value={formatMoney(derived.extrasNow.cents)}
@@ -572,7 +576,7 @@ function FinanceCardView(props: any) {
           )}`}
           sub={derived.momDelta === 0 ? "no change" : derived.momDelta < 0 ? "less spent" : "more spent"}
         />
-      </div>
+      </Card>
 
       {/* Monthly chart */}
       <Card className="p-4">
@@ -740,11 +744,11 @@ function SignalCard({
   const isUp = (delta ?? 0) > 0;
   const good = invert ? !isUp : isUp;
   return (
-    <Card className="p-3">
-      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+    <div className="p-3">
+      <div className="font-mono text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </div>
-      <div className="mt-1 text-base font-bold leading-tight">{value}</div>
+      <div className="mt-1 font-mono tabular-nums text-base font-bold leading-tight">{value}</div>
       <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
         {showDelta &&
           (isUp ? (
@@ -754,7 +758,7 @@ function SignalCard({
           ))}
         <span>{sub}</span>
       </div>
-    </Card>
+    </div>
   );
 }
 
