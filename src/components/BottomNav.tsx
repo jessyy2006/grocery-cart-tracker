@@ -23,15 +23,22 @@ export const BottomNav = () => {
             end={end}
             className={({ isActive }) =>
               cn(
-                "flex w-full max-w-[72px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-medium transition-colors",
+                "relative flex w-full max-w-[72px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs transition-colors",
                 isActive
-                  ? "bg-accent/30 text-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "font-semibold text-primary"
+                  : "font-medium text-muted-foreground hover:text-foreground"
               )
             }
           >
-            <Icon className="h-5 w-5" />
-            {label}
+            {({ isActive }) => (
+              <>
+                {isActive && (
+                  <span className="absolute top-0 h-0.5 w-6 rounded-full bg-primary" aria-hidden />
+                )}
+                <Icon className="h-5 w-5" />
+                {label}
+              </>
+            )}
           </NavLink>
         </li>
       ))}

@@ -21,6 +21,7 @@ import {
   NearbyStore,
 } from "@/lib/device/geolocation";
 import { TagPill } from "@/components/TagPill";
+import { PrintedAmount } from "@/components/PrintedAmount";
 import { toast } from "sonner";
 
 type TripItem = {
@@ -669,7 +670,7 @@ export default function ActiveTrip() {
           <div>
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Cart total</p>
             <div className="flex items-center gap-2">
-              <p className="text-3xl font-bold">{formatMoney(total)}</p>
+              <PrintedAmount cents={total} className="text-3xl font-bold" />
               {listItems.length > 0 && (() => {
                 const checked = listItems.filter((i) => i.checked_at).length;
                 const denom = listItems.length;
@@ -692,7 +693,7 @@ export default function ActiveTrip() {
             <Check className="mr-1 h-4 w-4" /> Save trip
           </Button>
         </div>
-        <Button size="lg" className="h-14 w-full text-base" onClick={() => setScanning(true)}>
+        <Button size="lg" className="h-14 w-full rounded-full text-base" onClick={() => setScanning(true)}>
           <ScanLine className="mr-2 h-5 w-5" /> Scan barcode
         </Button>
       </footer>
