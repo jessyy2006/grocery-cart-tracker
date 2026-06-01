@@ -5,11 +5,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Plus, MapPin, ListChecks } from "lucide-react";
-import { formatMoney, useCurrency } from "@/lib/format";
+import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 import { useProfile } from "@/hooks/useProfile";
 import FeatureIntroDialog from "@/components/FeatureIntroDialog";
 import { StartTripSheet } from "@/components/StartTripSheet";
+import { PrintedAmount } from "@/components/PrintedAmount";
+import { PerforatedDivider } from "@/components/PerforatedDivider";
 import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
 import { useSearchParams } from "react-router-dom";
 
@@ -87,24 +89,22 @@ export default function Home() {
             "Welcome back"
           )}
         </p>
-        <h1 className="text-3xl font-bold tracking-tight">Ready to shop?</h1>
       </header>
       <FeatureIntroDialog open={introOpen} onClose={() => setIntroOpen(false)} />
 
-      <Card className="overflow-hidden p-0 shadow-elevated">
-        <div className="gradient-hero p-6 text-primary-foreground">
-          <p className="text-xs uppercase tracking-wider opacity-80">This month's spend</p>
-          <p className="mt-1 text-3xl font-bold">{formatMoney(lifetime)}</p>
-        </div>
-        <div className="space-y-3 p-5">
-          <Button className="w-full" size="lg" onClick={() => setStartSheetOpen(true)}>
-            <Plus className="mr-2 h-5 w-5" /> Start shopping
-          </Button>
-          <Button variant="outline" className="w-full" onClick={() => navigate("/lists")}>
-            <ListChecks className="mr-2 h-5 w-5" /> My shopping lists
-          </Button>
-        </div>
+      {/* Spend slip — the focal point: glance at spend, then start */}
+      <Card className="p-5 shadow-soft">
+        <p className="label">This month's spend</p>
+        <PrintedAmount cents={lifetime} className="mt-1 block text-4xl font-bold tracking-tight" />
+        <PerforatedDivider className="my-4" />
+        <Button className="w-full rounded-full" size="lg" onClick={() => setStartSheetOpen(true)}>
+          <Plus className="mr-2 h-5 w-5" /> Start shopping
+        </Button>
       </Card>
+
+      <Button variant="ghost" className="w-full" onClick={() => navigate("/lists")}>
+        <ListChecks className="mr-2 h-4 w-4" /> My shopping lists
+      </Button>
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Recent trips</h2>
@@ -124,7 +124,7 @@ export default function Home() {
                       <MapPin className="h-3 w-3" /> {t.stores.join(" · ") || "No store"}
                     </p>
                   </div>
-                  <span className="font-semibold">{formatMoney(t.total_cents)}</span>
+                  <PrintedAmount cents={t.total_cents} className="font-semibold" />
                 </button>
               </li>
             ))}
