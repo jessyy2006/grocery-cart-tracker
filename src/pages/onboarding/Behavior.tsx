@@ -14,7 +14,7 @@ export default function OnboardingBehavior() {
 
   return (
     <OnboardingLayout
-      step={4}
+      step={3}
       title="How do you usually shop?"
       primaryLabel="Continue"
       primaryDisabled={!draft.shoppingBehavior}

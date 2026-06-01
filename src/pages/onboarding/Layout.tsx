@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const TOTAL_STEPS = 7;
+const TOTAL_STEPS = 5;
 
 type Props = {
   step: number;

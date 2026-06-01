@@ -205,7 +205,7 @@ export default function ListDetail() {
 
   const toggle = async (it: Item) => {
     if (!runActive) {
-      toast.error("Start the grocery run to check items off");
+      toast.error("Start shopping to check items off");
       return;
     }
     const checked_at = it.checked_at ? null : new Date().toISOString();
@@ -218,27 +218,11 @@ export default function ListDetail() {
     await supabase.from("shopping_list_items").delete().eq("id", itId);
   };
 
-  const startRun = async () => {
-    if (!user || !id) return;
+  const startRun = () => {
+    if (!id) return;
     if (items.length === 0) return toast.error("Add some items first");
-    // Reuse existing active trip if present, otherwise create a new one linked to this list
-    const { data: active } = await supabase
-      .from("trips")
-      .select("id")
-      .eq("status", "active")
-      .order("started_at", { ascending: false })
-      .limit(1);
-    if (active?.[0]) {
-      await supabase.from("trips").update({ list_id: id }).eq("id", active[0].id);
-      navigate("/trip");
-      return;
-    }
-    const { data, error } = await supabase
-      .from("trips")
-      .insert({ user_id: user.id, list_id: id, status: "active" })
-      .select("id")
-      .single();
-    if (error) return toast.error(error.message);
+    // Single trip-creation path (handles resume + fresh start). See lib/trip.ts.
+    sessionStorage.setItem("pendingTrip:listId", id);
     navigate("/trip/new");
   };
 
@@ -368,7 +352,7 @@ export default function ListDetail() {
 
       <footer className="border-t border-border bg-card px-4 pt-3 pb-3">
         <Button size="lg" className="h-14 w-full text-base" onClick={startRun}>
-          <ShoppingBasket className="mr-2 h-5 w-5" /> Start grocery run
+          <ShoppingBasket className="mr-2 h-5 w-5" /> Start shopping
         </Button>
       </footer>
 

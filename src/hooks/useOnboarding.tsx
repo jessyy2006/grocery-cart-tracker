@@ -10,8 +10,6 @@ export type OnboardingListItem = {
 export type OnboardingDraft = {
   firstName: string;
   lastName: string;
-  gender: string | null;
-  ageRange: string | null;
   goals: string[];
   budgetCents: number | null; // null = skipped (use default)
   shoppingBehavior: string | null;
@@ -21,8 +19,6 @@ export type OnboardingDraft = {
 const DEFAULT: OnboardingDraft = {
   firstName: "",
   lastName: "",
-  gender: null,
-  ageRange: null,
   goals: [],
   budgetCents: null,
   shoppingBehavior: null,

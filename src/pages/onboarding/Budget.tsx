@@ -35,7 +35,7 @@ export default function OnboardingBudget() {
 
   return (
     <OnboardingLayout
-      step={3}
+      step={2}
       title="Set your grocery budget"
       subtitle={`We'll track your spending against this goal in ${currency}.`}
       primaryLabel="Continue"

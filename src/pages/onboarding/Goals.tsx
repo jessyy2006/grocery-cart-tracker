@@ -21,7 +21,7 @@ export default function OnboardingGoals() {
 
   return (
     <OnboardingLayout
-      step={2}
+      step={1}
       title="How can we help you?"
       subtitle="Pick anything that resonates."
       primaryLabel="Continue"

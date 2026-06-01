@@ -4,25 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { ShoppingBasket, Plus, MapPin, ListChecks, ShoppingCart, ArrowLeft } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Plus, MapPin, ListChecks } from "lucide-react";
 import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
-import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
 import FeatureIntroDialog from "@/components/FeatureIntroDialog";
+import { StartTripSheet } from "@/components/StartTripSheet";
 import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
 import { useSearchParams } from "react-router-dom";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
-type ShortList = { id: string; name: string };
 
 export default function Home() {
   const { user } = useAuth();
@@ -34,10 +25,7 @@ export default function Home() {
   const [activeTrip, setActiveTrip] = useState<Trip | null>(null);
   const [recent, setRecent] = useState<(Trip & { stores: string[] })[]>([]);
   const [lifetime, setLifetime] = useState(0);
-  const [startOpen, setStartOpen] = useState(false);
-  const [chooseListOpen, setChooseListOpen] = useState(false);
-  const [lists, setLists] = useState<ShortList[]>([]);
-  const [creating, setCreating] = useState(false);
+  const [startSheetOpen, setStartSheetOpen] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("intro") === "1" && localStorage.getItem(FEATURE_INTRO_KEY) !== "1") {
@@ -87,45 +75,6 @@ export default function Home() {
     })();
   }, [user]);
 
-  const openStart = async () => {
-    const { data } = await supabase
-      .from("shopping_lists")
-      .select("id, name")
-      .eq("hidden", false)
-      .order("updated_at", { ascending: false });
-    setLists(data ?? []);
-    setStartOpen(true);
-  };
-
-  const startTripWith = async (listId: string | null) => {
-    if (!user) return;
-    setCreating(true);
-    try {
-      // End any lingering active trips so we always start fresh
-      await supabase
-        .from("trips")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("status", "active");
-
-      // Reset the chosen list so nothing is pre-checked
-      if (listId) {
-        await supabase
-          .from("shopping_list_items")
-          .update({ checked_at: null, price_cents: null })
-          .eq("list_id", listId);
-      }
-
-      sessionStorage.setItem("pendingTrip:listId", listId ?? "none");
-      setStartOpen(false);
-      navigate("/trip/new");
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed to start trip");
-    } finally {
-      setCreating(false);
-    }
-  };
-
   return (
     <div className="space-y-6 px-5 pb-6 pt-2">
       <header>
@@ -148,8 +97,8 @@ export default function Home() {
           <p className="mt-1 text-3xl font-bold">{formatMoney(lifetime)}</p>
         </div>
         <div className="space-y-3 p-5">
-          <Button className="w-full" size="lg" onClick={openStart}>
-            <Plus className="mr-2 h-5 w-5" /> Start new trip
+          <Button className="w-full" size="lg" onClick={() => setStartSheetOpen(true)}>
+            <Plus className="mr-2 h-5 w-5" /> Start shopping
           </Button>
           <Button variant="outline" className="w-full" onClick={() => navigate("/lists")}>
             <ListChecks className="mr-2 h-5 w-5" /> My shopping lists
@@ -183,79 +132,7 @@ export default function Home() {
         )}
       </section>
 
-      <Dialog open={startOpen} onOpenChange={setStartOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Start a new trip</DialogTitle>
-            <DialogDescription>
-              Shop with one of your lists, or shop freely.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Button
-              className="w-full"
-              size="lg"
-              disabled={creating || lists.length === 0}
-              onClick={() => {
-                setStartOpen(false);
-                setChooseListOpen(true);
-              }}
-            >
-              <ListChecks className="mr-2 h-4 w-4" /> Choose a list
-            </Button>
-            {lists.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center">
-                Create a list first from My shopping lists.
-              </p>
-            )}
-            <Button
-              variant="outline"
-              className="w-full"
-              disabled={creating}
-              onClick={() => startTripWith(null)}
-            >
-              <ShoppingCart className="mr-2 h-4 w-4" /> Shop freely (no list)
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={chooseListOpen} onOpenChange={setChooseListOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Choose a list</DialogTitle>
-            <DialogDescription>
-              Pick the list you'll be shopping for.
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-2">
-            <ul className="space-y-2">
-              {lists.map((l) => (
-                <li key={l.id}>
-                  <button
-                    disabled={creating}
-                    onClick={() => startTripWith(l.id)}
-                    className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary disabled:opacity-50"
-                  >
-                    <ListChecks className="h-5 w-5 text-primary" />
-                    <span className="font-medium">{l.name}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </ScrollArea>
-          <Button
-            variant="ghost"
-            className="w-full"
-            onClick={() => {
-              setChooseListOpen(false);
-              setStartOpen(true);
-            }}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back
-          </Button>
-        </DialogContent>
-      </Dialog>
+      <StartTripSheet open={startSheetOpen} onOpenChange={setStartSheetOpen} />
     </div>
   );
 }

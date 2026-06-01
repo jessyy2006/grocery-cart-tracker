@@ -57,8 +57,6 @@ const persistOnboarding = async (
     user_id: userId,
     first_name: draft.firstName.trim() || null,
     last_name: draft.lastName.trim() || null,
-    gender: draft.gender,
-    age_range: draft.ageRange,
     goals: draft.goals,
     shopping_behavior: draft.shoppingBehavior,
     completed_at: new Date().toISOString(),
@@ -205,9 +203,9 @@ export default function OnboardingFirstList() {
 
   return (
     <OnboardingLayout
-      step={5}
+      step={4}
       title="Ready to shop?"
-      subtitle="Edit your first grocery list, then start a grocery trip."
+      subtitle="Edit your first grocery list, then start your first trip."
       onSkip={skip}
       primaryLabel={busy ? "Starting…" : "Start your first trip"}
       primaryDisabled={busy}

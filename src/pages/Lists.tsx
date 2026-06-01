@@ -70,7 +70,7 @@ export default function Lists() {
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
           <ListChecks className="mb-3 h-10 w-10 text-primary" />
           <p className="font-medium text-foreground">No lists yet</p>
-          <p className="mt-1 text-sm">Create one to plan a grocery run.</p>
+          <p className="mt-1 text-sm">Create one to plan a shopping trip.</p>
         </div>
       ) : (
         <ul className="space-y-2">

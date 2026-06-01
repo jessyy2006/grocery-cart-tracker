@@ -6,14 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import OnboardingLayout from "./Layout";
 
-const GENDERS = [
-  { v: "male", l: "Male" },
-  { v: "female", l: "Female" },
-  { v: "other", l: "Other" },
-  { v: "prefer_not", l: "Prefer not to say" },
-];
-const AGES = ["18-24", "25-34", "35-44", "45-54", "55+"];
-
 export default function OnboardingProfile() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -33,13 +25,13 @@ export default function OnboardingProfile() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const canContinue = draft.firstName.trim() && draft.lastName.trim();
+  const canContinue = !!draft.firstName.trim();
 
   return (
     <OnboardingLayout
-      step={1}
+      step={0}
       title="Tell us about you."
-      subtitle="Just the basics — everything else is optional."
+      subtitle="Just your name — that's it."
       primaryLabel="Continue"
       primaryDisabled={!canContinue}
       onPrimary={() => navigate("/onboarding/goals")}
@@ -51,48 +43,8 @@ export default function OnboardingProfile() {
             <Input id="first" value={draft.firstName} onChange={(e) => update({ firstName: e.target.value })} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="last">Last name</Label>
+            <Label htmlFor="last">Last name (optional)</Label>
             <Input id="last" value={draft.lastName} onChange={(e) => update({ lastName: e.target.value })} />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Gender (optional)</Label>
-          <div className="grid grid-cols-2 gap-2">
-            {GENDERS.map((g) => (
-              <button
-                key={g.v}
-                type="button"
-                onClick={() => update({ gender: draft.gender === g.v ? null : g.v })}
-                className={`border p-3 text-sm transition ${
-                  draft.gender === g.v
-                    ? "border-primary bg-primary/10 font-medium"
-                    : "border-border hover:border-primary/50"
-                } rounded-md`}
-              >
-                {g.l}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Age range (optional)</Label>
-          <div className="flex flex-wrap gap-2">
-            {AGES.map((a) => (
-              <button
-                key={a}
-                type="button"
-                onClick={() => update({ ageRange: draft.ageRange === a ? null : a })}
-                className={`border px-4 py-2 text-sm transition ${
-                  draft.ageRange === a
-                    ? "border-primary bg-primary/10 font-medium"
-                    : "border-border hover:border-primary/50"
-                } rounded-md`}
-              >
-                {a}
-              </button>
-            ))}
           </div>
         </div>
       </div>
