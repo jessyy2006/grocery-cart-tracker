@@ -379,11 +379,11 @@ export default function Finance() {
   })();
 
   return (
-    <div className="space-y-5 px-5 pb-24 pt-2">
-      <header className="flex items-end justify-between">
+    <div className="space-y-7 px-5 pt-3">
+      <header className="flex items-end justify-between gap-3">
         <div>
-          <p className="invisible select-none text-sm text-muted-foreground" aria-hidden>.</p>
-          <h1 className="text-3xl font-bold tracking-tight">Finance</h1>
+          <p className="text-eyebrow">This month</p>
+          <h1 className="mt-1.5 text-h1">Finance</h1>
         </div>
         <div className="flex items-center gap-1">
           <ToggleGroup
@@ -393,11 +393,11 @@ export default function Finance() {
             size="sm"
             variant="outline"
           >
-            <ToggleGroupItem value="card" aria-label="Card view">
-              <LayoutGrid className="h-4 w-4" />
-            </ToggleGroupItem>
             <ToggleGroupItem value="receipt" aria-label="Receipt view">
               <ReceiptIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="card" aria-label="Card view">
+              <LayoutGrid className="h-4 w-4" />
             </ToggleGroupItem>
           </ToggleGroup>
           <Button size="icon" variant="ghost" onClick={openEditBudget} aria-label="Edit budget">
@@ -405,6 +405,7 @@ export default function Finance() {
           </Button>
         </div>
       </header>
+
 
       {loading ? (
         <div className="space-y-4">
