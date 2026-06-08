@@ -1,13 +1,14 @@
-// Soft, muted tag palettes — Notion-like. Static class strings so Tailwind JIT keeps them.
+// Produce-sticker palette — soft pastel chips with deeper ink for legibility.
+// Static class strings so Tailwind JIT keeps them.
 const PALETTE = [
-  "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
-  "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
-  "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200",
-  "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200",
-  "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200",
-  "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-200",
-  "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-200",
-  "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-200",
+  "bg-[hsl(8_80%_92%)] text-[hsl(8_60%_32%)] border border-[hsl(8_70%_82%)]",       // tomato
+  "bg-[hsl(40_90%_88%)] text-[hsl(30_60%_28%)] border border-[hsl(40_80%_78%)]",     // honey
+  "bg-[hsl(48_95%_88%)] text-[hsl(40_60%_28%)] border border-[hsl(48_85%_78%)]",     // butter
+  "bg-[hsl(200_70%_90%)] text-[hsl(205_55%_28%)] border border-[hsl(200_60%_80%)]",  // sky
+  "bg-[hsl(300_45%_92%)] text-[hsl(300_40%_32%)] border border-[hsl(300_35%_82%)]",  // plum
+  "bg-[hsl(18_55%_90%)] text-[hsl(18_50%_30%)] border border-[hsl(18_50%_80%)]",     // clay
+  "bg-[hsl(155_45%_90%)] text-[hsl(155_50%_22%)] border border-[hsl(155_40%_78%)]",  // mint
+  "bg-[hsl(350_70%_93%)] text-[hsl(350_55%_38%)] border border-[hsl(350_60%_84%)]",  // blush
 ] as const;
 
 // FNV-1a — better low-bit distribution than (h*31+c) for small palette modulos.

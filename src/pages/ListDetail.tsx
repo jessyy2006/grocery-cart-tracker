@@ -244,8 +244,8 @@ export default function ListDetail() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-border bg-card px-5 py-4">
-        <button onClick={() => navigate("/lists")} className="flex items-center gap-2">
+      <header className="glass sticky top-0 z-10 flex items-center justify-between border-b border-hairline px-5 py-3 safe-top">
+        <button onClick={() => navigate("/lists")} className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-surface-sunk" aria-label="Back">
           <ArrowLeft className="h-5 w-5" />
         </button>
         <button
@@ -257,16 +257,17 @@ export default function ListDetail() {
           className="flex flex-col items-center text-center"
           aria-label="Rename list"
         >
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">Shopping list</p>
-          <span className="inline-flex items-center gap-1 font-semibold">
+          <p className="text-eyebrow">Shopping list</p>
+          <span className="mt-0.5 inline-flex items-center gap-1.5 text-h2 font-display">
             {listName}
-            <Pencil className="h-3 w-3 text-muted-foreground" />
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
           </span>
         </button>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-money text-small text-muted-foreground w-10 text-right">
           {done}/{total}
         </span>
       </header>
+
 
       <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
         {items.length > 0 && (

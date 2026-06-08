@@ -4,15 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
-import { formatMoney, useCurrency } from "@/lib/format";
+import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PageHeader } from "@/components/PageHeader";
+import { Money } from "@/components/Money";
 
 type Row = {
   id: string;
@@ -42,14 +38,9 @@ export default function History() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      // Auto-purge trips older than 1 year (RLS scopes this to the current user)
       const cutoff = new Date();
       cutoff.setFullYear(cutoff.getFullYear() - 1);
-      await supabase
-        .from("trips")
-        .delete()
-        .lt("started_at", cutoff.toISOString());
-
+      await supabase.from("trips").delete().lt("started_at", cutoff.toISOString());
       const { data } = await supabase
         .from("trips")
         .select("id, started_at, total_cents, trip_items(store_name_snapshot)")
@@ -63,11 +54,7 @@ export default function History() {
           total_cents: t.total_cents,
           itemCount: (t.trip_items ?? []).length,
           stores: Array.from(
-            new Set(
-              (t.trip_items ?? [])
-                .map((i: any) => i.store_name_snapshot)
-                .filter(Boolean),
-            ),
+            new Set((t.trip_items ?? []).map((i: any) => i.store_name_snapshot).filter(Boolean)),
           ) as string[],
         })),
       );
@@ -85,57 +72,74 @@ export default function History() {
     [rows, month],
   );
 
+  // Group by month for section headers
+  const grouped = useMemo(() => {
+    const map = new Map<string, Row[]>();
+    for (const r of filtered) {
+      const k = monthKey(r.started_at);
+      const arr = map.get(k) ?? [];
+      arr.push(r);
+      map.set(k, arr);
+    }
+    return Array.from(map.entries());
+  }, [filtered]);
+
   return (
-    <div className="space-y-4 px-5 pb-6 pt-2">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <p className="invisible select-none text-sm text-muted-foreground" aria-hidden>.</p>
-          <h1 className="text-3xl font-bold tracking-tight">History</h1>
-        </div>
-        {monthOptions.length > 0 && (
-          <Select value={month} onValueChange={setMonth}>
-            <SelectTrigger className="h-9 w-[160px]">
-              <SelectValue placeholder="All months" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>All months</SelectItem>
-              {monthOptions.map((k) => (
-                <SelectItem key={k} value={k}>
-                  {monthLabel(k)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
+    <div className="space-y-7 px-5 pt-3">
+      <PageHeader
+        eyebrow="Past runs"
+        title="History"
+        action={
+          monthOptions.length > 0 ? (
+            <Select value={month} onValueChange={setMonth}>
+              <SelectTrigger className="h-10 w-[150px] rounded-md bg-surface border-hairline text-small">
+                <SelectValue placeholder="All months" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>All months</SelectItem>
+                {monthOptions.map((k) => (
+                  <SelectItem key={k} value={k}>{monthLabel(k)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null
+        }
+      />
+
       {filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          {rows.length === 0 ? "No saved trips yet." : "No trips for this month."}
-        </p>
+        <Card className="p-8 text-center">
+          <p className="text-small text-muted-foreground">
+            {rows.length === 0 ? "No saved trips yet." : "No trips for this month."}
+          </p>
+        </Card>
       ) : (
-        <ul className="space-y-2">
-          {filtered.map((t) => (
-            <li key={t.id}>
-              <button
-                onClick={() => navigate(`/trip/${t.id}`)}
-                className="w-full text-left"
-              >
-                <Card className="flex items-center justify-between p-4 shadow-soft transition hover:border-primary">
-                  <div>
-                    <p className="font-semibold">
-                      {format(new Date(t.started_at), "EEE, MMM d, yyyy")}
-                    </p>
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      {t.stores.join(" · ") || "No store"} · {t.itemCount} items
-                    </p>
-                  </div>
-                  <span className="text-lg font-bold">{formatMoney(t.total_cents)}</span>
-                </Card>
-              </button>
-            </li>
+        <div className="space-y-7">
+          {grouped.map(([k, items]) => (
+            <section key={k}>
+              <div className="sticky top-0 z-10 -mx-5 px-5 py-2 glass">
+                <p className="text-eyebrow">{monthLabel(k)}</p>
+              </div>
+              <ul className="mt-3 space-y-3">
+                {items.map((t) => (
+                  <li key={t.id}>
+                    <button onClick={() => navigate(`/trip/${t.id}`)} className="w-full text-left">
+                      <Card className="flex items-center justify-between p-4 transition hover:border-primary">
+                        <div>
+                          <p className="text-h3">{format(new Date(t.started_at), "EEE, MMM d")}</p>
+                          <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            {t.stores.join(" · ") || "No store"} · {t.itemCount} items
+                          </p>
+                        </div>
+                        <Money cents={t.total_cents} size="lg" />
+                      </Card>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
