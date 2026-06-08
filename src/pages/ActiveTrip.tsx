@@ -664,12 +664,12 @@ export default function ActiveTrip() {
         )}
       </div>
 
-      <footer className="border-t border-border bg-card p-4 safe-bottom">
+      <footer className="border-t border-hairline glass p-4 safe-bottom">
         <div className="mb-3 flex items-end justify-between">
           <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Cart total</p>
+            <p className="text-eyebrow">Cart total</p>
             <div className="flex items-center gap-2">
-              <p className="text-3xl font-bold">{formatMoney(total)}</p>
+              <p className="text-money text-3xl font-medium">{formatMoney(total)}</p>
               {listItems.length > 0 && (() => {
                 const checked = listItems.filter((i) => i.checked_at).length;
                 const denom = listItems.length;
