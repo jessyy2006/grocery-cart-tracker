@@ -22,6 +22,7 @@ import {
 } from "@/lib/device/geolocation";
 import { TagPill } from "@/components/TagPill";
 import { toast } from "sonner";
+import { MarketLoader } from "@/components/MarketLoader";
 
 type TripItem = {
   id: string;
@@ -83,6 +84,7 @@ export default function ActiveTrip() {
   const [offList, setOffList] = useState<{ tripItem: TripItem; productName: string } | null>(null);
   const [subPickerOpen, setSubPickerOpen] = useState(false);
   const [subQuery, setSubQuery] = useState("");
+  const [listReady, setListReady] = useState(false);
 
   // Load active trip
   useEffect(() => {
@@ -109,26 +111,36 @@ export default function ActiveTrip() {
       setListItems([]);
       setListName("");
       setListHidden(false);
+      if (tripId) setListReady(true);
       return;
     }
+    setListReady(false);
+    let cancelled = false;
     (async () => {
-      const { data: l } = await supabase
-        .from("shopping_lists")
-        .select("name, hidden")
-        .eq("id", listId)
-        .maybeSingle();
+      const [{ data: l }, { data }] = await Promise.all([
+        supabase
+          .from("shopping_lists")
+          .select("name, hidden")
+          .eq("id", listId)
+          .maybeSingle(),
+        supabase
+          .from("shopping_list_items")
+          .select("*")
+          .eq("list_id", listId)
+          .order("created_at", { ascending: true }),
+      ]);
+      if (cancelled) return;
       if (l) {
         setListName(l.name);
         setListHidden(!!(l as any).hidden);
       }
-      const { data } = await supabase
-        .from("shopping_list_items")
-        .select("*")
-        .eq("list_id", listId)
-        .order("created_at", { ascending: true });
       setListItems((data ?? []) as ListItem[]);
+      setListReady(true);
     })();
-  }, [listId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [listId, tripId]);
 
   // Load items + restore stashed store
   useEffect(() => {
@@ -534,8 +546,8 @@ export default function ActiveTrip() {
   const displayStores = isSearching ? (searchResults ?? []) : (nearbyStores ?? []);
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="glass sticky top-0 z-10 flex items-center justify-between border-b border-hairline px-5 py-3 safe-top">
+    <div className="flex h-full flex-col bg-background">
+      <header className="glass flex shrink-0 items-center justify-between border-b border-hairline px-5 py-3 safe-top">
         <div className="min-w-0">
           <p className="text-eyebrow">Shopping at</p>
           <button onClick={openStoreModal} className="mt-0.5 flex items-center gap-1 text-left">
@@ -567,104 +579,113 @@ export default function ActiveTrip() {
         </div>
       </header>
 
-      <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
-        {extrasOpen && extras.length > 0 && (
-          <section className="rounded-lg border border-[hsl(40_80%_78%)] bg-accent-honey/15 p-4">
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-h3 text-[hsl(30_60%_28%)]">Extras (off-list)</h3>
-              <span className="text-small font-medium text-[hsl(30_60%_28%)]">{extras.length}</span>
-            </div>
-            <ul className="space-y-2">
-              {extras.map((ex) => (
-                <li
-                  key={ex.id}
-                  className="flex items-center justify-between rounded-xl border border-red-500 bg-card p-2"
-                >
-                  <div className="min-w-0 flex-1 pr-2">
-                    <p className="truncate text-sm font-medium">{ex.name_snapshot}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {ex.qty} × {formatMoney(ex.price_cents)}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => removeExtra(ex.id)}
-                    className="text-muted-foreground hover:text-destructive"
-                    aria-label="Remove extra"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {listItems.length === 0 ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">
-            {listHidden
-              ? "Scan or add items as you shop — we'll sort them by category."
-              : "No shopping list linked to this trip."}
-          </p>
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+        {!listReady ? (
+          <MarketLoader minHeight="40vh" />
         ) : (
-          groupedList.map(({ slug, items: lis }) => {
-            const meta = getCategory(slug);
-            return (
-              <section key={slug}>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {meta.emoji} {meta.label}
-                </h3>
+          <>
+            {extrasOpen && extras.length > 0 && (
+              <section className="rounded-lg border border-[hsl(40_80%_78%)] bg-accent-honey/15 p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-h3 text-[hsl(30_60%_28%)]">Extras (off-list)</h3>
+                  <span className="text-small font-medium text-[hsl(30_60%_28%)]">{extras.length}</span>
+                </div>
                 <ul className="space-y-2">
-                  {lis.map((it) => (
-                    <li key={it.id}>
-                      <Card className="flex items-center gap-3 p-3">
-                        <Checkbox
-                          checked={!!it.checked_at}
-                          onCheckedChange={() => (it.checked_at ? uncheckListItem(it) : openManualCheck(it))}
-                          aria-label="Toggle item"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className={`truncate font-medium ${
-                              it.checked_at ? "text-muted-foreground line-through" : ""
-                            }`}
-                          >
-                            {it.name}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {(it.qty > 1 || it.notes) && (
-                              <p className="truncate text-xs text-muted-foreground">
-                                {it.qty > 1 ? `Qty ${it.qty}` : ""}
-                                {it.qty > 1 && it.notes ? " · " : ""}
-                                {it.notes ?? ""}
-                              </p>
-                            )}
-                            {it.tag && <TagPill tag={it.tag} size="xs" />}
-                            {(() => {
-                              const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
-                              return sub ? (
-                                <span className="truncate text-[10px] font-medium text-amber-700 dark:text-amber-300">
-                                  ↔ {sub.name_snapshot}
-                                </span>
-                              ) : null;
-                            })()}
-                          </div>
-                        </div>
-                        {it.price_cents != null && (
-                          <span className="shrink-0 text-right text-sm font-semibold text-primary">
-                            {formatMoney(it.price_cents)}
-                          </span>
-                        )}
-                      </Card>
+                  {extras.map((ex) => (
+                    <li
+                      key={ex.id}
+                      className="flex items-center justify-between rounded-xl border border-red-500 bg-card p-2"
+                    >
+                      <div className="min-w-0 flex-1 pr-2">
+                        <p className="truncate text-sm font-medium">{ex.name_snapshot}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {ex.qty} × {formatMoney(ex.price_cents)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => removeExtra(ex.id)}
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="Remove extra"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </li>
                   ))}
                 </ul>
               </section>
-            );
-          })
+            )}
+
+            {listItems.length === 0 ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                {listHidden
+                  ? "Scan or add items as you shop — we'll sort them by category."
+                  : "No shopping list linked to this trip."}
+              </p>
+            ) : (
+              groupedList.map(({ slug, items: lis }) => {
+                const meta = getCategory(slug);
+                return (
+                  <section key={slug}>
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {meta.emoji} {meta.label}
+                    </h3>
+                    <ul className="space-y-2">
+                      {lis.map((it) => (
+                        <li key={it.id}>
+                          <Card className="flex items-center gap-3 p-3">
+                            <Checkbox
+                              checked={!!it.checked_at}
+                              onCheckedChange={() => (it.checked_at ? uncheckListItem(it) : openManualCheck(it))}
+                              aria-label="Toggle item"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p
+                                className={`truncate font-medium ${
+                                  it.checked_at ? "text-muted-foreground line-through" : ""
+                                }`}
+                              >
+                                {it.name}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {(it.qty > 1 || it.notes) && (
+                                  <p className="truncate text-xs text-muted-foreground">
+                                    {it.qty > 1 ? `Qty ${it.qty}` : ""}
+                                    {it.qty > 1 && it.notes ? " · " : ""}
+                                    {it.notes ?? ""}
+                                  </p>
+                                )}
+                                {it.tag && <TagPill tag={it.tag} size="xs" />}
+                                {(() => {
+                                  const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
+                                  return sub ? (
+                                    <span className="truncate text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                                      ↔ {sub.name_snapshot}
+                                    </span>
+                                  ) : null;
+                                })()}
+                              </div>
+                            </div>
+                            {it.price_cents != null && (
+                              <span className="shrink-0 text-right text-sm font-semibold text-primary">
+                                {formatMoney(it.price_cents)}
+                              </span>
+                            )}
+                          </Card>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })
+            )}
+          </>
         )}
       </div>
 
-      <footer className="border-t border-hairline glass p-4 safe-bottom">
+      <footer
+        className="shrink-0 border-t border-hairline glass px-5 pt-4"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
+      >
         <div className="mb-3 flex items-end justify-between">
           <div>
             <p className="text-eyebrow">Cart total</p>

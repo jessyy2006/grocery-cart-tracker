@@ -2,7 +2,11 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { PropsWithChildren } from "react";
 
-export const PageTransition = ({ children }: PropsWithChildren) => {
+interface Props {
+  fullscreen?: boolean;
+}
+
+export const PageTransition = ({ children, fullscreen }: PropsWithChildren<Props>) => {
   const { pathname } = useLocation();
   const reduce = useReducedMotion();
 
@@ -21,7 +25,7 @@ export const PageTransition = ({ children }: PropsWithChildren) => {
                 y: { type: "spring", stiffness: 380, damping: 34, mass: 0.7 },
               }
         }
-        style={{ willChange: "opacity, transform" }}
+        className={fullscreen ? "h-full" : undefined}
       >
         {children}
       </motion.div>

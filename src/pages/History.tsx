@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/PageHeader";
 import { Money } from "@/components/Money";
+import { MarketLoader } from "@/components/MarketLoader";
 
 type Row = {
   id: string;
@@ -33,10 +34,12 @@ export default function History() {
   const navigate = useNavigate();
   useCurrency();
   const [rows, setRows] = useState<Row[]>([]);
+  const [ready, setReady] = useState(false);
   const [month, setMonth] = useState<string>(ALL);
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     (async () => {
       const cutoff = new Date();
       cutoff.setFullYear(cutoff.getFullYear() - 1);
@@ -47,6 +50,7 @@ export default function History() {
         .eq("status", "saved")
         .gte("started_at", cutoff.toISOString())
         .order("started_at", { ascending: false });
+      if (cancelled) return;
       setRows(
         (data ?? []).map((t: any) => ({
           id: t.id,
@@ -58,7 +62,11 @@ export default function History() {
           ) as string[],
         })),
       );
+      setReady(true);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const monthOptions = useMemo(() => {
@@ -106,7 +114,9 @@ export default function History() {
         }
       />
 
-      {filtered.length === 0 ? (
+      {!ready ? (
+        <MarketLoader minHeight="55vh" />
+      ) : filtered.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-small text-muted-foreground">
             {rows.length === 0 ? "No saved trips yet." : "No trips for this month."}

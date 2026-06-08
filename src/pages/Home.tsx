@@ -15,6 +15,7 @@ import FeatureIntroDialog from "@/components/FeatureIntroDialog";
 import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
 import { PageHeader } from "@/components/PageHeader";
 import { Money } from "@/components/Money";
+import { MarketLoader } from "@/components/MarketLoader";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
 type ShortList = { id: string; name: string };
@@ -37,6 +38,7 @@ export default function Home() {
   const [introOpen, setIntroOpen] = useState(false);
   const [recent, setRecent] = useState<(Trip & { stores: string[] })[]>([]);
   const [monthSpend, setMonthSpend] = useState(0);
+  const [ready, setReady] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [step, setStep] = useState<"choose" | "list">("choose");
   const [lists, setLists] = useState<ShortList[]>([]);
@@ -52,33 +54,42 @@ export default function Home() {
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     (async () => {
-      const { data: saved } = await supabase
-        .from("trips")
-        .select("id, started_at, total_cents, status, trip_items(store_name_snapshot)")
-        .eq("status", "saved")
-        .order("started_at", { ascending: false })
-        .limit(3);
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const [savedRes, allRes] = await Promise.all([
+        supabase
+          .from("trips")
+          .select("id, started_at, total_cents, status, trip_items(store_name_snapshot)")
+          .eq("status", "saved")
+          .order("started_at", { ascending: false })
+          .limit(3),
+        supabase
+          .from("trips")
+          .select("total_cents")
+          .eq("status", "saved")
+          .gte("started_at", monthStart.toISOString()),
+      ]);
+
+      if (cancelled) return;
 
       setRecent(
-        (saved ?? []).map((t: any) => ({
+        (savedRes.data ?? []).map((t: any) => ({
           ...t,
           stores: Array.from(
             new Set((t.trip_items ?? []).map((i: any) => i.store_name_snapshot).filter(Boolean))
           ) as string[],
         }))
       );
-
-      const monthStart = new Date();
-      monthStart.setDate(1);
-      monthStart.setHours(0, 0, 0, 0);
-      const { data: all } = await supabase
-        .from("trips")
-        .select("total_cents")
-        .eq("status", "saved")
-        .gte("started_at", monthStart.toISOString());
-      setMonthSpend((all ?? []).reduce((a, t: any) => a + (t.total_cents ?? 0), 0));
+      setMonthSpend((allRes.data ?? []).reduce((a, t: any) => a + (t.total_cents ?? 0), 0));
+      setReady(true);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const openSheet = async () => {
@@ -129,76 +140,82 @@ export default function Home() {
       />
       <FeatureIntroDialog open={introOpen} onClose={() => setIntroOpen(false)} />
 
-      {/* Hero — this month */}
-      <HeroCard className="overflow-hidden p-0">
-        <div className="relative p-6">
-          <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-accent-honey/20 blur-2xl" />
-          <p className="text-eyebrow">This month</p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <Money cents={monthSpend} size="display" />
-          </div>
-          <p className="mt-2 text-small text-muted-foreground">
-            {monthSpend === 0 ? "No spending yet — start your first trip." : "Tracked across your saved trips."}
-          </p>
-        </div>
-        <div className="p-5 pt-0">
-          <Button variant="hero" size="xl" className="w-full" onClick={openSheet}>
-            <ShoppingCart className="h-5 w-5" strokeWidth={2} />
-            Start a trip
-          </Button>
-        </div>
-      </HeroCard>
+      {!ready ? (
+        <MarketLoader minHeight="55vh" />
+      ) : (
+        <>
+          {/* Hero — this month */}
+          <HeroCard className="overflow-hidden p-0">
+            <div className="relative p-6">
+              <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-accent-honey/20 blur-2xl" />
+              <p className="text-eyebrow">This month</p>
+              <div className="mt-2 flex items-baseline gap-2">
+                <Money cents={monthSpend} size="display" />
+              </div>
+              <p className="mt-2 text-small text-muted-foreground">
+                {monthSpend === 0 ? "No spending yet — start your first trip." : "Tracked across your saved trips."}
+              </p>
+            </div>
+            <div className="p-5 pt-0">
+              <Button variant="hero" size="xl" className="w-full" onClick={openSheet}>
+                <ShoppingCart className="h-5 w-5" strokeWidth={2} />
+                Start a trip
+              </Button>
+            </div>
+          </HeroCard>
 
-      {/* Quiet link to lists */}
-      <button
-        onClick={() => navigate("/lists")}
-        className="flex w-full items-center justify-between text-left text-body text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <span className="inline-flex items-center gap-2">
-          <ListChecks className="h-4 w-4" strokeWidth={1.75} /> Manage your shopping lists
-        </span>
-        <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
-      </button>
+          {/* Quiet link to lists */}
+          <button
+            onClick={() => navigate("/lists")}
+            className="flex w-full items-center justify-between text-left text-body text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <span className="inline-flex items-center gap-2">
+              <ListChecks className="h-4 w-4" strokeWidth={1.75} /> Manage your shopping lists
+            </span>
+            <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
+          </button>
 
-      {/* Recent trips */}
-      <section>
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-h2">Recent trips</h2>
-          {recent.length > 0 && (
-            <button
-              onClick={() => navigate("/history")}
-              className="text-small text-muted-foreground hover:text-primary inline-flex items-center gap-1"
-            >
-              See all <ArrowRight className="h-3 w-3" />
-            </button>
-          )}
-        </div>
-        {recent.length === 0 ? (
-          <Card className="p-6 text-center">
-            <Sparkles className="mx-auto h-5 w-5 text-accent-honey" strokeWidth={1.75} />
-            <p className="mt-2 text-small text-muted-foreground">Your saved trips will live here.</p>
-          </Card>
-        ) : (
-          <ul className="space-y-3">
-            {recent.map((t) => (
-              <li key={t.id}>
+          {/* Recent trips */}
+          <section>
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-h2">Recent trips</h2>
+              {recent.length > 0 && (
                 <button
-                  onClick={() => navigate(`/trip/${t.id}`)}
-                  className="flex w-full items-center justify-between rounded-lg bg-card p-4 text-left shadow-soft border border-hairline hover:bg-surface-sunk transition-colors"
+                  onClick={() => navigate("/history")}
+                  className="text-small text-muted-foreground hover:text-primary inline-flex items-center gap-1"
                 >
-                  <div className="min-w-0">
-                    <p className="text-h3 truncate">{format(new Date(t.started_at), "EEE, MMM d")}</p>
-                    <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
-                      <MapPin className="h-3 w-3" /> {t.stores.join(" · ") || "No store"}
-                    </p>
-                  </div>
-                  <Money cents={t.total_cents} size="lg" />
+                  See all <ArrowRight className="h-3 w-3" />
                 </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+              )}
+            </div>
+            {recent.length === 0 ? (
+              <Card className="p-6 text-center">
+                <Sparkles className="mx-auto h-5 w-5 text-accent-honey" strokeWidth={1.75} />
+                <p className="mt-2 text-small text-muted-foreground">Your saved trips will live here.</p>
+              </Card>
+            ) : (
+              <ul className="space-y-3">
+                {recent.map((t) => (
+                  <li key={t.id}>
+                    <button
+                      onClick={() => navigate(`/trip/${t.id}`)}
+                      className="flex w-full items-center justify-between rounded-lg bg-card p-4 text-left shadow-soft border border-hairline hover:bg-surface-sunk transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-h3 truncate">{format(new Date(t.started_at), "EEE, MMM d")}</p>
+                        <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
+                          <MapPin className="h-3 w-3" /> {t.stores.join(" · ") || "No store"}
+                        </p>
+                      </div>
+                      <Money cents={t.total_cents} size="lg" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
+      )}
 
       {/* Unified start-trip bottom sheet (2 internal steps) */}
       <Drawer open={sheetOpen} onOpenChange={setSheetOpen}>
