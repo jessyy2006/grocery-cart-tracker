@@ -22,6 +22,7 @@ import {
 } from "@/lib/device/geolocation";
 import { TagPill } from "@/components/TagPill";
 import { toast } from "sonner";
+import { MarketLoader } from "@/components/MarketLoader";
 
 type TripItem = {
   id: string;
@@ -83,6 +84,7 @@ export default function ActiveTrip() {
   const [offList, setOffList] = useState<{ tripItem: TripItem; productName: string } | null>(null);
   const [subPickerOpen, setSubPickerOpen] = useState(false);
   const [subQuery, setSubQuery] = useState("");
+  const [listReady, setListReady] = useState(false);
 
   // Load active trip
   useEffect(() => {
@@ -109,26 +111,36 @@ export default function ActiveTrip() {
       setListItems([]);
       setListName("");
       setListHidden(false);
+      if (tripId) setListReady(true);
       return;
     }
+    setListReady(false);
+    let cancelled = false;
     (async () => {
-      const { data: l } = await supabase
-        .from("shopping_lists")
-        .select("name, hidden")
-        .eq("id", listId)
-        .maybeSingle();
+      const [{ data: l }, { data }] = await Promise.all([
+        supabase
+          .from("shopping_lists")
+          .select("name, hidden")
+          .eq("id", listId)
+          .maybeSingle(),
+        supabase
+          .from("shopping_list_items")
+          .select("*")
+          .eq("list_id", listId)
+          .order("created_at", { ascending: true }),
+      ]);
+      if (cancelled) return;
       if (l) {
         setListName(l.name);
         setListHidden(!!(l as any).hidden);
       }
-      const { data } = await supabase
-        .from("shopping_list_items")
-        .select("*")
-        .eq("list_id", listId)
-        .order("created_at", { ascending: true });
       setListItems((data ?? []) as ListItem[]);
+      setListReady(true);
     })();
-  }, [listId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [listId, tripId]);
 
   // Load items + restore stashed store
   useEffect(() => {
