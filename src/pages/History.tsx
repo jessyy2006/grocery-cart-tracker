@@ -114,7 +114,9 @@ export default function History() {
         }
       />
 
-      {filtered.length === 0 ? (
+      {!ready ? (
+        <MarketLoader minHeight="55vh" />
+      ) : filtered.length === 0 ? (
         <Card className="p-8 text-center">
           <p className="text-small text-muted-foreground">
             {rows.length === 0 ? "No saved trips yet." : "No trips for this month."}

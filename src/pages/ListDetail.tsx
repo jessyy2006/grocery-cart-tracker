@@ -20,6 +20,7 @@ import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } 
 import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
 import { TagPill } from "@/components/TagPill";
 import { TagSelector } from "@/components/TagSelector";
+import { MarketLoader } from "@/components/MarketLoader";
 import { toast } from "sonner";
 
 type Item = {
@@ -40,6 +41,7 @@ export default function ListDetail() {
   const navigate = useNavigate();
   const [listName, setListName] = useState("");
   const [items, setItems] = useState<Item[]>([]);
+  const [ready, setReady] = useState(false);
   const [name, setName] = useState("");
   const [qtyText, setQtyText] = useState("1");
   const [category, setCategory] = useState<CategorySlug>("other");
@@ -62,23 +64,31 @@ export default function ListDetail() {
 
   useEffect(() => {
     if (!id || !user) return;
+    let cancelled = false;
     (async () => {
-      const { data: l } = await supabase.from("shopping_lists").select("name").eq("id", id).maybeSingle();
+      const [{ data: l }, { data }, { data: trips }] = await Promise.all([
+        supabase.from("shopping_lists").select("name").eq("id", id).maybeSingle(),
+        supabase
+          .from("shopping_list_items")
+          .select("*")
+          .eq("list_id", id)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("trips")
+          .select("id")
+          .eq("list_id", id)
+          .eq("status", "active")
+          .limit(1),
+      ]);
+      if (cancelled) return;
       if (l) setListName(l.name);
-      const { data } = await supabase
-        .from("shopping_list_items")
-        .select("*")
-        .eq("list_id", id)
-        .order("created_at", { ascending: true });
       setItems((data ?? []) as Item[]);
-      const { data: trips } = await supabase
-        .from("trips")
-        .select("id")
-        .eq("list_id", id)
-        .eq("status", "active")
-        .limit(1);
       setRunActive(!!trips?.[0]);
+      setReady(true);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [id, user]);
 
   useEffect(() => {
