@@ -15,6 +15,7 @@ import FeatureIntroDialog from "@/components/FeatureIntroDialog";
 import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
 import { PageHeader } from "@/components/PageHeader";
 import { Money } from "@/components/Money";
+import { MarketLoader } from "@/components/MarketLoader";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
 type ShortList = { id: string; name: string };
@@ -37,6 +38,7 @@ export default function Home() {
   const [introOpen, setIntroOpen] = useState(false);
   const [recent, setRecent] = useState<(Trip & { stores: string[] })[]>([]);
   const [monthSpend, setMonthSpend] = useState(0);
+  const [ready, setReady] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [step, setStep] = useState<"choose" | "list">("choose");
   const [lists, setLists] = useState<ShortList[]>([]);
@@ -52,33 +54,42 @@ export default function Home() {
 
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     (async () => {
-      const { data: saved } = await supabase
-        .from("trips")
-        .select("id, started_at, total_cents, status, trip_items(store_name_snapshot)")
-        .eq("status", "saved")
-        .order("started_at", { ascending: false })
-        .limit(3);
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const [savedRes, allRes] = await Promise.all([
+        supabase
+          .from("trips")
+          .select("id, started_at, total_cents, status, trip_items(store_name_snapshot)")
+          .eq("status", "saved")
+          .order("started_at", { ascending: false })
+          .limit(3),
+        supabase
+          .from("trips")
+          .select("total_cents")
+          .eq("status", "saved")
+          .gte("started_at", monthStart.toISOString()),
+      ]);
+
+      if (cancelled) return;
 
       setRecent(
-        (saved ?? []).map((t: any) => ({
+        (savedRes.data ?? []).map((t: any) => ({
           ...t,
           stores: Array.from(
             new Set((t.trip_items ?? []).map((i: any) => i.store_name_snapshot).filter(Boolean))
           ) as string[],
         }))
       );
-
-      const monthStart = new Date();
-      monthStart.setDate(1);
-      monthStart.setHours(0, 0, 0, 0);
-      const { data: all } = await supabase
-        .from("trips")
-        .select("total_cents")
-        .eq("status", "saved")
-        .gte("started_at", monthStart.toISOString());
-      setMonthSpend((all ?? []).reduce((a, t: any) => a + (t.total_cents ?? 0), 0));
+      setMonthSpend((allRes.data ?? []).reduce((a, t: any) => a + (t.total_cents ?? 0), 0));
+      setReady(true);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const openSheet = async () => {
