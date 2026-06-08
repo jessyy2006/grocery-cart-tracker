@@ -120,11 +120,21 @@
     font-family: "Inter Tight Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
     font-feature-settings: "ss01", "cv11";
     min-height: 100dvh;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: hsl(var(--background));
     background-image:
       radial-gradient(hsl(36 30% 80% / 0.18) 1px, transparent 1px),
       radial-gradient(hsl(36 30% 80% / 0.12) 1px, transparent 1px);
     background-size: 24px 24px, 48px 48px;
     background-position: 0 0, 12px 12px;
+    will-change: transform;
+    transform: translateZ(0);
   }
 
   h1, h2, .font-display {
