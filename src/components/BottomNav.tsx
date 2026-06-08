@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import { Home, ListChecks, BarChart3, History, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,28 +15,39 @@ export const BottomNav = () => {
   const { pathname } = useLocation();
   if (pathname === "/trip" || pathname === "/trip/new") return null;
   return (
-  <nav className="sticky bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur safe-bottom">
-    <ul className="grid grid-cols-5 px-2 pt-1.5 pb-0">
-      {items.map(({ to, label, icon: Icon, end }) => (
-        <li key={to} className="flex justify-center">
-          <NavLink
-            to={to}
-            end={end}
-            className={({ isActive }) =>
-              cn(
-                "flex w-full max-w-[72px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-medium transition-colors",
-                isActive
-                  ? "bg-accent/30 text-primary"
-                  : "text-muted-foreground hover:text-foreground"
-              )
-            }
-          >
-            <Icon className="h-5 w-5" />
-            {label}
-          </NavLink>
-        </li>
-      ))}
-    </ul>
-  </nav>
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+      <nav className="pointer-events-auto glass shadow-raised border border-hairline rounded-full px-2 py-1.5">
+        <ul className="flex items-center gap-1">
+          {items.map(({ to, label, icon: Icon, end }) => (
+            <li key={to}>
+              <NavLink
+                to={to}
+                end={end}
+                aria-label={label}
+                className={({ isActive }) =>
+                  cn(
+                    "relative flex h-11 w-12 items-center justify-center rounded-full text-xs font-medium transition-colors",
+                    isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <motion.span
+                        layoutId="tab-pill"
+                        className="absolute inset-0 rounded-full bg-primary shadow-soft"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <Icon className="relative h-[18px] w-[18px]" strokeWidth={isActive ? 2.25 : 1.75} />
+                  </>
+                )}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
   );
 };
