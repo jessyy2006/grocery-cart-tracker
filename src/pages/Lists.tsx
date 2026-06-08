@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ListChecks, Trash2 } from "lucide-react";
+import { Plus, ListChecks, Trash2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/PageHeader";
+import { FloatingActionButton } from "@/components/FloatingActionButton";
+import { formatDistanceToNow } from "date-fns";
 
 type ShoppingList = {
   id: string;
@@ -32,9 +35,7 @@ export default function Lists() {
     setLists((data as any) ?? []);
   };
 
-  useEffect(() => {
-    if (user) load();
-  }, [user]);
+  useEffect(() => { if (user) load(); }, [user]);
 
   const create = async () => {
     if (!user || !name.trim()) return;
@@ -55,40 +56,49 @@ export default function Lists() {
   };
 
   return (
-    <div className="space-y-6 px-5 pb-6 pt-2">
-      <header className="flex items-end justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">Plan your run</p>
-          <h1 className="text-3xl font-bold tracking-tight">Shopping lists</h1>
-        </div>
-        <Button size="sm" onClick={() => setOpen(true)}>
-          <Plus className="mr-1 h-4 w-4" /> New
-        </Button>
-      </header>
+    <div className="space-y-7 px-5 pt-3">
+      <PageHeader eyebrow="Plan your run" title="Your lists" />
 
       {lists.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-          <ListChecks className="mb-3 h-10 w-10 text-primary" />
-          <p className="font-medium text-foreground">No lists yet</p>
-          <p className="mt-1 text-sm">Create one to plan a grocery run.</p>
-        </div>
+        <Card className="flex flex-col items-center justify-center p-10 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/60">
+            <ListChecks className="h-6 w-6 text-primary" strokeWidth={1.75} />
+          </div>
+          <p className="mt-4 text-h2">No lists yet</p>
+          <p className="mt-1 text-small text-muted-foreground max-w-[26ch]">
+            Build a list to plan your next market run.
+          </p>
+          <Button variant="hero" size="lg" className="mt-5" onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4" /> New list
+          </Button>
+        </Card>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {lists.map((l) => {
             const total = l.shopping_list_items?.length ?? 0;
             const done = l.shopping_list_items?.filter((i) => i.checked_at).length ?? 0;
             return (
               <li key={l.id}>
-                <Card className="flex items-center justify-between p-4">
-                  <button onClick={() => navigate(`/lists/${l.id}`)} className="min-w-0 flex-1 text-left">
-                    <p className="truncate font-semibold">{l.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {done}/{total} picked up
-                    </p>
+                <Card className="group relative overflow-hidden">
+                  <button
+                    onClick={() => navigate(`/lists/${l.id}`)}
+                    className="flex w-full items-center gap-3 p-5 text-left"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-eyebrow">
+                        {total === 0 ? "Empty list" : `${total} item${total === 1 ? "" : "s"}`}
+                        {total > 0 && ` · ${done} picked`}
+                      </p>
+                      <p className="mt-1 text-h2 truncate">{l.name}</p>
+                      <p className="mt-1 text-small text-muted-foreground">
+                        Updated {formatDistanceToNow(new Date(l.updated_at), { addSuffix: true })}
+                      </p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                   </button>
                   <button
                     onClick={() => remove(l.id)}
-                    className="ml-2 text-muted-foreground hover:text-destructive"
+                    className="absolute right-3 top-3 p-2 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Delete list"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -100,10 +110,14 @@ export default function Lists() {
         </ul>
       )}
 
+      {lists.length > 0 && (
+        <FloatingActionButton label="New list" onClick={() => setOpen(true)} />
+      )}
+
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-xl border-hairline">
           <DialogHeader>
-            <DialogTitle>New shopping list</DialogTitle>
+            <DialogTitle className="text-h1">New shopping list</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Input
@@ -113,8 +127,8 @@ export default function Lists() {
               autoFocus
               onKeyDown={(e) => e.key === "Enter" && create()}
             />
-            <Button className="w-full" onClick={create} disabled={!name.trim()}>
-              Create
+            <Button variant="hero" size="lg" className="w-full" onClick={create} disabled={!name.trim()}>
+              Create list
             </Button>
           </div>
         </DialogContent>
