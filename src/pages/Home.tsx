@@ -146,8 +146,7 @@ export default function Home() {
         <>
           {/* Hero — this month */}
           <HeroCard className="overflow-hidden p-0">
-            <div className="relative p-6">
-              <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-accent-honey/20 blur-2xl" />
+            <div className="p-6">
               <p className="text-eyebrow">This month</p>
               <div className="mt-2 flex items-baseline gap-2">
                 <Money cents={monthSpend} size="display" />
