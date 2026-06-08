@@ -16,26 +16,30 @@ export const FloatingActionButton = forwardRef<HTMLButtonElement, FABProps>(
   ({ label, icon, className, liftAboveNav = true, position = "right", ...props }, ref) => {
     const reduce = useReducedMotion();
     return (
-      <motion.button
-        ref={ref}
-        initial={reduce ? { opacity: 0 } : { scale: 0, rotate: -8, opacity: 0 }}
-        animate={reduce ? { opacity: 1 } : { scale: 1, rotate: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 320, damping: 18 }}
-        whileHover={reduce ? undefined : { y: -2 }}
-        whileTap={reduce ? undefined : { scale: 0.94 }}
-        {...props}
+      <div
         className={cn(
-          "fixed z-20 inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 h-14 text-[15px] font-semibold shadow-raised hover:shadow-glow",
-          position === "center"
-            ? "left-1/2 -translate-x-1/2"
-            : "right-5",
+          "fixed z-20 pointer-events-none",
+          position === "center" ? "left-0 right-0 flex justify-center" : "right-5",
           liftAboveNav ? "bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]" : "bottom-6",
-          className,
         )}
       >
-        {icon ?? <Plus className="h-5 w-5" strokeWidth={2.25} />}
-        <span>{label}</span>
-      </motion.button>
+        <motion.button
+          ref={ref}
+          initial={reduce ? { opacity: 0 } : { scale: 0, rotate: -8, opacity: 0 }}
+          animate={reduce ? { opacity: 1 } : { scale: 1, rotate: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 320, damping: 18 }}
+          whileHover={reduce ? undefined : { y: -2 }}
+          whileTap={reduce ? undefined : { scale: 0.94 }}
+          {...props}
+          className={cn(
+            "pointer-events-auto inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 h-14 text-[15px] font-semibold shadow-raised hover:shadow-glow",
+            className,
+          )}
+        >
+          {icon ?? <Plus className="h-5 w-5" strokeWidth={2.25} />}
+          <span>{label}</span>
+        </motion.button>
+      </div>
     );
   },
 );
