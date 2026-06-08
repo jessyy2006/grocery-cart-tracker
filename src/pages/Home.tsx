@@ -1,28 +1,32 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { ShoppingBasket, Plus, MapPin, ListChecks, ShoppingCart, ArrowLeft } from "lucide-react";
+import { Card, HeroCard } from "@/components/ui/card";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { ShoppingCart, ListChecks, MapPin, ArrowRight, ChevronLeft, Sparkles } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatMoney, useCurrency } from "@/lib/format";
+import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useProfile } from "@/hooks/useProfile";
 import FeatureIntroDialog from "@/components/FeatureIntroDialog";
 import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
-import { useSearchParams } from "react-router-dom";
+import { PageHeader } from "@/components/PageHeader";
+import { Money } from "@/components/Money";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
 type ShortList = { id: string; name: string };
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 5) return "Late night";
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  if (h < 21) return "Good evening";
+  return "Evening";
+}
 
 export default function Home() {
   const { user } = useAuth();
@@ -31,11 +35,10 @@ export default function Home() {
   const { firstName, loading: profileLoading } = useProfile();
   const [searchParams, setSearchParams] = useSearchParams();
   const [introOpen, setIntroOpen] = useState(false);
-  const [activeTrip, setActiveTrip] = useState<Trip | null>(null);
   const [recent, setRecent] = useState<(Trip & { stores: string[] })[]>([]);
-  const [lifetime, setLifetime] = useState(0);
-  const [startOpen, setStartOpen] = useState(false);
-  const [chooseListOpen, setChooseListOpen] = useState(false);
+  const [monthSpend, setMonthSpend] = useState(0);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [step, setStep] = useState<"choose" | "list">("choose");
   const [lists, setLists] = useState<ShortList[]>([]);
   const [creating, setCreating] = useState(false);
 
@@ -47,24 +50,15 @@ export default function Home() {
     }
   }, [searchParams, setSearchParams]);
 
-
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data: active } = await supabase
-        .from("trips")
-        .select("id, started_at, total_cents, status")
-        .eq("status", "active")
-        .order("started_at", { ascending: false })
-        .limit(1);
-      setActiveTrip(active?.[0] ?? null);
-
       const { data: saved } = await supabase
         .from("trips")
         .select("id, started_at, total_cents, status, trip_items(store_name_snapshot)")
         .eq("status", "saved")
         .order("started_at", { ascending: false })
-        .limit(5);
+        .limit(3);
 
       setRecent(
         (saved ?? []).map((t: any) => ({
@@ -83,41 +77,34 @@ export default function Home() {
         .select("total_cents")
         .eq("status", "saved")
         .gte("started_at", monthStart.toISOString());
-      setLifetime((all ?? []).reduce((a, t: any) => a + (t.total_cents ?? 0), 0));
+      setMonthSpend((all ?? []).reduce((a, t: any) => a + (t.total_cents ?? 0), 0));
     })();
   }, [user]);
 
-  const openStart = async () => {
+  const openSheet = async () => {
     const { data } = await supabase
       .from("shopping_lists")
       .select("id, name")
       .eq("hidden", false)
       .order("updated_at", { ascending: false });
     setLists(data ?? []);
-    setStartOpen(true);
+    setStep("choose");
+    setSheetOpen(true);
   };
 
   const startTripWith = async (listId: string | null) => {
     if (!user) return;
     setCreating(true);
     try {
-      // End any lingering active trips so we always start fresh
-      await supabase
-        .from("trips")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("status", "active");
-
-      // Reset the chosen list so nothing is pre-checked
+      await supabase.from("trips").delete().eq("user_id", user.id).eq("status", "active");
       if (listId) {
         await supabase
           .from("shopping_list_items")
           .update({ checked_at: null, price_cents: null })
           .eq("list_id", listId);
       }
-
       sessionStorage.setItem("pendingTrip:listId", listId ?? "none");
-      setStartOpen(false);
+      setSheetOpen(false);
       navigate("/trip/new");
     } catch (e: any) {
       toast.error(e.message ?? "Failed to start trip");
@@ -126,56 +113,86 @@ export default function Home() {
     }
   };
 
+  const today = format(new Date(), "EEEE");
+
   return (
-    <div className="space-y-6 px-5 pb-6 pt-2">
-      <header>
-        <p className="text-sm text-muted-foreground">
-          {profileLoading ? (
-            <span className="invisible">Welcome back</span>
-          ) : firstName ? (
-            `Welcome back, ${firstName}`
-          ) : (
-            "Welcome back"
-          )}
-        </p>
-        <h1 className="text-3xl font-bold tracking-tight">Ready to shop?</h1>
-      </header>
+    <div className="space-y-8 px-5 pt-3">
+      <PageHeader
+        eyebrow={
+          profileLoading
+            ? "\u00a0"
+            : firstName
+              ? `${greeting()}, ${firstName}`
+              : greeting()
+        }
+        title={`${today} market run?`}
+      />
       <FeatureIntroDialog open={introOpen} onClose={() => setIntroOpen(false)} />
 
-      <Card className="overflow-hidden p-0 shadow-elevated">
-        <div className="gradient-hero p-6 text-primary-foreground">
-          <p className="text-xs uppercase tracking-wider opacity-80">This month's spend</p>
-          <p className="mt-1 text-3xl font-bold">{formatMoney(lifetime)}</p>
+      {/* Hero — this month */}
+      <HeroCard className="overflow-hidden p-0">
+        <div className="relative p-6">
+          <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-accent-honey/20 blur-2xl" />
+          <p className="text-eyebrow">This month</p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <Money cents={monthSpend} size="display" />
+          </div>
+          <p className="mt-2 text-small text-muted-foreground">
+            {monthSpend === 0 ? "No spending yet — start your first trip." : "Tracked across your saved trips."}
+          </p>
         </div>
-        <div className="space-y-3 p-5">
-          <Button className="w-full" size="lg" onClick={openStart}>
-            <Plus className="mr-2 h-5 w-5" /> Start new trip
-          </Button>
-          <Button variant="outline" className="w-full" onClick={() => navigate("/lists")}>
-            <ListChecks className="mr-2 h-5 w-5" /> My shopping lists
+        <div className="p-5 pt-0">
+          <Button variant="hero" size="xl" className="w-full" onClick={openSheet}>
+            <ShoppingCart className="h-5 w-5" strokeWidth={2} />
+            Start a trip
           </Button>
         </div>
-      </Card>
+      </HeroCard>
 
+      {/* Quiet link to lists */}
+      <button
+        onClick={() => navigate("/lists")}
+        className="flex w-full items-center justify-between text-left text-body text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <span className="inline-flex items-center gap-2">
+          <ListChecks className="h-4 w-4" strokeWidth={1.75} /> Manage your shopping lists
+        </span>
+        <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
+      </button>
+
+      {/* Recent trips */}
       <section>
-        <h2 className="mb-3 text-lg font-semibold">Recent trips</h2>
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-h2">Recent trips</h2>
+          {recent.length > 0 && (
+            <button
+              onClick={() => navigate("/history")}
+              className="text-small text-muted-foreground hover:text-primary inline-flex items-center gap-1"
+            >
+              See all <ArrowRight className="h-3 w-3" />
+            </button>
+          )}
+        </div>
         {recent.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No saved trips yet — your history will appear here.</p>
+          <Card className="p-6 text-center">
+            <Sparkles className="mx-auto h-5 w-5 text-accent-honey" strokeWidth={1.75} />
+            <p className="mt-2 text-small text-muted-foreground">Your saved trips will live here.</p>
+          </Card>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {recent.map((t) => (
               <li key={t.id}>
                 <button
                   onClick={() => navigate(`/trip/${t.id}`)}
-                  className="flex w-full items-center justify-between rounded-2xl bg-card p-4 text-left shadow-soft transition hover:bg-secondary"
+                  className="flex w-full items-center justify-between rounded-lg bg-card p-4 text-left shadow-soft border border-hairline hover:bg-surface-sunk transition-colors"
                 >
-                  <div>
-                    <p className="font-medium">{format(new Date(t.started_at), "EEE, MMM d")}</p>
-                    <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                  <div className="min-w-0">
+                    <p className="text-h3 truncate">{format(new Date(t.started_at), "EEE, MMM d")}</p>
+                    <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
                       <MapPin className="h-3 w-3" /> {t.stores.join(" · ") || "No store"}
                     </p>
                   </div>
-                  <span className="font-semibold">{formatMoney(t.total_cents)}</span>
+                  <Money cents={t.total_cents} size="lg" />
                 </button>
               </li>
             ))}
@@ -183,79 +200,81 @@ export default function Home() {
         )}
       </section>
 
-      <Dialog open={startOpen} onOpenChange={setStartOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Start a new trip</DialogTitle>
-            <DialogDescription>
-              Shop with one of your lists, or shop freely.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Button
-              className="w-full"
-              size="lg"
-              disabled={creating || lists.length === 0}
-              onClick={() => {
-                setStartOpen(false);
-                setChooseListOpen(true);
-              }}
-            >
-              <ListChecks className="mr-2 h-4 w-4" /> Choose a list
-            </Button>
-            {lists.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center">
-                Create a list first from My shopping lists.
-              </p>
-            )}
-            <Button
-              variant="outline"
-              className="w-full"
-              disabled={creating}
-              onClick={() => startTripWith(null)}
-            >
-              <ShoppingCart className="mr-2 h-4 w-4" /> Shop freely (no list)
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Unified start-trip bottom sheet (2 internal steps) */}
+      <Drawer open={sheetOpen} onOpenChange={setSheetOpen}>
+        <DrawerContent className="bg-surface-raised border-hairline rounded-t-[28px] max-h-[85vh]">
+          <div className="px-5 pb-8 pt-2">
+            {step === "choose" ? (
+              <>
+                <h2 className="text-h1 mt-2">Start a trip</h2>
+                <p className="text-small text-muted-foreground mt-1">Pick a list or shop freely.</p>
+                <div className="mt-6 grid gap-3">
+                  <button
+                    disabled={creating || lists.length === 0}
+                    onClick={() => setStep("list")}
+                    className="group flex items-center gap-4 rounded-lg border border-hairline bg-card p-5 text-left shadow-soft hover:border-primary hover:shadow-glow transition-all disabled:opacity-50"
+                  >
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/60 text-primary">
+                      <ListChecks className="h-5 w-5" strokeWidth={2} />
+                    </span>
+                    <span className="flex-1">
+                      <span className="block text-h3">Shop from a list</span>
+                      <span className="block text-small text-muted-foreground">
+                        {lists.length === 0 ? "Create a list first" : `${lists.length} list${lists.length === 1 ? "" : "s"} available`}
+                      </span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                  </button>
 
-      <Dialog open={chooseListOpen} onOpenChange={setChooseListOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Choose a list</DialogTitle>
-            <DialogDescription>
-              Pick the list you'll be shopping for.
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-2">
-            <ul className="space-y-2">
-              {lists.map((l) => (
-                <li key={l.id}>
                   <button
                     disabled={creating}
-                    onClick={() => startTripWith(l.id)}
-                    className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary disabled:opacity-50"
+                    onClick={() => startTripWith(null)}
+                    className="group flex items-center gap-4 rounded-lg border border-hairline bg-card p-5 text-left shadow-soft hover:border-primary hover:shadow-glow transition-all disabled:opacity-50"
                   >
-                    <ListChecks className="h-5 w-5 text-primary" />
-                    <span className="font-medium">{l.name}</span>
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-butter/60 text-foreground">
+                      <Sparkles className="h-5 w-5" strokeWidth={2} />
+                    </span>
+                    <span className="flex-1">
+                      <span className="block text-h3">Shop freely</span>
+                      <span className="block text-small text-muted-foreground">No list — sorted as you go</span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
                   </button>
-                </li>
-              ))}
-            </ul>
-          </ScrollArea>
-          <Button
-            variant="ghost"
-            className="w-full"
-            onClick={() => {
-              setChooseListOpen(false);
-              setStartOpen(true);
-            }}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back
-          </Button>
-        </DialogContent>
-      </Dialog>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 mt-1">
+                  <button
+                    onClick={() => setStep("choose")}
+                    className="-ml-2 p-2 text-muted-foreground hover:text-foreground rounded-full"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <h2 className="text-h1">Pick a list</h2>
+                </div>
+                <ScrollArea className="mt-4 max-h-[55vh] pr-1">
+                  <ul className="space-y-2.5">
+                    {lists.map((l) => (
+                      <li key={l.id}>
+                        <button
+                          disabled={creating}
+                          onClick={() => startTripWith(l.id)}
+                          className="flex w-full items-center gap-3 rounded-lg border border-hairline bg-card p-4 text-left transition hover:border-primary hover:shadow-soft disabled:opacity-50"
+                        >
+                          <ListChecks className="h-5 w-5 text-primary" strokeWidth={2} />
+                          <span className="text-h3 flex-1">{l.name}</span>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </ScrollArea>
+              </>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
