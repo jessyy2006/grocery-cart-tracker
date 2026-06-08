@@ -10,6 +10,7 @@ import { Plus, ListChecks, Trash2, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
+import { MarketLoader } from "@/components/MarketLoader";
 import { formatDistanceToNow } from "date-fns";
 
 type ShoppingList = {
@@ -23,6 +24,7 @@ export default function Lists() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [lists, setLists] = useState<ShoppingList[]>([]);
+  const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
 
@@ -33,6 +35,7 @@ export default function Lists() {
       .eq("hidden", false)
       .order("updated_at", { ascending: false });
     setLists((data as any) ?? []);
+    setReady(true);
   };
 
   useEffect(() => { if (user) load(); }, [user]);
@@ -59,7 +62,9 @@ export default function Lists() {
     <div className="space-y-7 px-5 pt-3">
       <PageHeader eyebrow="Plan your run" title="Your lists" />
 
-      {lists.length === 0 ? (
+      {!ready ? (
+        <MarketLoader minHeight="55vh" />
+      ) : lists.length === 0 ? (
         <Card className="flex flex-col items-center justify-center p-10 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/60">
             <ListChecks className="h-6 w-6 text-primary" strokeWidth={1.75} />
@@ -73,7 +78,7 @@ export default function Lists() {
           </Button>
         </Card>
       ) : (
-        <ul className="space-y-3">
+        <ul className="space-y-3 pb-4">
           {lists.map((l) => {
             const total = l.shopping_list_items?.length ?? 0;
             const done = l.shopping_list_items?.filter((i) => i.checked_at).length ?? 0;
@@ -110,8 +115,8 @@ export default function Lists() {
         </ul>
       )}
 
-      {lists.length > 0 && (
-        <FloatingActionButton label="New list" onClick={() => setOpen(true)} />
+      {ready && lists.length > 0 && (
+        <FloatingActionButton label="New list" position="center" onClick={() => setOpen(true)} />
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
