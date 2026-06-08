@@ -64,8 +64,8 @@ export default function Finance() {
   const [editOpen, setEditOpen] = useState(false);
   const [budgetInput, setBudgetInput] = useState("");
   const [view, setView] = useState<"card" | "receipt">(() => {
-    if (typeof window === "undefined") return "card";
-    return (localStorage.getItem("finance:view") as "card" | "receipt") || "card";
+    if (typeof window === "undefined") return "receipt";
+    return (localStorage.getItem("finance:view") as "card" | "receipt") || "receipt";
   });
   const setViewPersist = (v: "card" | "receipt") => {
     setView(v);
