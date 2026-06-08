@@ -8,10 +8,12 @@ interface FABProps extends Omit<HTMLMotionProps<"button">, "ref"> {
   icon?: React.ReactNode;
   /** Lift the FAB above the floating bottom nav (default true) */
   liftAboveNav?: boolean;
+  /** Horizontal placement: 'right' (default) or 'center' */
+  position?: "right" | "center";
 }
 
 export const FloatingActionButton = forwardRef<HTMLButtonElement, FABProps>(
-  ({ label, icon, className, liftAboveNav = true, ...props }, ref) => {
+  ({ label, icon, className, liftAboveNav = true, position = "right", ...props }, ref) => {
     const reduce = useReducedMotion();
     return (
       <motion.button
@@ -23,7 +25,10 @@ export const FloatingActionButton = forwardRef<HTMLButtonElement, FABProps>(
         whileTap={reduce ? undefined : { scale: 0.94 }}
         {...props}
         className={cn(
-          "fixed right-5 z-20 inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 h-14 text-[15px] font-semibold shadow-raised hover:shadow-glow",
+          "fixed z-20 inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 h-14 text-[15px] font-semibold shadow-raised hover:shadow-glow",
+          position === "center"
+            ? "left-1/2 -translate-x-1/2"
+            : "right-5",
           liftAboveNav ? "bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]" : "bottom-6",
           className,
         )}
