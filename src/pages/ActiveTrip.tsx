@@ -535,17 +535,17 @@ export default function ActiveTrip() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-border bg-card px-5 py-4">
+      <header className="glass sticky top-0 z-10 flex items-center justify-between border-b border-hairline px-5 py-3 safe-top">
         <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">Shopping at</p>
-          <button onClick={openStoreModal} className="flex items-center gap-1 text-left">
+          <p className="text-eyebrow">Shopping at</p>
+          <button onClick={openStoreModal} className="mt-0.5 flex items-center gap-1 text-left">
             {activeStore ? (
               <>
                 <MapPin className="h-4 w-4 text-primary" />
-                <span className="truncate font-semibold">{activeStore.name}</span>
+                <span className="truncate text-h2 font-display">{activeStore.name}</span>
               </>
             ) : (
-              <span className="text-sm text-muted-foreground underline-offset-2 hover:underline">
+              <span className="text-small text-muted-foreground underline-offset-2 hover:underline">
                 Add store (optional)
               </span>
             )}
@@ -556,7 +556,7 @@ export default function ActiveTrip() {
             <button
               onClick={() => setExtrasOpen((o) => !o)}
               aria-label="Show extras"
-              className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white shadow-md"
+              className="flex h-7 min-w-7 items-center justify-center rounded-full bg-accent-honey px-2 text-xs font-bold text-[hsl(30_50%_18%)] shadow-soft"
             >
               {extras.length}
             </button>
@@ -569,10 +569,10 @@ export default function ActiveTrip() {
 
       <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
         {extrasOpen && extras.length > 0 && (
-          <section className="rounded-2xl border border-red-500 bg-red-500/15 p-3">
+          <section className="rounded-lg border border-[hsl(40_80%_78%)] bg-accent-honey/15 p-4">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-red-700">Extras</h3>
-              <span className="text-xs font-medium text-red-700">{extras.length}</span>
+              <h3 className="text-h3 text-[hsl(30_60%_28%)]">Extras (off-list)</h3>
+              <span className="text-small font-medium text-[hsl(30_60%_28%)]">{extras.length}</span>
             </div>
             <ul className="space-y-2">
               {extras.map((ex) => (
