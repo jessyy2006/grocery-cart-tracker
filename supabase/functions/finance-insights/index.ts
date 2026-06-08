@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
     return json({ insights: parsed.insights ?? [] });
   } catch (e) {
     console.error("finance-insights error", e);
-    return json({ error: e instanceof Error ? e.message : "Unknown" }, 500);
+    return json({ error: "Internal error" }, 500);
   }
 });
 
