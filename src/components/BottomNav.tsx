@@ -26,7 +26,7 @@ export const BottomNav = () => {
                 aria-label={label}
                 className={({ isActive }) =>
                   cn(
-                    "relative flex h-11 w-12 items-center justify-center rounded-full text-xs font-medium transition-colors",
+                    "relative flex h-11 w-12 items-center justify-center rounded-full text-xs font-medium transition-colors active:scale-[0.92] [transition:transform_120ms_ease-out,color_180ms_ease-out]",
                     isActive ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground",
                   )
                 }
@@ -37,7 +37,7 @@ export const BottomNav = () => {
                       <motion.span
                         layoutId="tab-pill"
                         className="absolute inset-0 rounded-full bg-primary shadow-soft"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        transition={{ type: "spring", stiffness: 420, damping: 32 }}
                       />
                     )}
                     <Icon className="relative h-[18px] w-[18px]" strokeWidth={isActive ? 2.25 : 1.75} />

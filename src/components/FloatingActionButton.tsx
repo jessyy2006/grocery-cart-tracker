@@ -1,8 +1,9 @@
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { forwardRef } from "react";
+import { motion, useReducedMotion, HTMLMotionProps } from "framer-motion";
 
-interface FABProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface FABProps extends Omit<HTMLMotionProps<"button">, "ref"> {
   label: string;
   icon?: React.ReactNode;
   /** Lift the FAB above the floating bottom nav (default true) */
@@ -10,19 +11,27 @@ interface FABProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const FloatingActionButton = forwardRef<HTMLButtonElement, FABProps>(
-  ({ label, icon, className, liftAboveNav = true, ...props }, ref) => (
-    <button
-      ref={ref}
-      {...props}
-      className={cn(
-        "fixed right-5 z-20 inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 h-14 text-[15px] font-semibold shadow-raised hover:shadow-glow hover:-translate-y-[1px] active:scale-[0.98] transition-all",
-        liftAboveNav ? "bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]" : "bottom-6",
-        className,
-      )}
-    >
-      {icon ?? <Plus className="h-5 w-5" strokeWidth={2.25} />}
-      <span>{label}</span>
-    </button>
-  ),
+  ({ label, icon, className, liftAboveNav = true, ...props }, ref) => {
+    const reduce = useReducedMotion();
+    return (
+      <motion.button
+        ref={ref}
+        initial={reduce ? { opacity: 0 } : { scale: 0, rotate: -8, opacity: 0 }}
+        animate={reduce ? { opacity: 1 } : { scale: 1, rotate: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 320, damping: 18 }}
+        whileHover={reduce ? undefined : { y: -2 }}
+        whileTap={reduce ? undefined : { scale: 0.94 }}
+        {...props}
+        className={cn(
+          "fixed right-5 z-20 inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-5 h-14 text-[15px] font-semibold shadow-raised hover:shadow-glow",
+          liftAboveNav ? "bottom-[calc(env(safe-area-inset-bottom)+5.5rem)]" : "bottom-6",
+          className,
+        )}
+      >
+        {icon ?? <Plus className="h-5 w-5" strokeWidth={2.25} />}
+        <span>{label}</span>
+      </motion.button>
+    );
+  },
 );
 FloatingActionButton.displayName = "FloatingActionButton";
