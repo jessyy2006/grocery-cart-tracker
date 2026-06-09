@@ -41,7 +41,7 @@ const fmtRange = (a: Date, b: Date) => {
 const Row = ({ label, value, strong }: { label: string; value: string; strong?: boolean }) => (
   <div className={`flex justify-between gap-4 ${strong ? "font-bold" : ""}`}>
     <span className="uppercase tracking-wider">{label}</span>
-    <span className="tabular-nums">{value}</span>
+    <span className="tabular-nums text-right">{value}</span>
   </div>
 );
 
@@ -438,16 +438,13 @@ export default function ReceiptView(props: Props) {
           <Row label="Trips" value={String(tripCount)} />
           <Row label="Avg / Trip" value={formatMoney(avgTripCents, currency)} />
           <Row label="Impulse Spend" value={formatMoney(impulseCents, currency)} />
-          <Row label="Impulse Items" value={String(impulseCount)} />
           <Row label="Impulse Rate" value={`${impulseRate}%`} />
+          <div className="h-4" aria-hidden />
           {biggestCategory && biggestCategory.delta !== 0 && (
-            <Row
-              label="Biggest Change"
-              value={`${biggestCategory.label} ${biggestCategory.delta > 0 ? "+" : "-"}${formatMoney(Math.abs(biggestCategory.delta), currency)}`}
-            />
+            <Row label="Biggest Category" value={biggestCategory.label} />
           )}
           {streak >= 2 && (
-            <Row label="Streak" value={`${streak} trips under budget`} />
+            <Row label="Streak" value={`${streak} trips`} />
           )}
           {momDelta !== null && (
             <Row
