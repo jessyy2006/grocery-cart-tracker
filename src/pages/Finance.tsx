@@ -533,16 +533,6 @@ function FinanceCardView(props: any) {
         )}
       </Card>
 
-      {/* Streak micro-element */}
-      {derived.streak >= 2 && (
-        <div className="flex items-center gap-2 px-1 text-sm text-muted-foreground">
-          <Flame className="h-4 w-4 text-accent" />
-          <span>
-            <span className="font-semibold text-foreground">{derived.streak} trips under budget</span>
-            {" — you're building a strong habit"}
-          </span>
-        </div>
-      )}
 
       {/* Behavior signals */}
       <div className="grid grid-cols-3 gap-2">
