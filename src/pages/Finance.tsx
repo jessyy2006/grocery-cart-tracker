@@ -539,7 +539,7 @@ function FinanceCardView(props: any) {
         <SignalCard
           label="Impulse"
           value={formatMoney(derived.extrasNow.cents)}
-          sub={`${derived.extrasNow.count} items · ${impulseRate}% · ${impulseClass}`}
+          sub={`${derived.extrasNow.count} items · ${impulseRate}%`}
           delta={extrasDelta}
           invert
         />
