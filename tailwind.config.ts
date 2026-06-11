@@ -24,6 +24,10 @@ export default {
           raised: "hsl(var(--surface-raised))",
         },
         hairline: "hsl(var(--hairline))",
+        forest: {
+          DEFAULT: "hsl(var(--forest))",
+          foreground: "hsl(var(--forest-foreground))",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
