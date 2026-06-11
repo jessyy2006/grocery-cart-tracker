@@ -492,14 +492,13 @@ function FinanceCardView(props: any) {
   const sectionAnchor = "text-eyebrow";
   const monoTiny = "text-[11px] lowercase tracking-wide text-muted-foreground";
   const maxBarVal = Math.max(...derived.series.map((s: { cents: number }) => s.cents), 1);
-  const currentMonthKey = derived.series[derived.series.length - 1]?.key;
   const hasAnyTrips = derived.series.some((s: { cents: number }) => s.cents > 0);
   const dottedLeader = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .";
 
   // Nice axis max: round up to a clean step
   const niceMax = (() => {
     const v = maxBarVal;
-    const pow = Math.pow(10, Math.max(0, Math.floor(Math.log10(v)) - 0));
+    const pow = Math.pow(10, Math.floor(Math.log10(v)));
     const steps = [1, 2, 2.5, 5, 10];
     for (const s of steps) {
       const candidate = s * pow;
@@ -508,7 +507,6 @@ function FinanceCardView(props: any) {
     return v;
   })();
   const yTicks = [niceMax, niceMax / 2, 0];
-  const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(currentMonthKey ?? null);
   const selectedMonth = derived.series.find((s: { key: string }) => s.key === selectedMonthKey) ?? null;
 
   return (
