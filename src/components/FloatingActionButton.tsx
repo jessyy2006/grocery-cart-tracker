@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, useReducedMotion, HTMLMotionProps } from "framer-motion";
 
 interface FABProps extends Omit<HTMLMotionProps<"button">, "ref"> {
@@ -15,7 +16,10 @@ interface FABProps extends Omit<HTMLMotionProps<"button">, "ref"> {
 export const FloatingActionButton = forwardRef<HTMLButtonElement, FABProps>(
   ({ label, icon, className, liftAboveNav = true, position = "right", ...props }, ref) => {
     const reduce = useReducedMotion();
-    return (
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+
+    const node = (
       <div
         className={cn(
           "fixed z-20 pointer-events-none",
@@ -41,6 +45,10 @@ export const FloatingActionButton = forwardRef<HTMLButtonElement, FABProps>(
         </motion.button>
       </div>
     );
+
+    if (!mounted) return null;
+    return createPortal(node, document.body);
   },
 );
 FloatingActionButton.displayName = "FloatingActionButton";
+
