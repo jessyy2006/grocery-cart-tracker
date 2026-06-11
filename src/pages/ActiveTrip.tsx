@@ -658,30 +658,22 @@ export default function ActiveTrip() {
   const isSearching = storeQuery.trim().length >= 2;
   const displayStores = isSearching ? (searchResults ?? []) : (nearbyStores ?? []);
 
+  const checkedCount = listItems.filter((i) => i.checked_at).length + extras.length;
+  const totalCount = listItems.length + extras.length;
+
   return (
     <div className="flex h-full flex-col bg-background">
-      <header className="glass flex shrink-0 items-center justify-between border-b border-hairline px-5 py-3 safe-top">
-        <div className="min-w-0">
-          <p className="text-eyebrow">Shopping at</p>
-          <button onClick={openStoreModal} className="mt-0.5 flex items-center gap-1 text-left">
-            {activeStore ? (
-              <>
-                <MapPin className="h-4 w-4 text-primary" />
-                <span className="truncate text-h2 font-display">{activeStore.name}</span>
-              </>
-            ) : (
-              <span className="text-small text-muted-foreground underline-offset-2 hover:underline">
-                Add store (optional)
-              </span>
-            )}
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
+      <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 pt-4 pb-3 safe-top">
+        {/* LEFT — exit */}
+        <div className="justify-self-start">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <X className="mr-1 h-4 w-4" /> Exit
-              </Button>
+              <button
+                type="button"
+                className="font-mono text-[12px] lowercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+              >
+                ✕ exit
+              </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -698,6 +690,32 @@ export default function ActiveTrip() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </div>
+
+        {/* CENTER — list name (+ store) */}
+        <button
+          onClick={openStoreModal}
+          className="min-w-0 justify-self-center text-center"
+          aria-label={activeStore ? "Change store" : "Add store"}
+        >
+          {activeStore ? (
+            <span className="block truncate text-[22px] leading-tight lowercase">
+              <span className="font-display">{(listName || "untitled").toLowerCase()}</span>
+              <span className="mx-1.5 text-muted-foreground">·</span>
+              <span className="font-mono text-[14px] text-muted-foreground">
+                {activeStore.name.toLowerCase()}
+              </span>
+            </span>
+          ) : (
+            <span className="block truncate font-display text-[24px] leading-tight lowercase">
+              {(listName || "untitled").toLowerCase()}
+            </span>
+          )}
+        </button>
+
+        {/* RIGHT — progress counter */}
+        <div className="justify-self-end font-mono text-[12px] tabular-nums text-muted-foreground">
+          [ {checkedCount}/{totalCount} ]
         </div>
       </header>
 
@@ -718,10 +736,10 @@ export default function ActiveTrip() {
                   const meta = getCategory(slug);
                   return (
                     <section key={slug}>
-                      <h3 className="mb-1 px-[60px] font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                      <h3 className="mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                         {meta.emoji} {meta.label.toLowerCase()}
                       </h3>
-                      <ul className="divide-y divide-foreground/10 border-y border-foreground/10">
+                      <ul className="divide-y divide-[hsl(20_40%_18%/0.3)] border-y border-[hsl(20_40%_18%/0.3)]">
                         {lis.map((it) => {
                           const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
                           const noteParts: string[] = [];
@@ -751,10 +769,10 @@ export default function ActiveTrip() {
 
                 {extras.length > 0 && (
                   <section>
-                    <h3 className="mb-1 px-[60px] font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground">
+                    <h3 className="mb-1 px-1 font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground">
                       unplanned additions
                     </h3>
-                    <ul className="divide-y divide-foreground/10 border-y border-foreground/10">
+                    <ul className="divide-y divide-[hsl(20_40%_18%/0.3)] border-y border-[hsl(20_40%_18%/0.3)]">
                       {extras.map((ex) => (
                         <LedgerRow
                           key={ex.id}
@@ -777,46 +795,42 @@ export default function ActiveTrip() {
         )}
       </div>
 
-      {/* Forest-green velvet utility footer */}
+      {/* High-contrast utility footer */}
       <footer
-        className="shrink-0 px-3"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)", paddingTop: "0.5rem" }}
+        className="shrink-0 border-t border-[hsl(20_40%_18%/0.3)] bg-background px-5 pt-3"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
       >
-        <div
-          className="rounded-[4px] bg-forest px-5 pt-3 pb-4 text-forest-foreground shadow-raised"
-        >
-          <div className="flex items-baseline justify-between">
-            <p className="font-mono text-[13px] lowercase">
-              cart total:{" "}
-              <span className="font-mono tabular-nums">{formatMoney(total)}</span>
-              {listItems.length > 0 && (() => {
-                const checked = listItems.filter((i) => i.checked_at).length;
-                const denom = listItems.length;
-                const numer = checked + extras.length;
-                return (
-                  <span className="ml-2 font-mono text-[11px] opacity-70">
-                    [{numer}/{denom}]
-                  </span>
-                );
-              })()}
-            </p>
-            <button
-              type="button"
-              onClick={saveTrip}
-              className="font-mono text-[12px] lowercase tracking-wide text-forest-foreground/90 hover:text-forest-foreground"
-            >
-              [ save trip ]
-            </button>
-          </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="flex items-baseline gap-2 leading-none">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              cart total
+            </span>
+            <span className="font-mono text-[18px] font-semibold tabular-nums text-foreground">
+              {formatMoney(total)}
+            </span>
+            {totalCount > 0 && (
+              <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                [ {checkedCount}/{totalCount} ]
+              </span>
+            )}
+          </p>
           <button
             type="button"
-            onClick={() => setScanning(true)}
-            className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[4px] border border-forest-foreground/25 bg-forest-foreground/5 font-mono text-[13px] lowercase tracking-wide text-forest-foreground hover:bg-forest-foreground/10 transition-colors"
+            onClick={saveTrip}
+            className="font-mono text-[12px] lowercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ScanLine className="h-4 w-4" /> [ scan barcode ]
+            [ save trip ]
           </button>
         </div>
+        <button
+          type="button"
+          onClick={() => setScanning(true)}
+          className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[4px] bg-forest font-mono text-[14px] lowercase tracking-wide text-forest-foreground hover:bg-forest/92 transition-colors"
+        >
+          📷 scan barcode
+        </button>
       </footer>
+
 
       {confetti && (
         <div

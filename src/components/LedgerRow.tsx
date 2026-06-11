@@ -7,10 +7,11 @@ import { cn } from "@/lib/utils";
  * Market Stationery Ledger Row
  *
  * Layout (left → right):
- *   [optional checkbox]  │margin│   item name (line 1)            [ qty ]   $price
- *                        │      │   note (serif italic) · tag (mono)
+ *   [checkbox]   item name (line 1)                qty: N    $price
+ *                note (serif italic) · tag (mono)
  *
- * Used by Lists, Active Trip planned items, and Active Trip unplanned additions.
+ * Strikethrough applies only to the primary item name; notes and tags remain
+ * fully legible. Completed items are styled but their metadata is preserved.
  */
 
 export interface LedgerRowProps {
@@ -50,22 +51,15 @@ export function LedgerRow({
 
   return (
     <li className="group relative">
-      {/* terracotta notebook margin line — runs full row height */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute top-0 bottom-0 w-px"
-        style={{ left: "48px", background: "hsl(18 45% 50% / 0.45)" }}
-      />
-
-      <div className="flex items-stretch py-4 pr-1 pl-[60px]">
-        {/* checkbox sits in the gutter, before margin line */}
+      <div className="flex items-stretch gap-3 py-4 pl-1 pr-1">
+        {/* Checkbox — close to the left edge */}
         {showCheckbox && (
           <button
             type="button"
             onClick={onToggle}
             aria-label={checked ? "Uncheck item" : "Check item"}
             className={cn(
-              "absolute left-3 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-[3px] border transition-colors",
+              "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] border transition-colors",
               checked
                 ? "border-forest bg-forest text-forest-foreground"
                 : "border-foreground/40 bg-transparent hover:border-foreground",
@@ -80,7 +74,7 @@ export function LedgerRow({
         )}
 
         {/* TEXT COLUMN */}
-        <div className="min-w-0 flex-1 self-center pr-3">
+        <div className="min-w-0 flex-1 self-center pr-2">
           <p
             className={cn(
               "text-[15px] lowercase leading-snug break-words",
@@ -90,14 +84,8 @@ export function LedgerRow({
             {name}
           </p>
 
-          {/* Line 2: always rendered (empty when no note/tag) so row collapses gracefully */}
           {hasSecondLine && (
-            <p
-              className={cn(
-                "mt-0.5 leading-snug",
-                checked && "line-through opacity-60",
-              )}
-            >
+            <p className="mt-0.5 leading-snug">
               {multiplierLine ? (
                 <span className="font-display italic text-[13px] text-muted-foreground">
                   {multiplierLine}
@@ -121,13 +109,13 @@ export function LedgerRow({
           )}
         </div>
 
-        {/* RIGHT COLUMN — qty + price on a single horizontal plane */}
+        {/* RIGHT COLUMN — qty + price grouped as a tight receipt cluster */}
         <div className="flex shrink-0 items-center gap-3 self-center">
-          <QtyBracket qty={qty} onChange={onQtyChange} />
+          <QtyLabel qty={qty} onChange={onQtyChange} />
           {priceCents != null && (
             <span
               className={cn(
-                "w-[68px] text-right font-mono text-[13px] tabular-nums",
+                "min-w-[56px] text-right font-mono text-[13px] tabular-nums",
                 checked ? "font-semibold text-forest" : "text-foreground",
               )}
             >
@@ -164,7 +152,7 @@ export function LedgerRow({
   );
 }
 
-function QtyBracket({ qty, onChange }: { qty: number; onChange?: (n: number) => void }) {
+function QtyLabel({ qty, onChange }: { qty: number; onChange?: (n: number) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
 
@@ -179,8 +167,8 @@ function QtyBracket({ qty, onChange }: { qty: number; onChange?: (n: number) => 
 
   if (!onChange) {
     return (
-      <span className="font-mono text-[12px] text-muted-foreground">
-        [ {qty} ]
+      <span className="font-mono text-[12px] lowercase text-muted-foreground tabular-nums">
+        qty: {qty}
       </span>
     );
   }
@@ -190,10 +178,10 @@ function QtyBracket({ qty, onChange }: { qty: number; onChange?: (n: number) => 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="font-mono text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+        className="font-mono text-[12px] lowercase text-muted-foreground hover:text-foreground transition-colors tabular-nums"
         aria-label="Edit quantity"
       >
-        [ {qty} ]
+        qty: {qty}
       </button>
     );
   }

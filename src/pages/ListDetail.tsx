@@ -317,14 +317,14 @@ export default function ListDetail() {
 
             {(groupBy === "category" ? groupedByCategory : groupedByTag).map((group) => (
               <section key={group.key}>
-                <h3 className="mb-1 px-[60px] font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                <h3 className="mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                   {groupBy === "category"
                     ? `${(group as any).emoji} ${String(group.label).toLowerCase()}`
                     : (group as any).isTag
                     ? String(group.label).toLowerCase()
                     : "other"}
                 </h3>
-                <ul className="divide-y divide-foreground/10 border-y border-foreground/10">
+                <ul className="divide-y divide-[hsl(20_40%_18%/0.3)] border-y border-[hsl(20_40%_18%/0.3)]">
                   {group.items.map((it) => (
                     <LedgerRow
                       key={it.id}
