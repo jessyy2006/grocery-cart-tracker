@@ -158,30 +158,40 @@ export default function Home() {
       ) : (
         <>
           {/* Hero — this month */}
-          <HeroCard className="relative overflow-hidden p-0">
-            <button
-              onClick={() => navigate("/scan-receipt")}
-              aria-label="Scan past receipt"
-              className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-md border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
-            >
-              <ScanLine className="h-4 w-4" strokeWidth={1.75} />
-            </button>
-            <div className="p-6">
-              <p className="text-eyebrow">This month</p>
-              <div className="mt-2 flex items-baseline gap-2">
-                <Money cents={monthSpend} size="display" />
-              </div>
-              <p className="mt-2 text-small text-muted-foreground">
-                {monthSpend === 0 ? "No spending yet — start your first trip." : "Tracked across your saved trips."}
-              </p>
-            </div>
-            <div className="p-5 pt-0">
-              <Button variant="hero" size="xl" className="w-full" onClick={openSheet}>
-                <ShoppingCart className="h-5 w-5" strokeWidth={2} />
-                Start a trip
-              </Button>
-            </div>
-          </HeroCard>
+          {(() => {
+            const pct = monthlyBudget && monthlyBudget > 0 ? Math.round((monthSpend / monthlyBudget) * 100) : null;
+            return (
+              <section className="relative overflow-hidden rounded-[6px] bg-surface-raised shadow-soft">
+                <button
+                  onClick={() => navigate("/scan-receipt")}
+                  aria-label="Scan past receipt"
+                  className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-[4px] border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
+                >
+                  <ScanLine className="h-4 w-4" strokeWidth={1.75} />
+                </button>
+                <div className="p-6">
+                  <p className="text-eyebrow">This month</p>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <Money cents={monthSpend} size="display" />
+                  </div>
+                  <p className="mt-3 text-small lowercase text-muted-foreground">
+                    {monthSpend === 0 ? "no spending yet — start your first trip." : "tracked across your saved trips."}
+                  </p>
+                  {pct !== null && monthSpend > 0 && (
+                    <p className="mt-1 font-mono text-[12px] lowercase text-muted-foreground">
+                      ── {pct}% of this month's budget utilized
+                    </p>
+                  )}
+                  <button
+                    onClick={openSheet}
+                    className="mt-6 h-12 w-full rounded-[4px] bg-foreground text-background text-[14px] lowercase tracking-tight transition-opacity hover:opacity-90"
+                  >
+                    [ start a live trip ]
+                  </button>
+                </div>
+              </section>
+            );
+          })()}
 
 
 
@@ -198,8 +208,8 @@ export default function Home() {
 
           {/* Recent trips */}
           <section>
-            <div className="mb-1 flex items-baseline justify-between">
-              <h2 className="text-small lowercase text-muted-foreground">recent trips</h2>
+            <div className="mb-2 flex items-baseline justify-between">
+              <h2 className="font-display text-[1.75rem] leading-none lowercase tracking-tight">recent trips</h2>
               {recent.length > 0 && (
                 <button
                   onClick={() => navigate("/history")}
@@ -215,7 +225,7 @@ export default function Home() {
                 <p className="mt-2 text-small text-muted-foreground">Your saved trips will live here.</p>
               </div>
             ) : (
-              <ul className="divide-y divide-dashed divide-foreground/15">
+              <ul className="divide-y divide-dashed divide-foreground/10">
                 {recent.map((t) => (
                   <li key={t.id}>
                     <TripTapeRow
