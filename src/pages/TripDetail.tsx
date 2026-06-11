@@ -174,12 +174,16 @@ export default function TripDetail() {
       if (listErr) throw listErr;
       const payload = items
         .filter((i) => i.name_snapshot.trim())
-        .map((i, idx) => ({
-          list_id: list.id,
-          name: stripQtyMarker(i.name_snapshot, i.qty).trim() || i.name_snapshot,
-          qty: i.qty,
-          position: idx,
-        }));
+        .map((i, idx) => {
+          const name = stripQtyMarker(i.name_snapshot, i.qty).trim() || i.name_snapshot;
+          return {
+            list_id: list.id,
+            name,
+            qty: i.qty && i.qty > 0 ? i.qty : 1,
+            category: guessCategory(name),
+            position: idx,
+          };
+        });
       if (payload.length > 0) {
         const { error: itemsErr } = await supabase.from("shopping_list_items").insert(payload);
         if (itemsErr) throw itemsErr;
