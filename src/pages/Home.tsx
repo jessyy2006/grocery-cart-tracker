@@ -37,7 +37,7 @@ export default function Home() {
   const { firstName, loading: profileLoading } = useProfile();
   const [searchParams, setSearchParams] = useSearchParams();
   const [introOpen, setIntroOpen] = useState(false);
-  const [recent, setRecent] = useState<(Trip & { stores: string[] })[]>([]);
+  const [recent, setRecent] = useState<(Trip & { itemCount: number })[]>([]);
   const [monthSpend, setMonthSpend] = useState(0);
   const [ready, setReady] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
