@@ -16,9 +16,9 @@ interface QuickAddRowProps {
 }
 
 /**
- * Add Item Pad — collapsed dashed slot that expands into a high-density
- * stationery card with name+qty+submit on row 1, note · tag on row 2,
- * and a full-width forest "add item" button on row 3.
+ * Add Item Pad — collapsed dashed slot that expands into a structured
+ * box-grid stationery card: name on row 1, qty + note on row 2,
+ * tag chip row, and a full-width forest "add item" button at the base.
  */
 export function QuickAddRow({
   onSubmit,
@@ -69,10 +69,15 @@ export function QuickAddRow({
     );
   }
 
+  // Shared box styling: solid paper backdrop, hairline border, forest focus ring.
+  const boxBase =
+    "rounded-[6px] border bg-surface px-3 transition-colors focus-within:border-forest focus-within:border-[1.5px]";
+  const boxIdle = "border-hairline";
+
   return (
-    <div className="animate-fade-rise rounded-[6px] border border-forest bg-surface-raised p-3 space-y-2.5">
-      {/* Row 1: name + qty + enter */}
-      <div className="flex items-center gap-2">
+    <div className="animate-fade-rise rounded-[6px] border border-hairline bg-surface-raised p-3 space-y-2.5">
+      {/* Row 1: item name */}
+      <div className={`${boxBase} ${boxIdle} h-11 flex items-center`}>
         <input
           ref={nameRef}
           value={name}
@@ -90,7 +95,11 @@ export function QuickAddRow({
           placeholder="item name..."
           className="flex-1 min-w-0 bg-transparent text-[14px] lowercase text-foreground placeholder:text-muted-foreground/70 outline-none"
         />
-        <div className="flex items-center font-mono text-[13px] text-foreground">
+      </div>
+
+      {/* Row 2: qty + note */}
+      <div className="flex items-stretch gap-2">
+        <div className={`${boxBase} ${boxIdle} h-11 flex items-center w-16`}>
           <input
             value={qtyText}
             onChange={(e) =>
@@ -101,37 +110,29 @@ export function QuickAddRow({
             }
             inputMode="numeric"
             aria-label="Quantity"
-            className="w-7 bg-transparent text-right outline-none"
+            className="w-full bg-transparent text-center font-mono text-[14px] text-foreground outline-none"
           />
-          <span className="text-muted-foreground">x</span>
         </div>
-        <button
-          type="button"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => void commit()}
-          disabled={!name.trim()}
-          className="font-mono text-[11px] lowercase tracking-wide text-muted-foreground hover:text-foreground disabled:opacity-40"
-        >
-          [ enter ]
-        </button>
+        <div className={`${boxBase} ${boxIdle} h-11 flex items-center flex-1 min-w-0`}>
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value.slice(0, 25))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void commit();
+              }
+            }}
+            maxLength={25}
+            placeholder="note (optional)"
+            className="flex-1 min-w-0 bg-transparent font-display italic text-[13px] text-foreground placeholder:text-muted-foreground/60 outline-none"
+          />
+        </div>
       </div>
 
-      {/* Row 2: note · tag */}
-      <div className="flex items-center gap-2 pl-0.5">
-        <input
-          value={note}
-          onChange={(e) => setNote(e.target.value.slice(0, 25))}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              void commit();
-            }
-          }}
-          maxLength={25}
-          placeholder="note (optional)"
-          className="flex-1 min-w-0 bg-transparent font-display italic text-[12px] text-muted-foreground placeholder:text-muted-foreground/60 outline-none"
-        />
-        <span className="text-muted-foreground/60 text-[12px]">·</span>
+      {/* Row 3: tag */}
+      <div className="flex items-center gap-2 pl-1">
+        <span className="font-mono text-[12px] lowercase text-muted-foreground">tag:</span>
         {tag ? (
           <TagPill tag={tag} size="xs" onRemove={() => setTag(null)} />
         ) : (
@@ -144,7 +145,6 @@ export function QuickAddRow({
                 const t = normalizeTag(tagQuery).slice(0, 10);
                 if (t) setTag(t);
                 if (name.trim()) {
-                  // commit using the just-set tag value
                   (async () => {
                     const qty = Math.max(1, parseInt(qtyText, 10) || 1);
                     await onSubmit({
@@ -160,20 +160,20 @@ export function QuickAddRow({
               }
             }}
             maxLength={10}
-            placeholder="tag (optional)"
-            className="w-[88px] bg-transparent font-mono text-[11px] lowercase text-muted-foreground placeholder:text-muted-foreground/60 outline-none text-right"
+            placeholder="add tag"
+            className="flex-1 min-w-0 bg-transparent font-mono text-[12px] lowercase text-foreground placeholder:text-muted-foreground/60 outline-none"
           />
         )}
       </div>
 
-      {/* Row 3: add item button */}
+      {/* Base: add item button */}
       <button
         type="button"
         onClick={() => void commit()}
         disabled={!name.trim()}
-        className="block w-full h-10 rounded-[6px] bg-forest text-forest-foreground px-4 font-mono text-[12px] lowercase tracking-tight hover:opacity-90 transition-opacity disabled:opacity-40"
+        className="block w-full h-11 rounded-[6px] bg-forest text-forest-foreground px-4 font-mono text-[13px] lowercase tracking-tight hover:opacity-90 transition-opacity disabled:opacity-40"
       >
-        + add item
+        add item
       </button>
     </div>
   );
