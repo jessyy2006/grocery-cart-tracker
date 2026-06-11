@@ -475,6 +475,8 @@ function FinanceCardView(props: any) {
     maxBar,
     rotatingInsight,
   } = props;
+  const currentMonthKey = derived.series[derived.series.length - 1]?.key as string | undefined;
+  const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(currentMonthKey ?? null);
   if (!hasBudget) {
     return (
       <div className="space-y-3">
