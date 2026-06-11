@@ -823,7 +823,9 @@ export default function ActiveTrip() {
                         const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
                         const noteParts: string[] = [];
                         if (it.notes) noteParts.push(it.notes);
-                        if (sub) noteParts.push(`↔ ${sub.name_snapshot}`);
+                        if (sub && !it.notes?.toLowerCase().startsWith("replaced ")) {
+                          noteParts.push(`↔ ${sub.name_snapshot}`);
+                        }
                         const note = noteParts.length ? noteParts.join(" · ") : null;
                         return (
                           <LedgerRow
