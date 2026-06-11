@@ -247,7 +247,7 @@ export default function Home() {
                   <button
                     disabled={creating || lists.length === 0}
                     onClick={() => setStep("list")}
-                    className="group flex items-center gap-4 rounded-lg border border-hairline bg-card p-5 text-left shadow-soft hover:border-primary hover:shadow-glow transition-all disabled:opacity-50"
+                    className="group flex items-center gap-4 rounded-[6px] border border-hairline bg-card p-5 text-left shadow-soft hover:border-primary hover:shadow-glow transition-all disabled:opacity-50"
                   >
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/60 text-primary">
                       <ListChecks className="h-5 w-5" strokeWidth={2} />
@@ -264,7 +264,7 @@ export default function Home() {
                   <button
                     disabled={creating}
                     onClick={() => startTripWith(null)}
-                    className="group flex items-center gap-4 rounded-lg border border-hairline bg-card p-5 text-left shadow-soft hover:border-primary hover:shadow-glow transition-all disabled:opacity-50"
+                    className="group flex items-center gap-4 rounded-[6px] border border-hairline bg-card p-5 text-left shadow-soft hover:border-primary hover:shadow-glow transition-all disabled:opacity-50"
                   >
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-butter/60 text-foreground">
                       <Sparkles className="h-5 w-5" strokeWidth={2} />
