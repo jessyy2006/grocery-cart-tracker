@@ -534,7 +534,8 @@ function FinanceCardView(props: any) {
 
   const sectionAnchor = "text-eyebrow";
   const monoTiny = "text-[11px] lowercase tracking-wide text-muted-foreground";
-  const maxBarVal = Math.max(...derived.series.map((s: { cents: number }) => s.cents), 1);
+  const maxHistBudget = Math.max(0, ...Array.from(budgetHistMap.values()));
+  const maxBarVal = Math.max(maxHistBudget, budgetCents ?? 0, 1);
   const hasAnyTrips = derived.series.some((s: { cents: number }) => s.cents > 0);
   const dottedLeader = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .";
 
