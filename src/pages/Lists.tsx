@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { PageHeader } from "@/components/PageHeader";
 import { MarketLoader } from "@/components/MarketLoader";
 import { formatDistanceToNow } from "date-fns";
 
@@ -56,46 +55,70 @@ export default function Lists() {
     await supabase.from("shopping_lists").delete().eq("id", id);
   };
 
-  const ctaClasses =
-    "h-12 w-full rounded-[4px] bg-forest text-forest-foreground text-[14px] lowercase tracking-tight transition-opacity hover:opacity-90";
+  // Margin rule positioned ~48px from page left edge. Page has px-5 (20px),
+  // so within our container offset is 48 - 20 = 28px.
+  const MARGIN_LEFT = 28;
 
   return (
-    <div className="space-y-7 px-5 pt-3 pb-8">
-      <PageHeader
-        eyebrow="plan your run"
-        title="your lists"
-        className="[&_h1]:text-display [&_h1]:lowercase [&_.text-eyebrow]:font-mono [&_.text-eyebrow]:normal-case [&_.text-eyebrow]:tracking-[0.14em] [&_.text-eyebrow]:font-normal"
+    <div className="relative min-h-[calc(100dvh-6rem)] px-5 pt-3 pb-12">
+      {/* Header */}
+      <header className="flex items-end justify-between gap-3 pt-2 pb-2">
+        <div className="min-w-0">
+          <p className="font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground mb-1.5">
+            plan your run
+          </p>
+          <h1 className="font-display text-[2.25rem] leading-[1.25] lowercase tracking-tight pb-1">
+            your lists
+          </h1>
+        </div>
+        <button
+          onClick={() => setOpen(true)}
+          className="font-mono text-[12px] lowercase tracking-tight text-forest hover:opacity-70 transition-opacity whitespace-nowrap pb-2"
+        >
+          + new list
+        </button>
+      </header>
+
+      {/* Notebook margin rule */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-[7rem] bottom-0"
+        style={{
+          left: `${MARGIN_LEFT}px`,
+          width: "1px",
+          backgroundColor: "hsl(18 35% 70% / 0.45)",
+        }}
       />
 
-      {!ready ? (
-        <MarketLoader minHeight="55vh" />
-      ) : lists.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="font-display text-[1.5rem] lowercase tracking-tight">no lists yet</p>
-          <p className="mt-2 font-mono text-[12px] lowercase text-muted-foreground max-w-[28ch]">
-            build a list to plan your next market run.
-          </p>
-          <button onClick={() => setOpen(true)} className={`${ctaClasses} mt-8 max-w-xs`}>
-            [ + create a new list ]
-          </button>
-        </div>
-      ) : (
-        <>
+      <div style={{ paddingLeft: `${MARGIN_LEFT + 16}px` }}>
+        {!ready ? (
+          <MarketLoader minHeight="55vh" />
+        ) : lists.length === 0 ? (
+          <div className="py-16 text-left">
+            <p className="font-display text-[1.5rem] lowercase tracking-tight">no lists yet</p>
+            <p className="mt-2 font-mono text-[12px] lowercase text-muted-foreground max-w-[28ch]">
+              tap "+ new list" to plan your next market run.
+            </p>
+          </div>
+        ) : (
           <ul className="divide-y divide-foreground/10">
             {lists.map((l) => {
               const total = l.shopping_list_items?.length ?? 0;
-              const sub = `→ ${total} item${total === 1 ? "" : "s"} · updated ${formatDistanceToNow(new Date(l.updated_at), { addSuffix: true })}`.toLowerCase();
+              const updated = formatDistanceToNow(new Date(l.updated_at), { addSuffix: true });
               return (
                 <li key={l.id} className="group relative">
                   <button
                     onClick={() => navigate(`/lists/${l.id}`)}
-                    className="flex w-full flex-col items-start gap-0.5 py-5 pr-10 text-left transition-opacity hover:opacity-70"
+                    className="flex w-full flex-col items-start gap-1 py-6 pr-10 text-left transition-opacity hover:opacity-70"
                   >
                     <p className="text-[15px] lowercase text-foreground truncate max-w-full">
                       {l.name.toLowerCase()}
                     </p>
-                    <p className="font-mono text-[12px] lowercase text-muted-foreground truncate max-w-full">
-                      {sub}
+                    <p className="lowercase text-muted-foreground truncate max-w-full">
+                      <span className="font-display italic text-[13px]">
+                        {total} item{total === 1 ? "" : "s"}
+                      </span>
+                      <span className="font-mono text-[12px]"> · updated {updated}</span>
                     </p>
                   </button>
                   <button
@@ -109,12 +132,8 @@ export default function Lists() {
               );
             })}
           </ul>
-
-          <button onClick={() => setOpen(true)} className={ctaClasses}>
-            [ + create a new list ]
-          </button>
-        </>
-      )}
+        )}
+      </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="rounded-xl border-hairline">
