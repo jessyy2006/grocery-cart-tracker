@@ -86,6 +86,8 @@ export default function ActiveTrip() {
   const [subPickerOpen, setSubPickerOpen] = useState(false);
   const [subQuery, setSubQuery] = useState("");
   const [listReady, setListReady] = useState(false);
+  const [receipt, setReceipt] = useState<TripReceiptPayload | null>(null);
+  const [receiptOpen, setReceiptOpen] = useState(false);
 
   // Load active trip
   useEffect(() => {
