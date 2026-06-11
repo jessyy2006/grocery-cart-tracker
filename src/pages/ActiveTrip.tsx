@@ -658,30 +658,22 @@ export default function ActiveTrip() {
   const isSearching = storeQuery.trim().length >= 2;
   const displayStores = isSearching ? (searchResults ?? []) : (nearbyStores ?? []);
 
+  const checkedCount = listItems.filter((i) => i.checked_at).length + extras.length;
+  const totalCount = listItems.length + extras.length;
+
   return (
     <div className="flex h-full flex-col bg-background">
-      <header className="glass flex shrink-0 items-center justify-between border-b border-hairline px-5 py-3 safe-top">
-        <div className="min-w-0">
-          <p className="text-eyebrow">Shopping at</p>
-          <button onClick={openStoreModal} className="mt-0.5 flex items-center gap-1 text-left">
-            {activeStore ? (
-              <>
-                <MapPin className="h-4 w-4 text-primary" />
-                <span className="truncate text-h2 font-display">{activeStore.name}</span>
-              </>
-            ) : (
-              <span className="text-small text-muted-foreground underline-offset-2 hover:underline">
-                Add store (optional)
-              </span>
-            )}
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
+      <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 pt-4 pb-3 safe-top">
+        {/* LEFT — exit */}
+        <div className="justify-self-start">
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <X className="mr-1 h-4 w-4" /> Exit
-              </Button>
+              <button
+                type="button"
+                className="font-mono text-[12px] lowercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+              >
+                ✕ exit
+              </button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -698,6 +690,32 @@ export default function ActiveTrip() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        </div>
+
+        {/* CENTER — list name (+ store) */}
+        <button
+          onClick={openStoreModal}
+          className="min-w-0 justify-self-center text-center"
+          aria-label={activeStore ? "Change store" : "Add store"}
+        >
+          {activeStore ? (
+            <span className="block truncate text-[22px] leading-tight lowercase">
+              <span className="font-display">{(listName || "untitled").toLowerCase()}</span>
+              <span className="mx-1.5 text-muted-foreground">·</span>
+              <span className="font-mono text-[14px] text-muted-foreground">
+                {activeStore.name.toLowerCase()}
+              </span>
+            </span>
+          ) : (
+            <span className="block truncate font-display text-[24px] leading-tight lowercase">
+              {(listName || "untitled").toLowerCase()}
+            </span>
+          )}
+        </button>
+
+        {/* RIGHT — progress counter */}
+        <div className="justify-self-end font-mono text-[12px] tabular-nums text-muted-foreground">
+          [ {checkedCount}/{totalCount} ]
         </div>
       </header>
 
