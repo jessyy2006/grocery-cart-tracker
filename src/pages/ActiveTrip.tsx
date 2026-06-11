@@ -689,33 +689,8 @@ export default function ActiveTrip() {
   return (
     <div className="flex h-full flex-col bg-background">
       <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 pt-4 pb-3 safe-top">
-        {/* LEFT — exit */}
-        <div className="justify-self-start">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button
-                type="button"
-                className="font-mono text-[12px] lowercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
-              >
-                ✕ exit
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure you want to exit?</AlertDialogTitle>
-                <AlertDialogDescription>Your trip won't be saved.</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  No, go back
-                </AlertDialogCancel>
-                <AlertDialogAction onClick={exitTrip} className="bg-transparent text-foreground hover:bg-muted">
-                  Exit
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+        {/* LEFT — spacer */}
+        <div />
 
         {/* CENTER — list name (+ store) */}
         <button
@@ -738,6 +713,34 @@ export default function ActiveTrip() {
           )}
         </button>
 
+        {/* RIGHT — exit */}
+        <div className="justify-self-end">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
+                aria-label="Exit trip"
+                className="font-mono text-[14px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                ✕
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to exit?</AlertDialogTitle>
+                <AlertDialogDescription>Your trip won't be saved.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  No, go back
+                </AlertDialogCancel>
+                <AlertDialogAction onClick={exitTrip} className="bg-transparent text-foreground hover:bg-muted">
+                  Exit
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 pb-8">
