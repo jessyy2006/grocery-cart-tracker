@@ -709,7 +709,7 @@ export default function ActiveTrip() {
               })()}
             </div>
           </div>
-          <Button variant="outline" onClick={saveTrip} disabled={items.length === 0}>
+          <Button variant="outline" onClick={saveTrip}>
             <Check className="mr-1 h-4 w-4" /> Save trip
           </Button>
         </div>
