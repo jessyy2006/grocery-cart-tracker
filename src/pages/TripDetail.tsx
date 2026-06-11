@@ -77,9 +77,11 @@ export default function TripDetail() {
           {trip && (
             <header>
               <p className="text-eyebrow">{format(new Date(trip.started_at), "EEEE · MMM d, yyyy")}</p>
+              <h1 className="mt-1 text-h1">{trip.title}</h1>
               <p className="mt-2 text-money text-[2.25rem] font-medium leading-none">{formatMoney(trip.total_cents)}</p>
             </header>
           )}
+
           {grouped.map((g) => (
             <section key={g.name}>
               <div className="mb-2 flex items-center justify-between">
