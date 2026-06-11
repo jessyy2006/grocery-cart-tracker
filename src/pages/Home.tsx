@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, HeroCard } from "@/components/ui/card";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { ShoppingCart, ListChecks, MapPin, ArrowRight, ChevronLeft, Sparkles, ScanLine } from "lucide-react";
+import { ShoppingCart, ListChecks, ArrowRight, ChevronLeft, Sparkles, ScanLine } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
@@ -16,6 +16,7 @@ import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
 import { PageHeader } from "@/components/PageHeader";
 import { Money } from "@/components/Money";
 import { MarketLoader } from "@/components/MarketLoader";
+import { TripTapeRow } from "@/components/trip/TripTapeRow";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
 type ShortList = { id: string; name: string };
@@ -36,7 +37,7 @@ export default function Home() {
   const { firstName, loading: profileLoading } = useProfile();
   const [searchParams, setSearchParams] = useSearchParams();
   const [introOpen, setIntroOpen] = useState(false);
-  const [recent, setRecent] = useState<(Trip & { stores: string[] })[]>([]);
+  const [recent, setRecent] = useState<(Trip & { itemCount: number; title: string })[]>([]);
   const [monthSpend, setMonthSpend] = useState(0);
   const [ready, setReady] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -63,7 +64,7 @@ export default function Home() {
       const [savedRes, allRes] = await Promise.all([
         supabase
           .from("trips")
-          .select("id, started_at, total_cents, status, trip_items(store_name_snapshot)")
+          .select("id, started_at, total_cents, status, trip_items(id), shopping_lists:list_id(name, hidden)")
           .eq("status", "saved")
           .order("started_at", { ascending: false })
           .limit(3),
@@ -77,12 +78,18 @@ export default function Home() {
       if (cancelled) return;
 
       setRecent(
-        (savedRes.data ?? []).map((t: any) => ({
-          ...t,
-          stores: Array.from(
-            new Set((t.trip_items ?? []).map((i: any) => i.store_name_snapshot).filter(Boolean))
-          ) as string[],
-        }))
+        (savedRes.data ?? []).map((t: any) => {
+          const list = t.shopping_lists;
+          const title =
+            list && !list.hidden && list.name
+              ? list.name
+              : format(new Date(t.started_at), "EEE, MMM d");
+          return {
+            ...t,
+            itemCount: (t.trip_items ?? []).length,
+            title,
+          };
+        })
       );
       setMonthSpend((allRes.data ?? []).reduce((a, t: any) => a + (t.total_cents ?? 0), 0));
       setReady(true);
@@ -185,40 +192,33 @@ export default function Home() {
 
           {/* Recent trips */}
           <section>
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-h2">Recent trips</h2>
+            <div className="mb-1 flex items-baseline justify-between">
+              <h2 className="text-small lowercase text-muted-foreground">recent trips</h2>
               {recent.length > 0 && (
                 <button
                   onClick={() => navigate("/history")}
-                  className="text-small text-muted-foreground hover:text-primary inline-flex items-center gap-1"
+                  className="text-small lowercase text-muted-foreground hover:text-primary inline-flex items-center gap-1"
                 >
-                  See all <ArrowRight className="h-3 w-3" />
+                  see all <ArrowRight className="h-3 w-3" />
                 </button>
               )}
             </div>
             {recent.length === 0 ? (
-              <Card className="p-6 text-center">
+              <div className="py-8 text-center">
                 <Sparkles className="mx-auto h-5 w-5 text-accent-honey" strokeWidth={1.75} />
                 <p className="mt-2 text-small text-muted-foreground">Your saved trips will live here.</p>
-              </Card>
+              </div>
             ) : (
-              <ul className="space-y-3">
+              <ul className="divide-y divide-dashed divide-foreground/15">
                 {recent.map((t) => (
                   <li key={t.id}>
-                    <button
+                    <TripTapeRow
+                      title={t.title}
+                      date={t.started_at}
+                      itemCount={t.itemCount}
+                      totalCents={t.total_cents}
                       onClick={() => navigate(`/trip/${t.id}`)}
-                      className="flex w-full items-center justify-between rounded-lg bg-card p-4 text-left shadow-soft border border-hairline hover:bg-surface-sunk transition-colors"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-h3 truncate">{format(new Date(t.started_at), "EEE, MMM d")}</p>
-                        {t.stores.length > 0 && (
-                          <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
-                            <MapPin className="h-3 w-3" /> {t.stores.join(" · ")}
-                          </p>
-                        )}
-                      </div>
-                      <Money cents={t.total_cents} size="lg" />
-                    </button>
+                    />
                   </li>
                 ))}
               </ul>

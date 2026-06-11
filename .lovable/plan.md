@@ -1,35 +1,49 @@
-## Trip Detail polish
+# Receipt Tape redesign — Home & History lists
 
-### 1. "Shop from this list" parity with a hand-built list
+Refactor the trip lists on `src/pages/Home.tsx` ("Recent trips") and `src/pages/History.tsx` (full history) into one shared, hyper-minimal "receipt tape" row style. All text sits flat on the page background — no cards, borders, or shadows.
 
-In `src/pages/TripDetail.tsx` `handleRevisit`, augment the `shopping_list_items` insert payload to match the shape used by `ScanReceipt.tsx` and `ListDetail.tsx`:
+## 1. New shared row component
 
-- Add `category: guessCategory(name)` per item (import from `@/lib/categories`).
-- `qty` already comes from `trip_items.qty` — keep as-is; falls back to `1` only when missing/zero.
-- No other field changes.
+Create `src/components/trip/TripTapeRow.tsx`:
 
-Result: items land in their proper category groups instead of all in "other".
+- Props: `title`, `date` (ISO), `itemCount`, `totalCents`, `onClick`.
+- Layout: full-width `<button>`, `flex items-center justify-between`, vertical padding `py-5` (~20px).
+- Left column:
+  - Line 1 — title in `lowercase`, `text-[15px]` regular, `text-foreground` (dark charcoal).
+  - Line 2 — `lowercase` `text-[13px]` `text-muted-foreground`, format: `"wed, jun 10 · 7 items"` via `format(date, "EEE, MMM d")` then `.toLowerCase()`.
+- Right column: `<Money>` at `size="md"` (~15px) in `text-foreground`, vertically centered by flex.
+- No icons, no MapPin, no chevron.
 
-### 2. Page layout: title → receipt → button
+## 2. Shared dashed divider
 
-Restructure the render so the trip title becomes a real page header **above** the receipt sheet, not the receipt's storefront line.
+Use a single hairline rule between rows: `border-t border-dashed border-foreground/10` on each row except the first (`[&>li+li>button]:border-t` pattern on the `<ul>`, or simply `divide-y divide-dashed divide-foreground/10` on the list). Apply inside each section so headers don't get a top rule.
 
-- Above the receipt: small eyebrow ("EEEE · MMM d, yyyy"), then `h1` with the trip title, centered.
-- Inside the receipt header: replace the bold store-name line with **"GROCERY RECEIPT"** (static, keeps the retail-receipt feel); keep the date/time line beneath.
-- Trip title source:
-  - **Attached to a list** → use the shopping list's `name`.
-  - **Free trip** → relative-time naming:
-    - same week as today → `"This {Weekday}'s run"` (e.g. "This Tuesday's run")
-    - prior week → `"Last {Weekday}'s run"`
-    - older → `"{MMM d} run"` (e.g. "Jun 10 run")
-  - Helper `formatTripTitle(date)` colocated at the top of `TripDetail.tsx`.
+## 3. `src/pages/Home.tsx` changes
 
-### 3. Handle-tab spacing
+- Replace the `recent.map` card buttons with `<ul class="-mx-1">` of `TripTapeRow`s, using `t.title`-equivalent — Home currently shows only the date, so pass `format(started_at, "EEE, MMM d").toLowerCase()` as the title for now and drop the stores subline (kept minimal per spec). Item count comes from `trip_items` length — extend the existing `savedRes` select to include `trip_items(id)` count (already fetches `store_name_snapshot`; change to `trip_items(id)` and use `.length`).
+- Section heading "Recent trips" stays but restyled: `lowercase text-small text-muted-foreground` to match the editorial tone (still keep "see all" link, lowercased).
 
-The wrapper around the bag-handle button currently uses `mt-3`, which positions the arch — not the button body — close to the receipt. Increase the outer wrapper margin so the arch itself sits ~24px below the receipt's bottom jagged edge:
+## 4. `src/pages/History.tsx` changes
 
-- Change wrapper from `mt-3` → `mt-10` (≈40px) so the arch element has natural breathing room and the button body sits further down.
+- Remove `<Card>` wrappers and the `<li>` spacing classes; render each month section's items as a `<ul>` of `TripTapeRow`s with dashed dividers between rows.
+- Month header ("june 2026"): keep the sticky behavior, restyle to `lowercase text-small text-muted-foreground tracking-normal` (drop the existing eyebrow uppercase styling for this view). Lowercase via `.toLowerCase()` on `monthLabel(k)`.
+- Header row: the scan icon button is already in `PageHeader.action` next to the month `Select` — no change needed; just confirm visual size matches (already `h-10 w-10`, minimalist outline).
+- Title fallback already uses list name or `"EEE, MMM d"`; lowercase it for display.
 
-### Files touched
+## 5. Cleanup
 
-- `src/pages/TripDetail.tsx` — only file changed. No DB, no new components.
+- Drop now-unused imports (`MapPin`, `Card`, `HeroCard` only where unused) from Home and History.
+- No DB, no auth, no routing changes.
+
+## Files touched
+
+- add `src/components/trip/TripTapeRow.tsx`
+- edit `src/pages/Home.tsx`
+- edit `src/pages/History.tsx`
+- edit `src/components/AppLayout.tsx` (hide FAB on `/`)
+
+## Out of scope
+
+- TripDetail page (already redesigned).
+- FloatingActionButton internals.
+- Any data model or query shape beyond swapping `store_name_snapshot` → `id` in the Home recent select to get item counts.
