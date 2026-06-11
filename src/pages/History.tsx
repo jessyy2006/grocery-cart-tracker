@@ -146,7 +146,7 @@ export default function History() {
                     <button onClick={() => navigate(`/trip/${t.id}`)} className="w-full text-left">
                       <Card className="flex items-center justify-between p-4 transition hover:border-primary">
                         <div>
-                          <p className="text-h3">{format(new Date(t.started_at), "EEE, MMM d")}</p>
+                          <p className="text-h3">{t.title}</p>
                           <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
                             <MapPin className="h-3 w-3" />
                             {t.stores.join(" · ") || "No store"} · {t.itemCount} items
