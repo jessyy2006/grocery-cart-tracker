@@ -30,6 +30,42 @@ type Parsed = {
 type Store = { id: string; name: string };
 type ListLite = { id: string; name: string; items: { id: string; name: string; checked_at: string | null }[] };
 
+const REVEAL = 76;
+
+function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete: () => void }) {
+  const x = useMotionValue(0);
+  const onDragEnd = (_e: unknown, info: PanInfo) => {
+    const target = info.offset.x < -REVEAL / 2 || info.velocity.x < -300 ? -REVEAL : 0;
+    animate(x, target, { type: "spring", stiffness: 500, damping: 40 });
+  };
+  const handleDelete = () => {
+    animate(x, 0, { duration: 0.12 });
+    onDelete();
+  };
+  return (
+    <li className="relative overflow-hidden">
+      <button
+        type="button"
+        onClick={handleDelete}
+        aria-label="Delete item"
+        className="absolute inset-y-0 right-0 flex items-center justify-center bg-destructive text-destructive-foreground"
+        style={{ width: REVEAL }}
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: -REVEAL, right: 0 }}
+        dragElastic={0.05}
+        style={{ x }}
+        onDragEnd={onDragEnd}
+        className="relative bg-card touch-pan-y"
+      >
+        {children}
+      </motion.div>
+    </li>
+  );
+}
 
 export default function ScanReceipt() {
   const { user } = useAuth();
