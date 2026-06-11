@@ -1,49 +1,62 @@
-# Receipt Tape redesign — Home & History lists
+# Editorial Market Ledger Overhaul
 
-Refactor the trip lists on `src/pages/Home.tsx` ("Recent trips") and `src/pages/History.tsx` (full history) into one shared, hyper-minimal "receipt tape" row style. All text sits flat on the page background — no cards, borders, or shadows.
+A typographic refresh across Home + History, plus a redesigned Hero Card on Home. No data-model changes, no behavior changes — pure presentation.
 
-## 1. New shared row component
+## 1. Typographic hierarchy (shared)
 
-Create `src/components/trip/TripTapeRow.tsx`:
+Establish two contrasting type registers used app-wide on these screens:
 
-- Props: `title`, `date` (ISO), `itemCount`, `totalCents`, `onClick`.
-- Layout: full-width `<button>`, `flex items-center justify-between`, vertical padding `py-5` (~20px).
-- Left column:
-  - Line 1 — title in `lowercase`, `text-[15px]` regular, `text-foreground` (dark charcoal).
-  - Line 2 — `lowercase` `text-[13px]` `text-muted-foreground`, format: `"wed, jun 10 · 7 items"` via `format(date, "EEE, MMM d")` then `.toLowerCase()`.
-- Right column: `<Money>` at `size="md"` (~15px) in `text-foreground`, vertically centered by flex.
-- No icons, no MapPin, no chevron.
+- **Section anchors** (Home: "recent trips"; History: page title "history") — `font-display` (Fraunces) at ~28px, weight 500, lowercase, tight tracking. Drops the current tiny `text-small lowercase muted` styling.
+- **Group subheads** (History month bands "june 2026", "may 2026") — `font-mono` (JetBrains Mono) at ~11px, uppercase-lowercase preserved as lowercase, muted-foreground, `tracking-[0.14em]`. A typewriter-style ledger label that visibly differs from the serif anchors.
+- All text in headers, subheads, and list rows stays lowercase (already in TripTapeRow; extended to new spots).
 
-## 2. Shared dashed divider
+## 2. Home Hero Card redesign
 
-Use a single hairline rule between rows: `border-t border-dashed border-foreground/10` on each row except the first (`[&>li+li>button]:border-t` pattern on the `<ul>`, or simply `divide-y divide-dashed divide-foreground/10` on the list). Apply inside each section so headers don't get a top rule.
+Greeting/title (`PageHeader` with "Thursday market run?") stays **outside and above** the card — unchanged structurally, just confirmed.
 
-## 3. `src/pages/Home.tsx` changes
+Rebuild the `HeroCard` block on `src/pages/Home.tsx` as:
 
-- Replace the `recent.map` card buttons with `<ul class="-mx-1">` of `TripTapeRow`s, using `t.title`-equivalent — Home currently shows only the date, so pass `format(started_at, "EEE, MMM d").toLowerCase()` as the title for now and drop the stores subline (kept minimal per spec). Item count comes from `trip_items` length — extend the existing `savedRes` select to include `trip_items(id)` count (already fetches `store_name_snapshot`; change to `trip_items(id)` and use `.length`).
-- Section heading "Recent trips" stays but restyled: `lowercase text-small text-muted-foreground` to match the editorial tone (still keep "see all" link, lowercased).
+```text
+┌─────────────────────────────────────────┐
+│  THIS MONTH                       [ 📷 ] │
+│                                          │
+│  $45.85                                  │
+│                                          │
+│  tracked across your saved trips.        │
+│  ── 32% of this month's budget utilized  │
+│                                          │
+│  [        start a live trip         ]    │
+└─────────────────────────────────────────┘
+```
 
-## 4. `src/pages/History.tsx` changes
+Specifics:
+- Replace `HeroCard` (rounded-xl, soft cream) with a plain `<section>`: `bg-surface-raised` (pure white), `rounded-[6px]`, `shadow-soft`, no border. Padding `p-6`, button row flush to bottom edges via inner layout.
+- Top row: `THIS MONTH` eyebrow on the left; the existing scan icon button absolutely positioned top-right inside the card (same icon button styling already used).
+- `$45.85` rendered via existing `<Money size="display" />`.
+- Subtext line unchanged ("tracked across your saved trips." / empty-state copy).
+- New budget line beneath subtext: `font-mono text-[12px] lowercase text-muted-foreground` reading `── {pct}% of this month's budget utilized`. Fetch `user_budgets.monthly_cents` in the same Home `useEffect` (parallel with existing queries). Hide the line entirely when no budget is set or `monthSpend === 0`.
+- Full-width CTA: replace the current green `variant="hero"` Button with a sharp rectangular button — `bg-foreground text-background`, `rounded-[4px]`, `h-12`, `w-full`, lowercase label `start a live trip`, no icon. Sits as the bottom row of the card with a small top margin.
 
-- Remove `<Card>` wrappers and the `<li>` spacing classes; render each month section's items as a `<ul>` of `TripTapeRow`s with dashed dividers between rows.
-- Month header ("june 2026"): keep the sticky behavior, restyle to `lowercase text-small text-muted-foreground tracking-normal` (drop the existing eyebrow uppercase styling for this view). Lowercase via `.toLowerCase()` on `monthLabel(k)`.
-- Header row: the scan icon button is already in `PageHeader.action` next to the month `Select` — no change needed; just confirm visual size matches (already `h-10 w-10`, minimalist outline).
-- Title fallback already uses list name or `"EEE, MMM d"`; lowercase it for display.
+## 3. History page header
 
-## 5. Cleanup
+`src/pages/History.tsx`:
+- Replace the `PageHeader` title styling for "History" so the title renders lowercase serif at the same scale as Home's "recent trips" anchor. Easiest: keep `PageHeader` but pass `title="history"` (lowercase) — the existing `text-h1` is already Fraunces. Bump to `text-display` for parity. Drop the "Past runs" eyebrow.
+- Month group headers: swap current `text-small lowercase text-muted-foreground` to `font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground`. Keep `sticky top-0 bg-background`.
+- Keep the scan icon + month select in the top-right action slot (already there).
 
-- Drop now-unused imports (`MapPin`, `Card`, `HeroCard` only where unused) from Home and History.
-- No DB, no auth, no routing changes.
+## 4. Home "recent trips" section
+
+`src/pages/Home.tsx`:
+- Section heading "recent trips" → `font-display text-[1.75rem] leading-none lowercase` (matches History anchor). The "see all →" link stays small/muted on the right, vertically aligned to baseline.
+- List already uses `TripTapeRow` with `divide-dashed`; soften the perforation: `divide-foreground/10` (paper-thin) and confirm rows render two-line layout (already correct).
+
+## 5. Out of scope
+
+- No changes to `TripTapeRow` internals (already matches the 2-line spec).
+- No changes to `FloatingActionButton`, bottom sheet, drawers, TripDetail, or any data writes.
+- No new dependencies. No design tokens added (uses existing `font-display`, `font-mono`, `--shadow-soft`, `--foreground`/`--background`).
 
 ## Files touched
 
-- add `src/components/trip/TripTapeRow.tsx`
-- edit `src/pages/Home.tsx`
-- edit `src/pages/History.tsx`
-- edit `src/components/AppLayout.tsx` (hide FAB on `/`)
-
-## Out of scope
-
-- TripDetail page (already redesigned).
-- FloatingActionButton internals.
-- Any data model or query shape beyond swapping `store_name_snapshot` → `id` in the Home recent select to get item counts.
+- `src/pages/Home.tsx` — rebuild HeroCard JSX, fetch budget, restyle "recent trips" heading, soften divider.
+- `src/pages/History.tsx` — restyle PageHeader title, restyle month subheads.

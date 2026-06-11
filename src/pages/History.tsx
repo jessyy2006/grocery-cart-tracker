@@ -107,8 +107,8 @@ export default function History() {
   return (
     <div className="space-y-7 px-5 pt-3">
       <PageHeader
-        eyebrow="Past runs"
-        title="History"
+        title="history"
+        className="[&_h1]:text-display [&_h1]:lowercase"
         action={
           <div className="flex items-center gap-2">
             {monthOptions.length > 0 && (
