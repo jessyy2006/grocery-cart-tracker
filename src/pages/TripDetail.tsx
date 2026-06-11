@@ -7,6 +7,25 @@ import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 import { MarketLoader } from "@/components/MarketLoader";
 import { JaggedEdge, Row, Divider, PAPER, INK } from "@/components/trip/ReceiptPaper";
+import { guessCategory } from "@/lib/categories";
+
+// Relative-time title for free trips (no attached shopping list).
+function formatTripTitle(date: Date): string {
+  const now = new Date();
+  const startOfWeek = (d: Date) => {
+    const x = new Date(d);
+    const day = x.getDay(); // 0 = Sun
+    x.setHours(0, 0, 0, 0);
+    x.setDate(x.getDate() - day);
+    return x;
+  };
+  const thisWeek = startOfWeek(now).getTime();
+  const tripWeek = startOfWeek(date).getTime();
+  const weekday = date.toLocaleDateString(undefined, { weekday: "long" });
+  if (tripWeek === thisWeek) return `This ${weekday}'s run`;
+  if (tripWeek === thisWeek - 7 * 24 * 60 * 60 * 1000) return `Last ${weekday}'s run`;
+  return `${format(date, "MMM d")} run`;
+}
 
 type Item = {
   id: string;
