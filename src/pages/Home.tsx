@@ -78,12 +78,18 @@ export default function Home() {
       if (cancelled) return;
 
       setRecent(
-        (savedRes.data ?? []).map((t: any) => ({
-          ...t,
-          stores: Array.from(
-            new Set((t.trip_items ?? []).map((i: any) => i.store_name_snapshot).filter(Boolean))
-          ) as string[],
-        }))
+        (savedRes.data ?? []).map((t: any) => {
+          const list = t.shopping_lists;
+          const title =
+            list && !list.hidden && list.name
+              ? list.name
+              : format(new Date(t.started_at), "EEE, MMM d");
+          return {
+            ...t,
+            itemCount: (t.trip_items ?? []).length,
+            title,
+          };
+        })
       );
       setMonthSpend((allRes.data ?? []).reduce((a, t: any) => a + (t.total_cents ?? 0), 0));
       setReady(true);
