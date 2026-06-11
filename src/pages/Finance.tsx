@@ -697,8 +697,8 @@ function StatColumn({
 }) {
   return (
     <div className={`flex flex-col items-start gap-1 px-3 ${bordered ? "border-l border-[hsl(40_26%_86%)]" : ""}`}>
-      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-        [ {label} ]
+      <div className="font-mono text-[8px] font-semibold uppercase tracking-wide text-[#1C1A17]">
+        {label}
       </div>
       <div className="text-[17px] font-bold leading-tight tabular-nums text-foreground">
         {value}
