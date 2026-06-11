@@ -43,16 +43,30 @@ export default function ScanReceipt() {
 
   // Review state
   const [storeName, setStoreName] = useState("");
-  const [storeChoice, setStoreChoice] = useState<string>(NO_STORE);
+  const [saveAsNewStore, setSaveAsNewStore] = useState(false);
   const [stores, setStores] = useState<Store[]>([]);
   const [tripDate, setTripDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [items, setItems] = useState<ParsedItem[]>([]);
+  const [priceDrafts, setPriceDrafts] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState(false);
   const [lists, setLists] = useState<ListLite[]>([]);
   const [matchListId, setMatchListId] = useState<string | null>(null);
   const [linkMatch, setLinkMatch] = useState(true);
   const [saveAsList, setSaveAsList] = useState(false);
   const [newListName, setNewListName] = useState("");
+
+  // Derive matched store from typed name
+  const matchedStore = useMemo(() => {
+    const t = storeName.toLowerCase().trim();
+    if (!t) return null;
+    return (
+      stores.find((s) => s.name.toLowerCase() === t) ??
+      stores.find(
+        (s) => s.name.toLowerCase().includes(t) || t.includes(s.name.toLowerCase()),
+      ) ??
+      null
+    );
+  }, [storeName, stores]);
 
   // Start camera on mount
   useEffect(() => {
