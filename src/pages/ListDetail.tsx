@@ -22,6 +22,7 @@ import { TagPill } from "@/components/TagPill";
 import { TagSelector } from "@/components/TagSelector";
 import { MarketLoader } from "@/components/MarketLoader";
 import { toast } from "sonner";
+import { snapshotListIntoTrip } from "@/lib/snapshotList";
 
 type Item = {
   id: string;
@@ -240,6 +241,7 @@ export default function ListDetail() {
       .limit(1);
     if (active?.[0]) {
       await supabase.from("trips").update({ list_id: id }).eq("id", active[0].id);
+      await snapshotListIntoTrip(active[0].id, id);
       navigate("/trip");
       return;
     }
@@ -249,7 +251,8 @@ export default function ListDetail() {
       .select("id")
       .single();
     if (error) return toast.error(error.message);
-    navigate("/trip/new");
+    await snapshotListIntoTrip(data!.id, id);
+    navigate("/trip");
   };
 
   return (
@@ -274,7 +277,7 @@ export default function ListDetail() {
           </span>
         </button>
         <span className="text-money text-small text-muted-foreground w-10 text-right">
-          {done}/{total}
+          {total}
         </span>
       </header>
 
@@ -326,13 +329,7 @@ export default function ListDetail() {
                     <li key={it.id}>
                       <Card className="flex items-center gap-3 p-3">
                         <div className="min-w-0 flex-1">
-                          <p
-                            className={`truncate font-medium ${
-                              it.checked_at ? "text-muted-foreground line-through" : ""
-                            }`}
-                          >
-                            {it.name}
-                          </p>
+                          <p className="truncate font-medium">{it.name}</p>
                           <div className="flex items-center gap-1.5">
                             {(it.qty > 1 || it.notes) && (
                               <p className="truncate text-xs text-muted-foreground">
@@ -344,11 +341,6 @@ export default function ListDetail() {
                             {groupBy === "category" && it.tag && <TagPill tag={it.tag} size="xs" />}
                           </div>
                         </div>
-                        {it.price_cents != null && (
-                          <span className="shrink-0 text-sm font-semibold text-primary">
-                            {formatMoney(it.price_cents)}
-                          </span>
-                        )}
                         <button
                           onClick={() => openEdit(it)}
                           className="text-muted-foreground hover:text-foreground"
