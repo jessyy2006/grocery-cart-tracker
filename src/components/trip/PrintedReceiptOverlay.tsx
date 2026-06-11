@@ -19,6 +19,8 @@ export type TripReceiptPayload = {
 
 const PAPER = "#fdfaf1";
 const INK = "#0e1a14";
+const GREEN_BG = "#13261d";
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 
 const JaggedEdge = ({ position }: { position: "top" | "bottom" }) => {
