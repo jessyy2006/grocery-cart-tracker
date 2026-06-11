@@ -108,36 +108,36 @@ export default function ActiveTrip() {
     })();
   }, [user, navigate]);
 
-  // Load shopping list
+  // Load shopping list name/hidden + the per-trip planned snapshot
   useEffect(() => {
-    if (!listId) {
-      setListItems([]);
-      setListName("");
-      setListHidden(false);
-      if (tripId) setListReady(true);
-      return;
-    }
+    if (!tripId) return;
     setListReady(false);
     let cancelled = false;
     (async () => {
-      const [{ data: l }, { data }] = await Promise.all([
+      const listMetaPromise = listId
+        ? supabase
+            .from("shopping_lists")
+            .select("name, hidden")
+            .eq("id", listId)
+            .maybeSingle()
+        : Promise.resolve({ data: null });
+      const [{ data: l }, { data: planned }] = await Promise.all([
+        listMetaPromise,
         supabase
-          .from("shopping_lists")
-          .select("name, hidden")
-          .eq("id", listId)
-          .maybeSingle(),
-        supabase
-          .from("shopping_list_items")
+          .from("trip_planned_items")
           .select("*")
-          .eq("list_id", listId)
+          .eq("trip_id", tripId)
           .order("created_at", { ascending: true }),
       ]);
       if (cancelled) return;
       if (l) {
-        setListName(l.name);
+        setListName((l as any).name);
         setListHidden(!!(l as any).hidden);
+      } else {
+        setListName("");
+        setListHidden(false);
       }
-      setListItems((data ?? []) as ListItem[]);
+      setListItems((planned ?? []) as ListItem[]);
       setListReady(true);
     })();
     return () => {
@@ -183,7 +183,7 @@ export default function ActiveTrip() {
       c.map((i) => (i.id === it.id ? { ...i, checked_at: null, price_cents: null } : i)),
     );
     await supabase
-      .from("shopping_list_items")
+      .from("trip_planned_items")
       .update({ checked_at: null, price_cents: null })
       .eq("id", it.id);
     if (sub) {
@@ -228,7 +228,7 @@ export default function ActiveTrip() {
       c.map((i) => (i.id === it.id ? { ...i, checked_at, qty: qtyNum, price_cents: priceCents } : i))
     );
     await supabase
-      .from("shopping_list_items")
+      .from("trip_planned_items")
       .update({ checked_at, qty: qtyNum, price_cents: priceCents })
       .eq("id", it.id);
     setManualCheck(null);
@@ -277,19 +277,19 @@ export default function ActiveTrip() {
         )
       );
       await supabase
-        .from("shopping_list_items")
+        .from("trip_planned_items")
         .update({ checked_at, barcode: code ?? undefined, name: newName, price_cents: newPrice })
         .eq("id", matchId);
       toast.success(`Checked off: ${productName}`);
-    } else if (listHidden && listId) {
-      // Free-shop mode: silently add as a planned (pre-checked) list item,
+    } else if (listHidden && tripId) {
+      // Free-shop mode: silently add as a planned (pre-checked) snapshot item,
       // categorized so it groups nicely. No extras prompt.
       const checked_at = new Date().toISOString();
       const slug = guessCategory(productName);
       const { data: row, error } = await supabase
-        .from("shopping_list_items")
+        .from("trip_planned_items")
         .insert({
-          list_id: listId,
+          trip_id: tripId,
           name: productName,
           qty: tripItem.qty,
           category: slug,
@@ -333,7 +333,7 @@ export default function ActiveTrip() {
     const [{ error: e1 }, { error: e2 }] = await Promise.all([
       supabase.from("trip_items").update({ substitutes_list_item_id: planned.id }).eq("id", tripItemId),
       supabase
-        .from("shopping_list_items")
+        .from("trip_planned_items")
         .update({
           checked_at,
           price_cents: offList.tripItem.price_cents,

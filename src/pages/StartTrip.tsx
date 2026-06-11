@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { snapshotListIntoTrip } from "@/lib/snapshotList";
 
 /**
  * Trip bootstrapper. No UI store selection — just create an active trip
@@ -62,6 +63,7 @@ export default function StartTrip() {
           .select("id")
           .single();
         if (error) throw error;
+        await snapshotListIntoTrip(trip.id, listId);
         sessionStorage.removeItem("pendingTrip:listId");
         sessionStorage.removeItem("trip:cameFromOnboarding");
         if (!cancelled) navigate("/trip", { replace: true });
