@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { formatMoney, type Currency } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+
 
 export type TripReceiptPayload = {
   storeName: string;
@@ -17,7 +19,7 @@ export type TripReceiptPayload = {
 
 const PAPER = "#fdfaf1";
 const INK = "#0e1a14";
-const TAB = "#1a1a1a";
+
 
 const JaggedEdge = ({ position }: { position: "top" | "bottom" }) => {
   const teeth = 40;
@@ -145,7 +147,7 @@ export default function PrintedReceiptOverlay({ open, payload, onDismiss }: Prop
     <AnimatePresence>
       {open && payload && (
         <motion.div
-          className="fixed inset-0 z-[100] flex flex-col items-center overflow-hidden bg-foreground/40 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-foreground/40 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -158,9 +160,7 @@ export default function PrintedReceiptOverlay({ open, payload, onDismiss }: Prop
             paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)",
           }}
         >
-          <div className="pointer-events-none mb-2 h-1.5 w-28 rounded-full bg-foreground/50" />
-
-          <div className="relative flex w-full flex-1 items-start justify-center overflow-hidden px-4">
+          <div className="relative flex w-full flex-1 items-center justify-center overflow-hidden px-4 py-4">
             <motion.div
               variants={containerVariants}
               initial="hidden"
@@ -269,7 +269,7 @@ export default function PrintedReceiptOverlay({ open, payload, onDismiss }: Prop
                   <motion.div variants={rowVariants}><Divider /></motion.div>
                   <motion.div
                     variants={rowVariants}
-                    className="pb-3 text-center text-[10px] uppercase tracking-widest text-neutral-500"
+                    className="pb-5 text-center text-[10px] uppercase tracking-widest text-neutral-500"
                   >
                     Thanks for shopping
                   </motion.div>
@@ -277,34 +277,26 @@ export default function PrintedReceiptOverlay({ open, payload, onDismiss }: Prop
               </div>
 
               <JaggedEdge position="bottom" />
-
-              {/* Paper-bag tab */}
-              <motion.button
-                type="button"
-                disabled={!ready}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDismiss();
-                }}
-                whileTap={{ scale: 0.98 }}
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: ready ? 1 : 0.85, y: 0 }}
-                transition={{ delay: reduce ? 0 : 0.6, duration: 0.25 }}
-                className="relative mx-auto -mt-px flex w-[78%] items-center justify-center gap-3 rounded-b-2xl px-6 pb-5 pt-4 text-[11px] font-semibold uppercase tracking-[0.18em] disabled:cursor-not-allowed"
-                style={{ backgroundColor: TAB, color: PAPER }}
-                aria-label="Collect your receipt"
-              >
-                {/* Handle cutout */}
-                <span
-                  aria-hidden
-                  className="absolute left-1/2 top-1.5 h-1.5 w-12 -translate-x-1/2 rounded-full"
-                  style={{ backgroundColor: PAPER, opacity: 0.18 }}
-                />
-                <span>Collect your receipt</span>
-              </motion.button>
             </motion.div>
           </div>
+
+          {/* Collect receipt button */}
+          <div
+            className="w-full px-6 pb-4 pt-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              variant="secondary"
+              size="lg"
+              disabled={!ready}
+              onClick={onDismiss}
+              className="mx-auto flex w-full max-w-sm bg-foreground text-background hover:bg-foreground/90"
+            >
+              Collect receipt
+            </Button>
+          </div>
         </motion.div>
+
       )}
     </AnimatePresence>
   );
