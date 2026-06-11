@@ -317,46 +317,28 @@ export default function ListDetail() {
 
             {(groupBy === "category" ? groupedByCategory : groupedByTag).map((group) => (
               <section key={group.key}>
-                <h3 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <h3 className="mb-1 px-[60px] font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                   {groupBy === "category"
-                    ? `${(group as any).emoji} ${group.label}`
+                    ? `${(group as any).emoji} ${String(group.label).toLowerCase()}`
                     : (group as any).isTag
-                    ? <TagPill tag={group.label} />
-                    : "Other"}
+                    ? String(group.label).toLowerCase()
+                    : "other"}
                 </h3>
-                <ul className="space-y-2">
+                <ul className="divide-y divide-foreground/10 border-y border-foreground/10">
                   {group.items.map((it) => (
-                    <li key={it.id}>
-                      <Card className="flex items-center gap-3 p-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">{it.name}</p>
-                          <div className="flex items-center gap-1.5">
-                            {(it.qty > 1 || it.notes) && (
-                              <p className="truncate text-xs text-muted-foreground">
-                                {it.qty > 1 ? `Qty ${it.qty}` : ""}
-                                {it.qty > 1 && it.notes ? " · " : ""}
-                                {it.notes ?? ""}
-                              </p>
-                            )}
-                            {groupBy === "category" && it.tag && <TagPill tag={it.tag} size="xs" />}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => openEdit(it)}
-                          className="text-muted-foreground hover:text-foreground"
-                          aria-label="Edit item"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => remove(it.id)}
-                          className="text-muted-foreground hover:text-destructive"
-                          aria-label="Delete item"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </Card>
-                    </li>
+                    <LedgerRow
+                      key={it.id}
+                      name={it.name}
+                      qty={it.qty}
+                      note={it.notes}
+                      tag={groupBy === "category" ? it.tag : null}
+                      onQtyChange={async (next) => {
+                        setItems((c) => c.map((i) => (i.id === it.id ? { ...i, qty: next } : i)));
+                        await supabase.from("shopping_list_items").update({ qty: next }).eq("id", it.id);
+                      }}
+                      onEdit={() => openEdit(it)}
+                      onDelete={() => remove(it.id)}
+                    />
                   ))}
                 </ul>
               </section>
@@ -366,18 +348,22 @@ export default function ListDetail() {
               type="button"
               onClick={() => setAddOpen(true)}
               aria-label="Add item"
-              className="flex h-14 w-full items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/40 text-muted-foreground transition hover:border-muted-foreground hover:text-foreground"
+              className="ml-[60px] flex h-12 w-[calc(100%-60px)] items-center justify-center gap-2 font-mono text-[12px] lowercase tracking-wide text-muted-foreground transition hover:text-foreground"
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-4 w-4" /> add item
             </button>
             <div ref={endRef} />
           </>
         )}
       </div>
 
-      <footer className="border-t border-border bg-card px-4 pt-3 pb-3">
-        <Button size="lg" className="h-14 w-full text-base" onClick={startRun}>
-          <ShoppingBasket className="mr-2 h-5 w-5" /> Start grocery run
+      <footer className="border-t border-hairline bg-card px-4 pt-3 pb-3">
+        <Button
+          size="lg"
+          className="h-14 w-full rounded-[4px] bg-forest text-forest-foreground text-base font-mono lowercase tracking-wide hover:bg-forest/90"
+          onClick={startRun}
+        >
+          <ShoppingBasket className="mr-2 h-5 w-5" /> start grocery run
         </Button>
       </footer>
 
