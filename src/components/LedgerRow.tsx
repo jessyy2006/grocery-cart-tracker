@@ -75,13 +75,17 @@ export function LedgerRow({
 
         {/* TEXT COLUMN */}
         <div className="min-w-0 flex-1 self-center pr-2">
-          <p
-            className={cn(
-              "text-[15px] lowercase leading-snug break-words",
-              checked ? "text-muted-foreground line-through" : "text-foreground",
-            )}
-          >
-            {name}
+          <p className="flex flex-wrap items-baseline gap-x-1.5 leading-snug">
+            <span
+              className={cn(
+                "text-[15px] lowercase break-words",
+                checked ? "text-muted-foreground line-through" : "text-foreground",
+              )}
+            >
+              {name}
+            </span>
+            <span className="text-muted-foreground">·</span>
+            <QtyMultiplier qty={qty} onChange={onQtyChange} />
           </p>
 
           {hasSecondLine && (
@@ -109,9 +113,8 @@ export function LedgerRow({
           )}
         </div>
 
-        {/* RIGHT COLUMN — qty + price grouped as a tight receipt cluster */}
-        <div className="flex shrink-0 items-center gap-3 self-center">
-          <QtyLabel qty={qty} onChange={onQtyChange} />
+        {/* RIGHT COLUMN — price only */}
+        <div className="flex shrink-0 items-center gap-2 self-center">
           {priceCents != null && (
             <span
               className={cn(
@@ -147,12 +150,13 @@ export function LedgerRow({
             </span>
           )}
         </div>
+
       </div>
     </li>
   );
 }
 
-function QtyLabel({ qty, onChange }: { qty: number; onChange?: (n: number) => void }) {
+function QtyMultiplier({ qty, onChange }: { qty: number; onChange?: (n: number) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
 
@@ -168,7 +172,7 @@ function QtyLabel({ qty, onChange }: { qty: number; onChange?: (n: number) => vo
   if (!onChange) {
     return (
       <span className="font-mono text-[12px] lowercase text-muted-foreground tabular-nums">
-        qty: {qty}
+        {qty}x
       </span>
     );
   }
@@ -181,7 +185,7 @@ function QtyLabel({ qty, onChange }: { qty: number; onChange?: (n: number) => vo
         className="font-mono text-[12px] lowercase text-muted-foreground hover:text-foreground transition-colors tabular-nums"
         aria-label="Edit quantity"
       >
-        qty: {qty}
+        {qty}x
       </button>
     );
   }
