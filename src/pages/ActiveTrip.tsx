@@ -757,40 +757,72 @@ export default function ActiveTrip() {
               </p>
             ) : (
               <div className="space-y-6">
-                {groupedList.map(({ slug, items: lis }) => {
-                  const meta = getCategory(slug);
-                  return (
-                    <section key={slug}>
-                      <h3 className="mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                        {meta.emoji} {meta.label.toLowerCase()}
-                      </h3>
-                      <ul className="border-t border-[hsl(20_40%_18%/0.3)]">
-                        {lis.map((it) => {
-                          const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
-                          const noteParts: string[] = [];
-                          if (it.notes) noteParts.push(it.notes);
-                          if (sub) noteParts.push(`↔ ${sub.name_snapshot}`);
-                          const note = noteParts.length ? noteParts.join(" · ") : null;
-                          return (
-                            <LedgerRow
-                              key={it.id}
-                              name={it.name}
-                              qty={it.qty}
-                              note={note}
-                              tag={it.tag}
-                              priceCents={it.price_cents}
-                              showCheckbox
-                              checked={!!it.checked_at}
-                              onToggle={() =>
-                                it.checked_at ? uncheckListItem(it) : openManualCheck(it)
-                              }
-                            />
-                          );
-                        })}
-                      </ul>
-                    </section>
-                  );
-                })}
+                {listItems.length > 0 && (
+                  <div className="flex items-center justify-end gap-1 text-xs">
+                    <span className="mr-1 text-muted-foreground">Group by</span>
+                    <button
+                      onClick={() => setTripGroupBy("category")}
+                      className={`rounded-full px-2 py-0.5 font-medium ${
+                        tripGroupBy === "category" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      Category
+                    </button>
+                    <button
+                      onClick={() => setTripGroupBy("tag")}
+                      className={`rounded-full px-2 py-0.5 font-medium ${
+                        tripGroupBy === "tag" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      Tag
+                    </button>
+                  </div>
+                )}
+
+                {(tripGroupBy === "category"
+                  ? groupedList.map((g) => ({
+                      key: g.slug as string,
+                      label: `${getCategory(g.slug).emoji} ${getCategory(g.slug).label.toLowerCase()}`,
+                      items: g.items,
+                      showItemTag: true,
+                    }))
+                  : groupedListByTag.map((g) => ({
+                      key: g.key,
+                      label: g.isTag ? g.label.toLowerCase() : "other",
+                      items: g.items,
+                      showItemTag: false,
+                    }))
+                ).map((group) => (
+                  <section key={group.key}>
+                    <h3 className="mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                      {group.label}
+                    </h3>
+                    <ul className="border-t border-[hsl(20_40%_18%/0.3)]">
+                      {group.items.map((it) => {
+                        const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
+                        const noteParts: string[] = [];
+                        if (it.notes) noteParts.push(it.notes);
+                        if (sub) noteParts.push(`↔ ${sub.name_snapshot}`);
+                        const note = noteParts.length ? noteParts.join(" · ") : null;
+                        return (
+                          <LedgerRow
+                            key={it.id}
+                            name={it.name}
+                            qty={it.qty}
+                            note={note}
+                            tag={group.showItemTag ? it.tag : null}
+                            priceCents={it.price_cents}
+                            showCheckbox
+                            checked={!!it.checked_at}
+                            onToggle={() =>
+                              it.checked_at ? uncheckListItem(it) : openManualCheck(it)
+                            }
+                          />
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))}
 
                 {extras.length > 0 && (
                   <section>
