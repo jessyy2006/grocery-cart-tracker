@@ -290,13 +290,13 @@ export default function ListDetail() {
           <>
             <QuickAddRow
               tagSuggestions={tagSuggestions}
-              onSubmit={async ({ name: n, note, tag: t }) => {
+              onSubmit={async ({ name: n, qty, note, tag: t }) => {
                 if (!id) return;
                 const slug = guessCategory(n);
                 const insert = {
                   list_id: id,
                   name: n,
-                  qty: 1,
+                  qty,
                   category: slug,
                   notes: note ? note.slice(0, 25) : null,
                   tag: t,
@@ -313,6 +313,7 @@ export default function ListDetail() {
                 setItems((c) => [...c, data as Item]);
               }}
             />
+
 
             {items.length > 0 && (
               <div className="flex items-center gap-2 text-[12px] lowercase">
