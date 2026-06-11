@@ -202,6 +202,8 @@ export default function ActiveTrip() {
     }
   };
 
+  const [tripGroupBy, setTripGroupBy] = useState<"category" | "tag">("category");
+
   const groupedList = useMemo(() => {
     const map = new Map<CategorySlug, ListItem[]>();
     for (const it of listItems) {
@@ -214,6 +216,29 @@ export default function ActiveTrip() {
     for (const arr of map.values())
       arr.sort((a, b) => Number(!!a.checked_at) - Number(!!b.checked_at));
     return CATEGORY_ORDER.filter((s) => map.has(s)).map((s) => ({ slug: s, items: map.get(s)! }));
+  }, [listItems]);
+
+  const groupedListByTag = useMemo(() => {
+    const map = new Map<string, ListItem[]>();
+    const order: string[] = [];
+    for (const it of listItems) {
+      const k = it.tag ?? "__none";
+      if (!map.has(k)) {
+        map.set(k, []);
+        order.push(k);
+      }
+      map.get(k)!.push(it);
+    }
+    for (const arr of map.values())
+      arr.sort((a, b) => Number(!!a.checked_at) - Number(!!b.checked_at));
+    const keys = order.filter((k) => k !== "__none");
+    if (map.has("__none")) keys.push("__none");
+    return keys.map((k) => ({
+      key: k,
+      label: k === "__none" ? "other" : k,
+      isTag: k !== "__none",
+      items: map.get(k)!,
+    }));
   }, [listItems]);
 
   const openManualCheck = (it: ListItem) => {
