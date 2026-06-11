@@ -6,6 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export async function snapshotListIntoTrip(tripId: string, listId: string | null) {
   if (!listId) return;
+  // Idempotent — never re-snapshot a trip that already has planned items.
+  const { count } = await supabase
+    .from("trip_planned_items")
+    .select("id", { count: "exact", head: true })
+    .eq("trip_id", tripId);
+  if ((count ?? 0) > 0) return;
   const { data: rows, error } = await supabase
     .from("shopping_list_items")
     .select("id, name, qty, category, notes, tag, barcode")
