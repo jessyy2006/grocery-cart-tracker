@@ -365,7 +365,10 @@ export default function ActiveTrip() {
     if (!offList) return;
     const tripItemId = offList.tripItem.id;
     const checked_at = new Date().toISOString();
-    // Persist on trip_item + check off planned item
+    const originalName = planned.name;
+    const substituteName = offList.productName;
+    const replacementNote = `Replaced ${originalName}`;
+    // Persist on trip_item + check off planned item, swapping in the substitute name
     const [{ error: e1 }, { error: e2 }] = await Promise.all([
       supabase.from("trip_items").update({ substitutes_list_item_id: planned.id }).eq("id", tripItemId),
       supabase
@@ -374,6 +377,8 @@ export default function ActiveTrip() {
           checked_at,
           price_cents: offList.tripItem.price_cents,
           qty: offList.tripItem.qty,
+          name: substituteName,
+          notes: replacementNote,
         })
         .eq("id", planned.id),
     ]);
@@ -387,11 +392,18 @@ export default function ActiveTrip() {
     setListItems((c) =>
       c.map((i) =>
         i.id === planned.id
-          ? { ...i, checked_at, price_cents: offList.tripItem.price_cents, qty: offList.tripItem.qty }
+          ? {
+              ...i,
+              checked_at,
+              price_cents: offList.tripItem.price_cents,
+              qty: offList.tripItem.qty,
+              name: substituteName,
+              notes: replacementNote,
+            }
           : i,
       ),
     );
-    toast.success(`Substituted ${planned.name} → ${offList.productName}`);
+    toast.success(`Substituted ${originalName} → ${substituteName}`);
     setSubPickerOpen(false);
     setOffList(null);
   };
