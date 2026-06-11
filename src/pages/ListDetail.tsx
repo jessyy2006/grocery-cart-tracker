@@ -315,23 +315,27 @@ export default function ListDetail() {
             />
 
             {items.length > 0 && (
-              <div className="flex items-center justify-end gap-1 text-xs">
-                <span className="mr-1 text-muted-foreground">Group by</span>
+              <div className="flex items-center gap-2 text-[12px] lowercase">
+                <span className="text-muted-foreground">group by:</span>
                 <button
                   onClick={() => setGroupBy("category")}
-                  className={`rounded-full px-2 py-0.5 font-medium ${
-                    groupBy === "category" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  }`}
+                  className={
+                    groupBy === "category"
+                      ? "font-mono text-foreground"
+                      : "text-muted-foreground"
+                  }
                 >
-                  Category
+                  {groupBy === "category" ? "[ category ]" : "category"}
                 </button>
                 <button
                   onClick={() => setGroupBy("tag")}
-                  className={`rounded-full px-2 py-0.5 font-medium ${
-                    groupBy === "tag" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                  }`}
+                  className={
+                    groupBy === "tag"
+                      ? "font-mono text-foreground"
+                      : "text-muted-foreground"
+                  }
                 >
-                  Tag
+                  {groupBy === "tag" ? "[ tag ]" : "tag"}
                 </button>
               </div>
             )}
