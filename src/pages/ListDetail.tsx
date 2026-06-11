@@ -13,14 +13,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { ArrowLeft, Plus, Trash2, ShoppingBasket, Pencil } from "lucide-react";
+import { ArrowLeft, Plus, ShoppingBasket, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { formatMoney } from "@/lib/format";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
 import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
 import { TagPill } from "@/components/TagPill";
 import { TagSelector } from "@/components/TagSelector";
 import { MarketLoader } from "@/components/MarketLoader";
+import { LedgerRow } from "@/components/LedgerRow";
 import { toast } from "sonner";
 import { snapshotListIntoTrip } from "@/lib/snapshotList";
 
