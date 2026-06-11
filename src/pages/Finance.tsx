@@ -660,9 +660,7 @@ function FinanceCardView(props: any) {
       {/* E — INSIGHT FOOTNOTE */}
       {rotatingInsight && (
         <section className="space-y-2 border-t border-[hsl(40_26%_86%)] pt-5">
-          <div className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-            insights
-          </div>
+          <div className="text-eyebrow">insights</div>
           <p className="font-display text-[15px] italic leading-snug text-foreground">
             {rotatingInsight.body}
           </p>
