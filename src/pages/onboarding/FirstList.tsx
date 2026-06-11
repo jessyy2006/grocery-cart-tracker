@@ -340,11 +340,11 @@ export default function OnboardingFirstList() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditing(null)}>
+          <DialogFooter className="flex-row gap-2 sm:justify-stretch sm:space-x-0">
+            <Button variant="primaryLight" size="lg" className="flex-1" onClick={saveEdit}>Save</Button>
+            <Button variant="secondaryLight" size="lg" className="flex-1" onClick={() => setEditing(null)}>
               Cancel
             </Button>
-            <Button variant="primaryLight" size="lg" onClick={saveEdit}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
