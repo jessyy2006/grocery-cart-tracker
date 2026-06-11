@@ -288,33 +288,6 @@ export default function ListDetail() {
           <MarketLoader minHeight="50vh" />
         ) : (
           <>
-            <QuickAddRow
-              tagSuggestions={tagSuggestions}
-              onSubmit={async ({ name: n, qty, note, tag: t }) => {
-                if (!id) return;
-                const slug = guessCategory(n);
-                const insert = {
-                  list_id: id,
-                  name: n,
-                  qty,
-                  category: slug,
-                  notes: note ? note.slice(0, 25) : null,
-                  tag: t,
-                };
-                const { data, error } = await supabase
-                  .from("shopping_list_items")
-                  .insert(insert)
-                  .select("*")
-                  .single();
-                if (error) {
-                  toast.error(error.message);
-                  return;
-                }
-                setItems((c) => [...c, data as Item]);
-              }}
-            />
-
-
             {items.length > 0 && (
               <div className="flex items-center gap-2 text-[12px] lowercase">
                 <span className="text-muted-foreground">group by:</span>
@@ -340,6 +313,32 @@ export default function ListDetail() {
                 </button>
               </div>
             )}
+
+            <QuickAddRow
+              tagSuggestions={tagSuggestions}
+              onSubmit={async ({ name: n, qty, note, tag: t }) => {
+                if (!id) return;
+                const slug = guessCategory(n);
+                const insert = {
+                  list_id: id,
+                  name: n,
+                  qty,
+                  category: slug,
+                  notes: note ? note.slice(0, 25) : null,
+                  tag: t,
+                };
+                const { data, error } = await supabase
+                  .from("shopping_list_items")
+                  .insert(insert)
+                  .select("*")
+                  .single();
+                if (error) {
+                  toast.error(error.message);
+                  return;
+                }
+                setItems((c) => [...c, data as Item]);
+              }}
+            />
 
             {items.length === 0 && (
               <p className="py-10 text-center text-sm text-muted-foreground">
