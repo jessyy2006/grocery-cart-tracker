@@ -640,7 +640,7 @@ function FinanceCardView(props: any) {
 
           {derived.byStore.length > 0 && (
             <div className="space-y-3 pt-4">
-              <div className={monoLabel}>by store</div>
+              <div className={sectionAnchor}>breakdown by store</div>
               {derived.byStore.map(([store, cents]: [string, number]) => (
                 <div key={store} className="flex items-baseline gap-2">
                   <div className="shrink-0 text-sm lowercase text-foreground">{store}</div>
