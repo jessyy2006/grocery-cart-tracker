@@ -498,6 +498,7 @@ function FinanceCardView(props: any) {
     <div className="space-y-10">
       {/* A — SUMMARY HERO */}
       <section className="space-y-3">
+        <div className={sectionAnchor}>spending budget</div>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="text-[40px] font-bold leading-[1.05] tracking-tight text-foreground">
@@ -505,9 +506,6 @@ function FinanceCardView(props: any) {
               <span className={over ? "text-destructive" : "text-foreground"}>
                 {over ? "over" : "left"}
               </span>
-            </div>
-            <div className={`mt-1.5 ${monoTiny}`}>
-              of {formatMoney(budgetCents!)} monthly budget threshold
             </div>
           </div>
           <div className="shrink-0 pt-2 font-mono text-[10px] font-bold tracking-wider text-foreground">
@@ -519,6 +517,9 @@ function FinanceCardView(props: any) {
             className={`h-full ${over ? "bg-destructive" : "bg-foreground"}`}
             style={{ width: `${Math.min(100, pctUsed)}%` }}
           />
+        </div>
+        <div className={monoTiny}>
+          of {formatMoney(budgetCents!)} monthly budget threshold
         </div>
       </section>
 
