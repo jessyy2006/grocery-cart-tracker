@@ -469,6 +469,7 @@ export default function Finance() {
           impulseClass={impulseClass}
           extrasDelta={extrasDelta}
           maxBar={maxBar}
+          budgetHistory={budgetHistory}
           rotatingInsight={rotatingInsight}
         />
       )}
