@@ -19,7 +19,7 @@ export type TripReceiptPayload = {
 
 const PAPER = "#fdfaf1";
 const INK = "#0e1a14";
-const TAB = "#1a1a1a";
+
 
 const JaggedEdge = ({ position }: { position: "top" | "bottom" }) => {
   const teeth = 40;
