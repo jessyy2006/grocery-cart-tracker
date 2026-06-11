@@ -726,7 +726,7 @@ function FinanceCardView(props: any) {
                     </div>
                     {showDelta && (
                       <div
-                        className={`text-[11px] tabular-nums ${
+                        className={`text-money text-[11px] tabular-nums ${
                           isUp ? "text-destructive" : "text-[hsl(163_94%_24%)]"
                         }`}
                       >
