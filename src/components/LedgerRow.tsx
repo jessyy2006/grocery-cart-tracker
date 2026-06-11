@@ -51,7 +51,7 @@ export function LedgerRow({
 
   return (
     <li className="group relative">
-      <div className="flex items-stretch gap-3 py-4 pl-1 pr-1">
+      <div className="flex items-stretch gap-3 py-2 pl-1 pr-1">
         {/* Checkbox — close to the left edge */}
         {showCheckbox && (
           <button
