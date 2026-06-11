@@ -494,6 +494,21 @@ function FinanceCardView(props: any) {
   const hasAnyTrips = derived.series.some((s: { cents: number }) => s.cents > 0);
   const dottedLeader = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .";
 
+  // Nice axis max: round up to a clean step
+  const niceMax = (() => {
+    const v = maxBarVal;
+    const pow = Math.pow(10, Math.max(0, Math.floor(Math.log10(v)) - 0));
+    const steps = [1, 2, 2.5, 5, 10];
+    for (const s of steps) {
+      const candidate = s * pow;
+      if (candidate >= v) return candidate;
+    }
+    return v;
+  })();
+  const yTicks = [niceMax, niceMax / 2, 0];
+  const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(currentMonthKey ?? null);
+  const selectedMonth = derived.series.find((s: { key: string }) => s.key === selectedMonthKey) ?? null;
+
   return (
     <div className="space-y-10">
       {/* A — SUMMARY HERO */}
