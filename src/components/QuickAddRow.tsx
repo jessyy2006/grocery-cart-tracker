@@ -171,7 +171,7 @@ export function QuickAddRow({
         type="button"
         onClick={() => void commit()}
         disabled={!name.trim()}
-        className="block w-full h-10 rounded-[4px] bg-forest text-forest-foreground px-4 font-mono text-[12px] lowercase tracking-tight hover:opacity-90 transition-opacity disabled:opacity-40"
+        className="block w-full h-10 rounded-xl bg-forest text-forest-foreground px-4 font-mono text-[12px] lowercase tracking-tight hover:opacity-90 transition-opacity disabled:opacity-40"
       >
         + add item
       </button>
