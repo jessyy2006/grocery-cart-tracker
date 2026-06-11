@@ -562,7 +562,7 @@ function FinanceCardView(props: any) {
           <div className="min-w-0">
             <div className="text-money text-[44px] leading-[1.02] tracking-tight text-foreground">
               {formatMoney(Math.abs(remaining))}{" "}
-              <span className={over ? "text-destructive" : "text-foreground"}>
+              <span className={over ? "text-destructive" : "text-muted-foreground"}>
                 {over ? "over" : "left"}
               </span>
             </div>
