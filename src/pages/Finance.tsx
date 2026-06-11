@@ -47,6 +47,7 @@ export default function Finance() {
   // currency hook called below
   const [loading, setLoading] = useState(true);
   const [budgetCents, setBudgetCents] = useState<number | null>(null);
+  const [budgetHistory, setBudgetHistory] = useState<Map<string, number>>(new Map());
   const [trips, setTrips] = useState<Trip[]>([]);
   const [items, setItems] = useState<TripItem[]>([]);
   const [listItems, setListItems] = useState<ListItem[]>([]);
