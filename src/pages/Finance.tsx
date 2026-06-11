@@ -488,11 +488,11 @@ export default function Finance() {
             onChange={(e) => setBudgetInput(e.target.value)}
             autoFocus
           />
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditOpen(false)}>
+          <DialogFooter className="flex-row gap-2 sm:justify-stretch sm:space-x-0">
+            <Button variant="primaryLight" size="lg" className="flex-1" onClick={saveBudget}>Save</Button>
+            <Button variant="secondaryLight" size="lg" className="flex-1" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
-            <Button variant="primaryLight" size="lg" onClick={saveBudget}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

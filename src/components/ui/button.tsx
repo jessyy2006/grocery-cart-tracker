@@ -17,6 +17,8 @@ const buttonVariants = cva(
           "rounded-[4px] bg-forest text-forest-foreground font-mono lowercase tracking-tight hover:opacity-90",
         primaryDark:
           "rounded-[4px] border border-forest-foreground bg-transparent text-forest-foreground font-mono lowercase tracking-wide hover:bg-forest-foreground/5",
+        secondaryLight:
+          "rounded-[4px] border border-forest bg-transparent text-forest font-mono lowercase tracking-tight hover:bg-forest/25 hover:text-background active:bg-forest/25 active:text-background",
         default: "rounded-lg text-sm font-semibold bg-primary text-primary-foreground shadow-soft hover:bg-primary/92 hover:shadow-glow",
         hero: "rounded-lg text-base font-semibold bg-primary text-primary-foreground shadow-raised hover:shadow-glow hover:-translate-y-[1px]",
         destructive: "rounded-lg text-sm font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90",

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -730,13 +731,18 @@ export default function ActiveTrip() {
                 <AlertDialogTitle>Are you sure you want to exit?</AlertDialogTitle>
                 <AlertDialogDescription>Your trip won't be saved.</AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  No, go back
-                </AlertDialogCancel>
-                <AlertDialogAction onClick={exitTrip} className={buttonVariants({ variant: "primaryLight", size: "lg" })}>
+              <AlertDialogFooter className="flex-row gap-2 sm:justify-stretch">
+                <AlertDialogAction
+                  onClick={exitTrip}
+                  className={cn(buttonVariants({ variant: "primaryLight", size: "lg" }), "flex-1")}
+                >
                   Exit
                 </AlertDialogAction>
+                <AlertDialogCancel
+                  className={cn(buttonVariants({ variant: "secondaryLight", size: "lg" }), "mt-0 flex-1")}
+                >
+                  No, go back
+                </AlertDialogCancel>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

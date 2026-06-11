@@ -442,12 +442,12 @@ export default function ListDetail() {
             </Select>
             <TagSelector value={tag} suggestions={tagSuggestions} onChange={setTag} />
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setAddOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primaryLight" size="lg" onClick={addItem} disabled={!name.trim()}>
+          <DialogFooter className="flex-row gap-2 sm:justify-stretch sm:space-x-0">
+            <Button variant="primaryLight" size="lg" className="flex-1" onClick={addItem} disabled={!name.trim()}>
               <Plus className="mr-1 h-4 w-4" /> Add
+            </Button>
+            <Button variant="secondaryLight" size="lg" className="flex-1" onClick={() => setAddOpen(false)}>
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -510,11 +510,11 @@ export default function ListDetail() {
             </div>
             <TagSelector value={editTag} suggestions={tagSuggestions} onChange={setEditTag} />
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditing(null)}>
+          <DialogFooter className="flex-row gap-2 sm:justify-stretch sm:space-x-0">
+            <Button variant="primaryLight" size="lg" className="flex-1" onClick={saveEdit}>Save</Button>
+            <Button variant="secondaryLight" size="lg" className="flex-1" onClick={() => setEditing(null)}>
               Cancel
             </Button>
-            <Button variant="primaryLight" size="lg" onClick={saveEdit}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -546,11 +546,11 @@ export default function ListDetail() {
               }
             }}
           />
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setRenameOpen(false)}>
-              Cancel
-            </Button>
+          <DialogFooter className="flex-row gap-2 sm:justify-stretch sm:space-x-0">
             <Button
+              variant="primaryLight"
+              size="lg"
+              className="flex-1"
               onClick={async () => {
                 const next = renameValue.trim();
                 if (!next || !id) return;
@@ -566,6 +566,9 @@ export default function ListDetail() {
               disabled={!renameValue.trim()}
             >
               Save
+            </Button>
+            <Button variant="secondaryLight" size="lg" className="flex-1" onClick={() => setRenameOpen(false)}>
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>
