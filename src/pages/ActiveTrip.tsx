@@ -1041,7 +1041,7 @@ export default function ActiveTrip() {
 
       <Dialog open={!!offList && !subPickerOpen} onOpenChange={(o) => { if (!o) setOffList(null); }}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
+          <DialogHeader className="sm:text-center">
             <DialogTitle className="text-center">Not on your list</DialogTitle>
             <DialogDescription className="text-center">
               "{offList?.productName}" isn't on your shopping list. How should we count it?
