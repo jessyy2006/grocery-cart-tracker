@@ -487,7 +487,7 @@ function FinanceCardView(props: any) {
     );
   }
 
-  const monoLabel = "font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground";
+  const sectionAnchor = "font-mono text-[10px] font-bold uppercase tracking-widest text-[#7C756B]";
   const monoTiny = "font-mono text-[10px] lowercase tracking-wider text-muted-foreground";
   const maxBarVal = Math.max(...derived.series.map((s: { cents: number }) => s.cents), 1);
   const currentMonthKey = derived.series[derived.series.length - 1]?.key;
