@@ -639,7 +639,7 @@ function FinanceCardView(props: any) {
         <div className="flex gap-2">
           <div className="w-10" />
           <div className="flex flex-1 gap-3 border-t border-[hsl(40_26%_86%)] px-1 pt-1.5">
-            {derived.series.map((s: { key: string; label: string; key: string }) => (
+            {derived.series.map((s: { key: string; label: string }) => (
               <div
                 key={s.key}
                 className={`flex-1 text-center ${monoTiny} ${s.key === selectedMonthKey ? "text-foreground" : ""}`}
