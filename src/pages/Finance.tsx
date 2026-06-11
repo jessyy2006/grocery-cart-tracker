@@ -558,20 +558,24 @@ function FinanceCardView(props: any) {
       </section>
 
       {/* C — BAR CHART */}
-      <section>
-        <div className="flex h-40 items-end gap-3 px-1">
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <div className={sectionAnchor}>6-month overview</div>
+          <div className={monoTiny}>budget limit {formatMoney(budgetCents!)}</div>
+        </div>
+        <div className="flex h-40 items-stretch gap-3 px-1">
           {derived.series.map((s: { key: string; cents: number }) => {
-            const h = Math.max(2, Math.round((s.cents / maxBarVal) * 100));
+            const h = Math.max(s.cents > 0 ? 4 : 0, Math.round((s.cents / maxBarVal) * 100));
             const isCurrent = s.key === currentMonthKey;
             const isPast = !isCurrent && s.cents > 0;
             return (
-              <div key={s.key} className="flex flex-1 flex-col items-stretch justify-end">
+              <div key={s.key} className="flex flex-1 flex-col justify-end">
                 <div
-                  className={`rounded-t-[4px] ${
+                  className={`w-full rounded-t-[4px] ${
                     isCurrent
                       ? "bg-foreground"
                       : isPast
-                      ? "bg-[hsl(40_26%_86%)]"
+                      ? "bg-[hsl(36_10%_45%)]"
                       : "bg-[hsl(40_26%_86%)] opacity-50"
                   }`}
                   style={{ height: `${h}%` }}
