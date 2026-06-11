@@ -63,10 +63,10 @@
     --hairline: 40 26% 86%;
     --border: 40 26% 86%;
     --input: 40 26% 86%;
-    --ring: 36 10% 10%;
+    --ring: 155 56% 15%;
 
-    /* Forest CTA token now mapped to ink for cohesion */
-    --forest: 36 10% 10%;
+    /* Forest CTA token */
+    --forest: 155 56% 15%;
     --forest-foreground: 43 30% 95%;
 
     --receipt-paper: 43 35% 97%;
