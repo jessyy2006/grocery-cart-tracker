@@ -133,11 +133,7 @@
     z-index: -1;
     pointer-events: none;
     background-color: hsl(var(--background));
-    background-image:
-      radial-gradient(hsl(36 30% 80% / 0.18) 1px, transparent 1px),
-      radial-gradient(hsl(36 30% 80% / 0.12) 1px, transparent 1px);
-    background-size: 24px 24px, 48px 48px;
-    background-position: 0 0, 12px 12px;
+    background-image: none;
     will-change: transform;
     transform: translateZ(0);
   }
