@@ -108,15 +108,15 @@ export default function History() {
     <div className="space-y-7 px-5 pt-3">
       <PageHeader
         title="history"
-        className="[&_h1]:text-display [&_h1]:lowercase"
+        className="items-center [&_h1]:text-display [&_h1]:lowercase [&_h1]:leading-[1.25] [&_h1]:pb-1 [&_h1]:overflow-visible"
         action={
           <div className="flex items-center gap-2">
             {monthOptions.length > 0 && (
               <Select value={month} onValueChange={setMonth}>
-                <SelectTrigger className="h-10 w-[150px] rounded-md bg-surface border-hairline text-small">
+                <SelectTrigger className="h-9 w-[140px] rounded-[6px] bg-surface border-hairline text-small">
                   <SelectValue placeholder="All months" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-[6px]">
                   <SelectItem value={ALL}>All months</SelectItem>
                   {monthOptions.map((k) => (
                     <SelectItem key={k} value={k}>{monthLabel(k)}</SelectItem>
@@ -127,13 +127,14 @@ export default function History() {
             <button
               onClick={() => navigate("/scan-receipt")}
               aria-label="Scan past receipt"
-              className="flex h-10 w-10 items-center justify-center rounded-md border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-[4px] border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
             >
               <ScanLine className="h-4 w-4" strokeWidth={1.75} />
             </button>
           </div>
         }
       />
+
 
       {!ready ? (
         <MarketLoader minHeight="55vh" />
