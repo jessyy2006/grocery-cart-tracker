@@ -440,23 +440,123 @@ export default function ActiveTrip() {
   };
 
   const saveTrip = async () => {
-    if (!tripId) return;
-    if (items.length === 0) {
+    if (!tripId || !user) return;
+    if (items.length === 0 && extras.length === 0 && listItems.every((i) => !i.checked_at)) {
       toast.error("Add at least one item");
       return;
     }
+    const endedAt = new Date();
     const { error } = await supabase
       .from("trips")
-      .update({ status: "saved", ended_at: new Date().toISOString() })
+      .update({ status: "saved", ended_at: endedAt.toISOString() })
       .eq("id", tripId);
     if (error) {
       toast.error(error.message);
       return;
     }
     sessionStorage.removeItem(`trip:${tripId}:store`);
-    toast.success("Trip saved");
-    navigate(`/trip/${tripId}`, { replace: true });
+
+    // Build receipt payload
+    const checkedListItems = listItems.filter((i) => i.checked_at && i.price_cents != null);
+    const receiptItems: { name: string; cents: number }[] = [
+      ...checkedListItems.map((i) => ({
+        name: i.name,
+        cents: (i.price_cents ?? 0) * (i.qty || 1),
+      })),
+      ...extras.map((e) => ({
+        name: e.name_snapshot,
+        cents: e.price_cents * e.qty,
+      })),
+    ];
+
+    // Biggest category in this trip
+    const catTotals = new Map<string, number>();
+    for (const i of checkedListItems) {
+      const slug = (CATEGORY_ORDER.includes(i.category as CategorySlug)
+        ? i.category
+        : guessCategory(i.name)) as string;
+      catTotals.set(slug, (catTotals.get(slug) ?? 0) + (i.price_cents ?? 0) * (i.qty || 1));
+    }
+    for (const e of extras) {
+      const slug = guessCategory(e.name_snapshot);
+      catTotals.set(slug, (catTotals.get(slug) ?? 0) + e.price_cents * e.qty);
+    }
+    let biggestCategory: string | null = null;
+    if (catTotals.size > 0) {
+      const top = [...catTotals.entries()].sort((a, b) => b[1] - a[1])[0];
+      biggestCategory = getCategory(top[0]).label;
+    }
+
+    // Budget + streak from month trips
+    let pctOfBudget: number | null = null;
+    let streak = 0;
+    try {
+      const monthStart = new Date(endedAt.getFullYear(), endedAt.getMonth(), 1);
+      const [{ data: budget }, { data: savedTrips }] = await Promise.all([
+        supabase
+          .from("user_budgets")
+          .select("monthly_cents")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("trips")
+          .select("id, total_cents, started_at")
+          .eq("user_id", user.id)
+          .eq("status", "saved")
+          .order("started_at", { ascending: true }),
+      ]);
+      const budgetCents = budget?.monthly_cents ?? 0;
+      const trips = (savedTrips ?? []) as { id: string; total_cents: number | null; started_at: string }[];
+      const monthSpend = trips
+        .filter((t) => new Date(t.started_at) >= monthStart)
+        .reduce((a, t) => a + (t.total_cents ?? 0), 0);
+      // Ensure current trip's value is reflected even if trigger hasn't run yet
+      const currentReflected = trips.some((t) => t.id === tripId && (t.total_cents ?? 0) > 0);
+      const adjustedMonthSpend = currentReflected ? monthSpend : monthSpend + total;
+      if (budgetCents > 0) {
+        pctOfBudget = Math.min(999, Math.round((adjustedMonthSpend / budgetCents) * 100));
+        // Streak: walk most-recent saved trips, count those keeping running month total <= budget
+        const monthRunning = new Map<string, number>();
+        const cumByTrip = new Map<string, number>();
+        const sorted = [...trips].sort(
+          (a, b) => +new Date(a.started_at) - +new Date(b.started_at),
+        );
+        for (const t of sorted) {
+          const d = new Date(t.started_at);
+          const k = `${d.getFullYear()}-${d.getMonth()}`;
+          const sum = (monthRunning.get(k) ?? 0) + (t.total_cents ?? 0);
+          monthRunning.set(k, sum);
+          cumByTrip.set(t.id, sum);
+        }
+        for (const t of [...sorted].reverse()) {
+          if ((cumByTrip.get(t.id) ?? 0) <= budgetCents) streak++;
+          else break;
+        }
+      }
+    } catch {
+      // best-effort — receipt still renders
+    }
+
+    setReceipt({
+      storeName: activeStore?.name ?? "Unknown Store",
+      date: endedAt,
+      items: receiptItems,
+      extraCount: extras.length,
+      totalCents: total,
+      pctOfBudget,
+      biggestCategory,
+      streak,
+      currency: getCurrency(),
+    });
+    setReceiptOpen(true);
   };
+
+  const dismissReceipt = () => {
+    setReceiptOpen(false);
+    toast.success("Trip saved");
+    if (tripId) navigate(`/trip/${tripId}`, { replace: true });
+  };
+
 
   const openStoreModal = async () => {
     setStoreModalOpen(true);
