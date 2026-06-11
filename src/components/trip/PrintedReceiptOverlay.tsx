@@ -292,7 +292,7 @@ export default function PrintedReceiptOverlay({ open, payload, onDismiss }: Prop
               </div>
 
               <JaggedEdge position="bottom" />
-            </motion.div>
+            </div>
           </div>
 
           {/* Collect receipt button */}
@@ -301,11 +301,11 @@ export default function PrintedReceiptOverlay({ open, payload, onDismiss }: Prop
             onClick={(e) => e.stopPropagation()}
           >
             <Button
-              variant="secondary"
               size="lg"
               disabled={!ready}
-              onClick={onDismiss}
-              className="mx-auto flex w-full max-w-sm bg-foreground text-background hover:bg-foreground/90"
+              onClick={handleDismiss}
+              className="mx-auto flex w-full max-w-sm hover:opacity-90"
+              style={{ backgroundColor: PAPER, color: GREEN_BG }}
             >
               Collect receipt
             </Button>
