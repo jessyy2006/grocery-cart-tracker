@@ -157,6 +157,41 @@ export default function Home() {
         <MarketLoader minHeight="55vh" />
       ) : (
         <>
+          {/* Recent trips */}
+          <section>
+            <div className="mb-2 flex items-baseline justify-between">
+              <h2 className="font-display text-[1.75rem] leading-none lowercase tracking-tight">recent trips</h2>
+              {recent.length > 0 && (
+                <button
+                  onClick={() => navigate("/history")}
+                  className="text-small lowercase text-muted-foreground hover:text-primary inline-flex items-center gap-1"
+                >
+                  see all <ArrowRight className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            {recent.length === 0 ? (
+              <div className="py-8 text-center">
+                <Sparkles className="mx-auto h-5 w-5 text-accent-honey" strokeWidth={1.75} />
+                <p className="mt-2 text-small text-muted-foreground">Your saved trips will live here.</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-dashed divide-foreground/10">
+                {recent.map((t) => (
+                  <li key={t.id}>
+                    <TripTapeRow
+                      title={t.title}
+                      date={t.started_at}
+                      itemCount={t.itemCount}
+                      totalCents={t.total_cents}
+                      onClick={() => navigate(`/trip/${t.id}`)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
           {/* Hero — this month */}
           {(() => {
             const pct = monthlyBudget && monthlyBudget > 0 ? Math.round((monthSpend / monthlyBudget) * 100) : null;
@@ -192,54 +227,6 @@ export default function Home() {
               </section>
             );
           })()}
-
-
-
-          {/* Quiet link to lists */}
-          <button
-            onClick={() => navigate("/lists")}
-            className="flex w-full items-center justify-between text-left text-body text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <span className="inline-flex items-center gap-2">
-              <ListChecks className="h-4 w-4" strokeWidth={1.75} /> Manage your shopping lists
-            </span>
-            <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
-          </button>
-
-          {/* Recent trips */}
-          <section>
-            <div className="mb-2 flex items-baseline justify-between">
-              <h2 className="font-display text-[1.75rem] leading-none lowercase tracking-tight">recent trips</h2>
-              {recent.length > 0 && (
-                <button
-                  onClick={() => navigate("/history")}
-                  className="text-small lowercase text-muted-foreground hover:text-primary inline-flex items-center gap-1"
-                >
-                  see all <ArrowRight className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-            {recent.length === 0 ? (
-              <div className="py-8 text-center">
-                <Sparkles className="mx-auto h-5 w-5 text-accent-honey" strokeWidth={1.75} />
-                <p className="mt-2 text-small text-muted-foreground">Your saved trips will live here.</p>
-              </div>
-            ) : (
-              <ul className="divide-y divide-dashed divide-foreground/10">
-                {recent.map((t) => (
-                  <li key={t.id}>
-                    <TripTapeRow
-                      title={t.title}
-                      date={t.started_at}
-                      itemCount={t.itemCount}
-                      totalCents={t.total_cents}
-                      onClick={() => navigate(`/trip/${t.id}`)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
         </>
       )}
 
