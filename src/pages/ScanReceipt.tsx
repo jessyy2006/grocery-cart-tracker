@@ -456,23 +456,17 @@ export default function ScanReceipt() {
                 onChange={(e) => setStoreName(e.target.value)}
                 placeholder="Store name"
               />
-              {(stores.length > 0 || storeName.trim()) && (
-                <Select value={storeChoice} onValueChange={setStoreChoice}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Link to a saved store" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NO_STORE}>Don't link to a store</SelectItem>
-                    {storeName.trim() && (
-                      <SelectItem value={NEW_STORE}>+ Save "{storeName.trim()}" as new store</SelectItem>
-                    )}
-                    {stores.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {storeName.trim() && !matchedStore && (
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-hairline p-3">
+                  <Checkbox
+                    checked={saveAsNewStore}
+                    onCheckedChange={(v) => setSaveAsNewStore(v === true)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-small">
+                    Save <strong>"{storeName.trim()}"</strong> as a new store
+                  </span>
+                </label>
               )}
             </div>
 
