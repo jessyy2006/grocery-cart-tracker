@@ -324,7 +324,7 @@ export default function ListDetail() {
                     ? String(group.label).toLowerCase()
                     : "other"}
                 </h3>
-                <ul className="border-y border-[hsl(20_40%_18%/0.3)]">
+                <ul className="border-t border-[hsl(20_40%_18%/0.3)]">
                   {group.items.map((it) => (
                     <LedgerRow
                       key={it.id}
