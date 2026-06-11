@@ -7,6 +7,25 @@ import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 import { MarketLoader } from "@/components/MarketLoader";
 import { JaggedEdge, Row, Divider, PAPER, INK } from "@/components/trip/ReceiptPaper";
+import { guessCategory } from "@/lib/categories";
+
+// Relative-time title for free trips (no attached shopping list).
+function formatTripTitle(date: Date): string {
+  const now = new Date();
+  const startOfWeek = (d: Date) => {
+    const x = new Date(d);
+    const day = x.getDay(); // 0 = Sun
+    x.setHours(0, 0, 0, 0);
+    x.setDate(x.getDate() - day);
+    return x;
+  };
+  const thisWeek = startOfWeek(now).getTime();
+  const tripWeek = startOfWeek(date).getTime();
+  const weekday = date.toLocaleDateString(undefined, { weekday: "long" });
+  if (tripWeek === thisWeek) return `This ${weekday}'s run`;
+  if (tripWeek === thisWeek - 7 * 24 * 60 * 60 * 1000) return `Last ${weekday}'s run`;
+  return `${format(date, "MMM d")} run`;
+}
 
 type Item = {
   id: string;
@@ -74,7 +93,7 @@ export default function TripDetail() {
       const title =
         list && !list.hidden && list.name
           ? list.name
-          : format(new Date(t.started_at), "EEEE · MMM d, yyyy");
+          : formatTripTitle(new Date(t.started_at));
       setTrip({ started_at: t.started_at, total_cents: t.total_cents, title, user_id: t.user_id });
       setItems(i ?? []);
 
@@ -106,10 +125,6 @@ export default function TripDetail() {
     };
   }, [id]);
 
-  const storeName = useMemo(() => {
-    const first = items.find((it) => it.store_name_snapshot)?.store_name_snapshot;
-    return first ?? "Grocery Run";
-  }, [items]);
 
   const highestItem = useMemo(() => {
     if (items.length === 0) return null;
@@ -155,12 +170,16 @@ export default function TripDetail() {
       if (listErr) throw listErr;
       const payload = items
         .filter((i) => i.name_snapshot.trim())
-        .map((i, idx) => ({
-          list_id: list.id,
-          name: stripQtyMarker(i.name_snapshot, i.qty).trim() || i.name_snapshot,
-          qty: i.qty,
-          position: idx,
-        }));
+        .map((i, idx) => {
+          const name = stripQtyMarker(i.name_snapshot, i.qty).trim() || i.name_snapshot;
+          return {
+            list_id: list.id,
+            name,
+            qty: i.qty && i.qty > 0 ? i.qty : 1,
+            category: guessCategory(name),
+            position: idx,
+          };
+        });
       if (payload.length > 0) {
         const { error: itemsErr } = await supabase.from("shopping_list_items").insert(payload);
         if (itemsErr) throw itemsErr;
@@ -204,7 +223,15 @@ export default function TripDetail() {
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
 
-      <div className="mx-auto mt-8 flex w-full max-w-sm flex-col items-stretch">
+      <div className="mx-auto mt-6 flex w-full max-w-sm flex-col items-stretch">
+        {/* Trip title header */}
+        <header className="mb-6 text-center">
+          <p className="text-eyebrow">
+            {format(new Date(trip.started_at), "EEEE · MMM d, yyyy")}
+          </p>
+          <h1 className="mt-1 text-h1">{trip.title}</h1>
+        </header>
+
         {/* Receipt sheet */}
         <div style={{ filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.18))" }}>
           <JaggedEdge position="top" />
@@ -215,7 +242,7 @@ export default function TripDetail() {
             <div className="px-6 pb-6 pt-5">
               {/* Header */}
               <div className="text-center">
-                <div className="text-base font-bold uppercase tracking-widest">{storeName}</div>
+                <div className="text-base font-bold uppercase tracking-widest">Grocery Receipt</div>
                 <div className="mt-1 text-xs text-neutral-600">
                   {fmtDateTime(new Date(trip.started_at))}
                 </div>
@@ -278,7 +305,7 @@ export default function TripDetail() {
         </div>
 
         {/* Bag-handle tab */}
-        <div className="relative mx-auto mt-3 flex flex-col items-center">
+        <div className="relative mx-auto mt-10 flex flex-col items-center">
           <button
             type="button"
             onClick={handleRevisit}

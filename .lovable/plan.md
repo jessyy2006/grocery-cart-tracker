@@ -1,55 +1,35 @@
-## Refactor: History detail as static Summary Receipt
+## Trip Detail polish
 
-Replace the card-grid layout in `src/pages/TripDetail.tsx` with a flat, centered paper-receipt canvas that reuses the visual language of `PrintedReceiptOverlay` — without any printing/tearing animation.
+### 1. "Shop from this list" parity with a hand-built list
 
-### 1. Layout
+In `src/pages/TripDetail.tsx` `handleRevisit`, augment the `shopping_list_items` insert payload to match the shape used by `ScanReceipt.tsx` and `ListDetail.tsx`:
 
-- Strip the current `Card` grid and store-grouping section headers.
-- Render a single centered column (max-w-sm), generous vertical padding, background uses the existing app surface — no overlay, no portal.
-- Receipt sheet: cream paper (`#fdfaf1`) with jagged top/bottom edges, soft drop shadow, identical to the checkout receipt's typography (mono, 13px, charcoal `#0e1a14`).
-- Header inside the sheet: store name (or "GROCERY RUN" fallback) in bold uppercase tracking-widest, date+time underneath in muted xs.
-- Keep the small back button above the sheet.
+- Add `category: guessCategory(name)` per item (import from `@/lib/categories`).
+- `qty` already comes from `trip_items.qty` — keep as-is; falls back to `1` only when missing/zero.
+- No other field changes.
 
-### 2. Items list
+Result: items land in their proper category groups instead of all in "other".
 
-- One row per item: name left-aligned, line total right-aligned, tabular-nums.
-- Beneath each name, a muted secondary line `qty × unit price` in `text-[11px] text-neutral-500`.
-- Only render the multiplier line when `qty > 1` (or unit price differs from line total).
-- Name sanitization: strip trailing quantity markers from `name_snapshot` when a multiplier is shown — regex on patterns like  `x2`,  `×2`,  `(2)`,  `2x` at end of string, case-insensitive. Centralize as `stripQtyMarker(name, qty)` in this file.
-- Drop the per-store subtotal row — the receipt totals at the bottom replace it. Items stay in scanned order.
+### 2. Page layout: title → receipt → button
 
-### 3. Totals block
+Restructure the render so the trip title becomes a real page header **above** the receipt sheet, not the receipt's storefront line.
 
-Dashed divider, then:
+- Above the receipt: small eyebrow ("EEEE · MMM d, yyyy"), then `h1` with the trip title, centered.
+- Inside the receipt header: replace the bold store-name line with **"GROCERY RECEIPT"** (static, keeps the retail-receipt feel); keep the date/time line beneath.
+- Trip title source:
+  - **Attached to a list** → use the shopping list's `name`.
+  - **Free trip** → relative-time naming:
+    - same week as today → `"This {Weekday}'s run"` (e.g. "This Tuesday's run")
+    - prior week → `"Last {Weekday}'s run"`
+    - older → `"{MMM d} run"` (e.g. "Jun 10 run")
+  - Helper `formatTripTitle(date)` colocated at the top of `TripDetail.tsx`.
 
-- `TOTAL SPENT` — bold, right-aligned amount.
-- `% OF BUDGET SPENT` — computed from `user_budgets.monthly_cents` for the trip's month; renders `—` when no budget is set. Fetched in the same effect (single extra query).
+### 3. Handle-tab spacing
 
-### 4. Insights fine-print (center-aligned)
+The wrapper around the bag-handle button currently uses `mt-3`, which positions the arch — not the button body — close to the receipt. Increase the outer wrapper margin so the arch itself sits ~24px below the receipt's bottom jagged edge:
 
-- Dashed divider, then a centered block in `font-mono text-[11px] lowercase text-neutral-500 leading-relaxed`, no card, no border.
-- 2 lines, each a full sentence:
-  1. Highest-ticket item: `"your most expensive item was the {name} at {price}."`
-  2. Budget context: depending on data, one of
-    - `"this run was {pct}% of your {month} budget."`
-    - `"{x}% above / below your average trip this month."`
-    - omitted entirely if no budget and only one trip exists.
-- All computation is client-side from already-loaded `trip_items` plus the month's trips/budget (one extra `trips` query for the month aggregate).
+- Change wrapper from `mt-3` → `mt-10` (≈40px) so the arch element has natural breathing room and the button body sits further down.
 
-### 5. Footer handle tab
+### Files touched
 
-- Below the receipt sheet's bottom jagged edge, render a monochrome "bag handle" tab: a deep-charcoal rounded pill (`bg-[#0e1a14] text-[#fdfaf1]`) centered under the sheet, with a small arched cut-out look (two stacked rounded rects) — purely CSS, no new asset.
-- Tab label: **"Shop from this list"**.
-- Tap behavior: create a new `shopping_lists` row named after the trip title, insert one `shopping_list_items` per trip item (name + qty, no store binding), then `navigate(`/list/${newListId}`)` (or the existing list route — confirm during implementation by checking `App.tsx` routes). Show a toast on success, error toast on failure, disable while pending.
-
-### 6. Files touched
-
-- **Edit** `src/pages/TripDetail.tsx` — full rewrite of the render tree; reuse `JaggedEdge`, `Row`, `Divider` helpers by extracting them into a new shared module.
-- **New** `src/components/trip/ReceiptPaper.tsx` — exports `JaggedEdge`, `Row`, `Divider`, `PAPER`, `INK` constants. Refactor `PrintedReceiptOverlay.tsx` to import from here (no behavior change there).
-- No DB migrations. No edge function changes.
-
-### Technical notes
-
-- Budget lookup: `supabase.from("user_budgets").select("monthly_cents").maybeSingle()` — the table is single-row per user in current schema; if it's monthly-keyed we'll filter by month. Verified during implementation via `supabase--read_query`.
-- "Shop from this list" reuses the existing list-creation pattern from `ScanReceipt.tsx` ("Save as reusable list") to keep insert shape consistent.
-- No animation libs added; the page is fully static (no `framer-motion` usage in TripDetail).
+- `src/pages/TripDetail.tsx` — only file changed. No DB, no new components.
