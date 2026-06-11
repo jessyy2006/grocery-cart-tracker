@@ -1120,6 +1120,12 @@ export default function ActiveTrip() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <PrintedReceiptOverlay
+        open={receiptOpen}
+        payload={receipt}
+        onDismiss={dismissReceipt}
+      />
     </div>
   );
 }
