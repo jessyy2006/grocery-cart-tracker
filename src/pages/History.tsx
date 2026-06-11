@@ -9,7 +9,7 @@ import { format } from "date-fns";
 import { TripTapeRow } from "@/components/trip/TripTapeRow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/PageHeader";
-import { Money } from "@/components/Money";
+
 import { MarketLoader } from "@/components/MarketLoader";
 
 type Row = {
