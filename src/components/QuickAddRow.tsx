@@ -62,7 +62,7 @@ export function QuickAddRow({
       <button
         type="button"
         onClick={expand}
-        className="block w-full rounded-xl border border-dashed border-[hsl(20_40%_18%/0.55)] bg-surface-raised py-3.5 text-center font-mono text-[13px] lowercase tracking-tight text-foreground transition-colors hover:bg-surface"
+        className="block w-full rounded-[6px] border border-dashed border-[hsl(20_40%_18%/0.55)] bg-surface-raised py-3.5 text-center font-mono text-[13px] lowercase tracking-tight text-foreground transition-colors hover:bg-surface"
       >
         [ + add a new item ]
       </button>
@@ -70,7 +70,7 @@ export function QuickAddRow({
   }
 
   return (
-    <div className="animate-fade-rise rounded-xl border border-forest bg-surface-raised p-3 space-y-2.5">
+    <div className="animate-fade-rise rounded-[6px] border border-forest bg-surface-raised p-3 space-y-2.5">
       {/* Row 1: name + qty + enter */}
       <div className="flex items-center gap-2">
         <input
@@ -171,7 +171,7 @@ export function QuickAddRow({
         type="button"
         onClick={() => void commit()}
         disabled={!name.trim()}
-        className="block w-full h-10 rounded-xl bg-forest text-forest-foreground px-4 font-mono text-[12px] lowercase tracking-tight hover:opacity-90 transition-opacity disabled:opacity-40"
+        className="block w-full h-10 rounded-[6px] bg-forest text-forest-foreground px-4 font-mono text-[12px] lowercase tracking-tight hover:opacity-90 transition-opacity disabled:opacity-40"
       >
         + add item
       </button>
