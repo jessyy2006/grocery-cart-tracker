@@ -1,29 +1,55 @@
-## Fixes for Scan Receipt flow
+## Refactor: History detail as static Summary Receipt
 
-### 1. Hide bottom nav on `/scan-receipt`
-- Update `BottomNav.tsx` and the `fullscreen` check in `AppLayout.tsx` to treat `/scan-receipt` the same as `/trip` (return `null` / use fullscreen layout). This removes the floating nav so the Retake / Use photo / Cancel / Save buttons are no longer covered.
+Replace the card-grid layout in `src/pages/TripDetail.tsx` with a flat, centered paper-receipt canvas that reuses the visual language of `PrintedReceiptOverlay` — without any printing/tearing animation.
 
-### 2. Fix price input
-The current cell binds value to `(line_total_cents / 100).toFixed(2)` and re-parses on every keystroke through `parsePriceToCents`, which causes the "increment by cents" feel (typing `6` becomes `0.06`, etc.).
-- Store a per-row local string draft for the price field while editing. On change, just update the draft string; on blur (or Enter), parse to cents and write back to the item. Keep `inputMode="decimal"` and add `pattern="[0-9]*[.,]?[0-9]*"`. This lets users type `6.98` naturally.
+### 1. Layout
 
-### 3. Restyle "Save as new store" as a small checkbox
-- Remove the Select dropdown UI. Below the store name input, render a single small caption-style checkbox row (matching the "Save these items as a reusable shopping list" styling: `flex items-start gap-3 rounded-lg border border-hairline p-3`, `text-small`) labeled `Save "<Store Name>" as a new store`.
-- Behavior: checkbox is shown only when the typed store name does not already match an existing store. If matched, auto-link silently (no UI). If unmatched and user leaves it unchecked, save store name as snapshot only (current `NO_STORE` behavior). If checked, create new store (current `NEW_STORE` behavior).
-- Drop the `Select`, `SelectContent`, etc. imports and `storeChoice` state in favor of a single boolean `saveAsNewStore` plus a resolved `matchedStoreId` derived from `storeName`.
+- Strip the current `Card` grid and store-grouping section headers.
+- Render a single centered column (max-w-sm), generous vertical padding, background uses the existing app surface — no overlay, no portal.
+- Receipt sheet: cream paper (`#fdfaf1`) with jagged top/bottom edges, soft drop shadow, identical to the checkout receipt's typography (mono, 13px, charcoal `#0e1a14`).
+- Header inside the sheet: store name (or "GROCERY RUN" fallback) in bold uppercase tracking-widest, date+time underneath in muted xs.
+- Keep the small back button above the sheet.
 
-### 4. Item row layout + swipe-to-delete
-- Change the row grid from `[1fr_56px_92px_28px]` to roughly `[1fr_44px_72px]` so name ≈ two-thirds, qty fits 2 digits, price fits 4 digits (e.g. `99.99`). Remove the visible trash icon column.
-- Wrap each `<li>` content in a swipeable container:
-  - Outer `<li>` is `relative overflow-hidden`.
-  - Behind the row, render an absolutely-positioned red `Delete` button (`bg-destructive text-destructive-foreground`, width ~72px, right-aligned, full row height).
-  - Foreground row is a `motion.div` with horizontal drag (`drag="x"`, `dragConstraints={{ left: -72, right: 0 }}`, `dragElastic={0.05}`). On drag end, snap to `-72` if dragged past ~ -32, else snap back to 0. Tapping the revealed Delete button calls `removeItem(idx)`.
-  - Use framer-motion (already a dep). Track open state per row in local state (e.g. `openSwipeIdx`); opening one row closes others.
+### 2. Items list
 
-### Files to edit
-- `src/components/AppLayout.tsx` — include `/scan-receipt` in fullscreen check
-- `src/components/BottomNav.tsx` — hide on `/scan-receipt`
-- `src/pages/ScanReceipt.tsx` — items 2, 3, 4 (review card markup + state)
+- One row per item: name left-aligned, line total right-aligned, tabular-nums.
+- Beneath each name, a muted secondary line `qty × unit price` in `text-[11px] text-neutral-500`.
+- Only render the multiplier line when `qty > 1` (or unit price differs from line total).
+- Name sanitization: strip trailing quantity markers from `name_snapshot` when a multiplier is shown — regex on patterns like  `x2`,  `×2`,  `(2)`,  `2x` at end of string, case-insensitive. Centralize as `stripQtyMarker(name, qty)` in this file.
+- Drop the per-store subtotal row — the receipt totals at the bottom replace it. Items stay in scanned order.
 
-### Out of scope
-No backend/edge-function or scan capture changes.
+### 3. Totals block
+
+Dashed divider, then:
+
+- `TOTAL SPENT` — bold, right-aligned amount.
+- `% OF BUDGET SPENT` — computed from `user_budgets.monthly_cents` for the trip's month; renders `—` when no budget is set. Fetched in the same effect (single extra query).
+
+### 4. Insights fine-print (center-aligned)
+
+- Dashed divider, then a centered block in `font-mono text-[11px] lowercase text-neutral-500 leading-relaxed`, no card, no border.
+- 2 lines, each a full sentence:
+  1. Highest-ticket item: `"your most expensive item was the {name} at {price}."`
+  2. Budget context: depending on data, one of
+    - `"this run was {pct}% of your {month} budget."`
+    - `"{x}% above / below your average trip this month."`
+    - omitted entirely if no budget and only one trip exists.
+- All computation is client-side from already-loaded `trip_items` plus the month's trips/budget (one extra `trips` query for the month aggregate).
+
+### 5. Footer handle tab
+
+- Below the receipt sheet's bottom jagged edge, render a monochrome "bag handle" tab: a deep-charcoal rounded pill (`bg-[#0e1a14] text-[#fdfaf1]`) centered under the sheet, with a small arched cut-out look (two stacked rounded rects) — purely CSS, no new asset.
+- Tab label: **"Shop from this list"**.
+- Tap behavior: create a new `shopping_lists` row named after the trip title, insert one `shopping_list_items` per trip item (name + qty, no store binding), then `navigate(`/list/${newListId}`)` (or the existing list route — confirm during implementation by checking `App.tsx` routes). Show a toast on success, error toast on failure, disable while pending.
+
+### 6. Files touched
+
+- **Edit** `src/pages/TripDetail.tsx` — full rewrite of the render tree; reuse `JaggedEdge`, `Row`, `Divider` helpers by extracting them into a new shared module.
+- **New** `src/components/trip/ReceiptPaper.tsx` — exports `JaggedEdge`, `Row`, `Divider`, `PAPER`, `INK` constants. Refactor `PrintedReceiptOverlay.tsx` to import from here (no behavior change there).
+- No DB migrations. No edge function changes.
+
+### Technical notes
+
+- Budget lookup: `supabase.from("user_budgets").select("monthly_cents").maybeSingle()` — the table is single-row per user in current schema; if it's monthly-keyed we'll filter by month. Verified during implementation via `supabase--read_query`.
+- "Shop from this list" reuses the existing list-creation pattern from `ScanReceipt.tsx` ("Save as reusable list") to keep insert shape consistent.
+- No animation libs added; the page is fully static (no `framer-motion` usage in TripDetail).
