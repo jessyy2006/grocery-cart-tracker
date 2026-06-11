@@ -54,15 +54,15 @@ export default function TripDetail() {
   }, [id]);
 
   const grouped = useMemo(() => {
-    const m = new Map<string, { name: string; items: Item[]; subtotal: number }>();
+    const m = new Map<string, { name: string | null; items: Item[]; subtotal: number }>();
     for (const i of items) {
-      const name = i.store_name_snapshot ?? "Unspecified";
-      if (!m.has(name)) m.set(name, { name, items: [], subtotal: 0 });
-      const g = m.get(name)!;
+      const key = i.store_name_snapshot ?? "__none__";
+      if (!m.has(key)) m.set(key, { name: i.store_name_snapshot, items: [], subtotal: 0 });
+      const g = m.get(key)!;
       g.items.push(i);
       g.subtotal += i.price_cents * i.qty;
     }
-    return Array.from(m.values());
+    return Array.from(m.entries()).map(([key, v]) => ({ key, ...v }));
   }, [items]);
 
   return (
