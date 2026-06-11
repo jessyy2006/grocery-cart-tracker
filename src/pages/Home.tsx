@@ -61,7 +61,7 @@ export default function Home() {
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
 
-      const [savedRes, allRes] = await Promise.all([
+      const [savedRes, allRes, budgetRes] = await Promise.all([
         supabase
           .from("trips")
           .select("id, started_at, total_cents, status, trip_items(id), shopping_lists:list_id(name, hidden)")
@@ -73,6 +73,11 @@ export default function Home() {
           .select("total_cents")
           .eq("status", "saved")
           .gte("started_at", monthStart.toISOString()),
+        supabase
+          .from("user_budgets")
+          .select("monthly_cents")
+          .eq("user_id", user.id)
+          .maybeSingle(),
       ]);
 
       if (cancelled) return;
