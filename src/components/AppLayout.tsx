@@ -5,6 +5,7 @@ import { PageTransition } from "./PageTransition";
 export const AppLayout = () => {
   const { pathname } = useLocation();
   const fullscreen = pathname === "/trip" || pathname === "/trip/new" || pathname === "/scan-receipt";
+  const hideNav = fullscreen || /^\/lists\/[^/]+$/.test(pathname);
 
   return (
     <div className="flex min-h-dvh h-full flex-col bg-background overscroll-none">
@@ -12,7 +13,7 @@ export const AppLayout = () => {
         className={
           fullscreen
             ? "relative isolate flex-1 h-dvh overflow-hidden overscroll-contain"
-            : "relative isolate flex-1 min-h-dvh overflow-y-auto overscroll-contain safe-top pb-28"
+            : `relative isolate flex-1 min-h-dvh overflow-y-auto overscroll-contain safe-top ${hideNav ? "" : "pb-28"}`
         }
         style={{ overflowAnchor: "none" }}
       >
@@ -20,7 +21,7 @@ export const AppLayout = () => {
           <Outlet />
         </PageTransition>
       </main>
-      <BottomNav />
+      {!hideNav && <BottomNav />}
     </div>
   );
 };
