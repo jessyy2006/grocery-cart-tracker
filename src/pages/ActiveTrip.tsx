@@ -687,9 +687,27 @@ export default function ActiveTrip() {
               {extras.length}
             </button>
           )}
-          <Button variant="ghost" size="sm" onClick={exitTrip}>
-            <X className="mr-1 h-4 w-4" /> Exit
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <X className="mr-1 h-4 w-4" /> Exit
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to exit?</AlertDialogTitle>
+                <AlertDialogDescription>Your trip won't be saved.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  No, go back
+                </AlertDialogCancel>
+                <AlertDialogAction onClick={exitTrip} className="bg-transparent text-foreground hover:bg-muted">
+                  Exit
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </header>
 
