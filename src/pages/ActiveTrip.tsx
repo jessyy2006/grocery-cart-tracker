@@ -10,9 +10,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Scanner } from "@/components/Scanner";
 import { ScanLine, Plus, MapPin, Trash2, Check, X, Search, Loader2 } from "lucide-react";
-import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
+import { formatMoney, parsePriceToCents, useCurrency, getCurrency } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
 import { findListMatch, getCategory, guessCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
+import PrintedReceiptOverlay, { type TripReceiptPayload } from "@/components/trip/PrintedReceiptOverlay";
 import {
   findNearbyStores,
   getCachedCoords,
