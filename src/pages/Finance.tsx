@@ -686,8 +686,8 @@ function StatColumn({
   bordered,
 }: {
   label: string;
-  value: React.ReactNode;
-  meta: React.ReactNode;
+  value: ReactNode;
+  meta: ReactNode;
   bordered?: boolean;
 }) {
   return (
