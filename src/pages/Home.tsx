@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, HeroCard } from "@/components/ui/card";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { ShoppingCart, ListChecks, MapPin, ArrowRight, ChevronLeft, Sparkles, ScanLine } from "lucide-react";
+import { ShoppingCart, ListChecks, ArrowRight, ChevronLeft, Sparkles, ScanLine } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
