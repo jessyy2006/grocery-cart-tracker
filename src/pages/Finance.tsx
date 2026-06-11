@@ -487,8 +487,8 @@ function FinanceCardView(props: any) {
     );
   }
 
-  const sectionAnchor = "font-mono text-[10px] font-bold uppercase tracking-widest text-[#7C756B]";
-  const monoTiny = "font-mono text-[10px] lowercase tracking-wider text-muted-foreground";
+  const sectionAnchor = "text-eyebrow";
+  const monoTiny = "text-[11px] lowercase tracking-wide text-muted-foreground";
   const maxBarVal = Math.max(...derived.series.map((s: { cents: number }) => s.cents), 1);
   const currentMonthKey = derived.series[derived.series.length - 1]?.key;
   const hasAnyTrips = derived.series.some((s: { cents: number }) => s.cents > 0);
@@ -501,20 +501,20 @@ function FinanceCardView(props: any) {
         <div className={sectionAnchor}>spending budget</div>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="text-[40px] font-bold leading-[1.05] tracking-tight text-foreground">
+            <div className="font-display text-[44px] font-medium leading-[1.02] tracking-tight text-foreground">
               {formatMoney(Math.abs(remaining))}{" "}
               <span className={over ? "text-destructive" : "text-foreground"}>
                 {over ? "over" : "left"}
               </span>
             </div>
           </div>
-          <div className="shrink-0 pt-2 font-mono text-[10px] font-bold tracking-wider text-foreground">
+          <div className="shrink-0 pt-2 text-[11px] font-semibold tracking-wide text-foreground">
             [ {pctUsed}% used ]
           </div>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-[hsl(40_26%_86%)]">
           <div
-            className={`h-full ${over ? "bg-destructive" : "bg-foreground"}`}
+            className={`h-full ${over ? "bg-destructive" : "bg-primary"}`}
             style={{ width: `${Math.min(100, pctUsed)}%` }}
           />
         </div>
@@ -573,10 +573,10 @@ function FinanceCardView(props: any) {
                 <div
                   className={`w-full rounded-t-[4px] ${
                     isCurrent
-                      ? "bg-foreground"
+                      ? "bg-primary"
                       : isPast
-                      ? "bg-[hsl(36_10%_45%)]"
-                      : "bg-[hsl(40_26%_86%)] opacity-50"
+                      ? "bg-[hsl(145_25%_70%)]"
+                      : "bg-[hsl(145_20%_85%)] opacity-60"
                   }`}
                   style={{ height: `${h}%` }}
                 />
@@ -660,9 +660,7 @@ function FinanceCardView(props: any) {
       {/* E — INSIGHT FOOTNOTE */}
       {rotatingInsight && (
         <section className="space-y-2 border-t border-[hsl(40_26%_86%)] pt-5">
-          <div className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-            insights
-          </div>
+          <div className="text-eyebrow">insights</div>
           <p className="font-display text-[15px] italic leading-snug text-foreground">
             {rotatingInsight.body}
           </p>
@@ -697,13 +695,13 @@ function StatColumn({
 }) {
   return (
     <div className={`flex flex-col items-start gap-1 px-3 ${bordered ? "border-l border-[hsl(40_26%_86%)]" : ""}`}>
-      <div className="font-mono text-[8px] font-semibold uppercase tracking-wide text-[#1C1A17]">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.10em] text-foreground">
         {label}
       </div>
-      <div className="text-[17px] font-bold leading-tight tabular-nums text-foreground">
+      <div className="font-display text-[22px] font-medium leading-tight tabular-nums text-foreground">
         {value}
       </div>
-      <div className="font-mono text-[10px] lowercase tracking-wide text-muted-foreground">
+      <div className="text-[11px] lowercase tracking-wide text-muted-foreground">
         {meta}
       </div>
     </div>

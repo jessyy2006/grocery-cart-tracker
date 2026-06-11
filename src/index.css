@@ -29,10 +29,10 @@
     --popover: 43 35% 97%;
     --popover-foreground: 36 10% 10%;
 
-    /* Primary = ink black */
-    --primary: 36 10% 10%;
+    /* Primary = dark forest green */
+    --primary: 155 56% 15%;
     --primary-foreground: 43 30% 95%;
-    --primary-glow: 36 10% 22%;
+    --primary-glow: 155 40% 28%;
 
     /* Neutralised accents (tag colors kept but de-saturated) */
     --accent: 40 26% 88%;
@@ -63,10 +63,10 @@
     --hairline: 40 26% 86%;
     --border: 40 26% 86%;
     --input: 40 26% 86%;
-    --ring: 36 10% 10%;
+    --ring: 155 56% 15%;
 
-    /* Forest CTA token now mapped to ink for cohesion */
-    --forest: 36 10% 10%;
+    /* Forest CTA token */
+    --forest: 155 56% 15%;
     --forest-foreground: 43 30% 95%;
 
     --receipt-paper: 43 35% 97%;
@@ -100,7 +100,7 @@
     --card-foreground: 36 10% 10%;
     --popover: 43 35% 97%;
     --popover-foreground: 36 10% 10%;
-    --primary: 36 10% 10%;
+    --primary: 155 56% 15%;
     --primary-foreground: 43 30% 95%;
     --secondary: 40 26% 90%;
     --secondary-foreground: 36 10% 10%;
@@ -112,7 +112,7 @@
     --destructive-foreground: 43 30% 95%;
     --border: 40 26% 86%;
     --input: 40 26% 86%;
-    --ring: 36 10% 10%;
+    --ring: 155 56% 15%;
   }
 }
 
