@@ -795,41 +795,43 @@ export default function ActiveTrip() {
         )}
       </div>
 
-      {/* High-contrast utility footer */}
+      {/* Forest green hero footer */}
       <footer
-        className="shrink-0 border-t border-[hsl(20_40%_18%/0.3)] bg-background px-5 pt-3"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+        className="shrink-0 bg-forest text-forest-foreground px-5 pt-4"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
       >
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="flex items-baseline gap-2 leading-none">
-            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-              cart total
-            </span>
-            <span className="font-mono text-[18px] font-semibold tabular-nums text-foreground">
-              {formatMoney(total)}
-            </span>
-            {totalCount > 0 && (
-              <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                [ {checkedCount}/{totalCount} ]
-              </span>
-            )}
-          </p>
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-forest-foreground/70">
+            cart total
+          </span>
           <button
             type="button"
             onClick={saveTrip}
-            className="font-mono text-[12px] lowercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
+            className="font-mono text-[12px] lowercase tracking-wide text-forest-foreground/80 hover:text-forest-foreground transition-colors"
           >
             [ save trip ]
           </button>
         </div>
+        <p className="mt-2 flex items-baseline gap-2 leading-none">
+          <span className="font-mono text-[28px] font-semibold tabular-nums text-forest-foreground">
+            {formatMoney(total)}
+          </span>
+          {totalCount > 0 && (
+            <span className="font-mono text-[12px] tabular-nums text-forest-foreground/70">
+              ({checkedCount}/{totalCount} items)
+            </span>
+          )}
+        </p>
         <button
           type="button"
           onClick={() => setScanning(true)}
-          className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[4px] bg-forest font-mono text-[14px] lowercase tracking-wide text-forest-foreground hover:bg-forest/92 transition-colors"
+          className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[4px] bg-background font-mono text-[14px] font-semibold lowercase tracking-wide text-forest hover:bg-background/95 transition-colors"
         >
-          📷 scan barcode
+          <Camera className="h-4 w-4" />
+          scan barcode
         </button>
       </footer>
+
 
 
       {confetti && (
