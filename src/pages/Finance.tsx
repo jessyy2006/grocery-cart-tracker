@@ -72,7 +72,7 @@ export default function Finance() {
       sixMonthsAgo.setDate(1);
       sixMonthsAgo.setHours(0, 0, 0, 0);
 
-      const [budgetRes, tripsRes] = await Promise.all([
+      const [budgetRes, tripsRes, historyRes] = await Promise.all([
         supabase.from("user_budgets").select("monthly_cents").eq("user_id", user.id).maybeSingle(),
         supabase
           .from("trips")
@@ -80,11 +80,37 @@ export default function Finance() {
           .eq("status", "saved")
           .gte("started_at", sixMonthsAgo.toISOString())
           .order("started_at", { ascending: false }),
+        supabase
+          .from("user_budget_history")
+          .select("month_start, monthly_cents")
+          .eq("user_id", user.id)
+          .gte("month_start", sixMonthsAgo.toISOString().slice(0, 10)),
       ]);
 
-      setBudgetCents(budgetRes.data?.monthly_cents ?? null);
+      const currentBudget = budgetRes.data?.monthly_cents ?? null;
+      setBudgetCents(currentBudget);
       const tripRows = (tripsRes.data ?? []) as Trip[];
       setTrips(tripRows);
+
+      const hist = new Map<string, number>();
+      for (const row of (historyRes.data ?? []) as { month_start: string; monthly_cents: number }[]) {
+        const d = new Date(row.month_start);
+        hist.set(monthKey(d), row.monthly_cents);
+      }
+      // Backfill current month from current budget if missing
+      const nowD = new Date();
+      const curKey = monthKey(nowD);
+      if (currentBudget && !hist.has(curKey)) {
+        const monthStart = new Date(nowD.getFullYear(), nowD.getMonth(), 1);
+        hist.set(curKey, currentBudget);
+        await supabase
+          .from("user_budget_history")
+          .upsert(
+            { user_id: user.id, month_start: monthStart.toISOString().slice(0, 10), monthly_cents: currentBudget },
+            { onConflict: "user_id,month_start" },
+          );
+      }
+      setBudgetHistory(hist);
 
       if (tripRows.length) {
         const ids = tripRows.map((t) => t.id);
