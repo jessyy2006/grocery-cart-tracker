@@ -738,10 +738,6 @@ export default function ActiveTrip() {
           )}
         </button>
 
-        {/* RIGHT — progress counter */}
-        <div className="justify-self-end font-mono text-[12px] tabular-nums text-muted-foreground">
-          [ {checkedCount}/{totalCount} ]
-        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 pb-8">
