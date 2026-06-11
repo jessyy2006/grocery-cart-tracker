@@ -156,7 +156,7 @@ export function LedgerRow({
   );
 }
 
-function QtyLabel({ qty, onChange }: { qty: number; onChange?: (n: number) => void }) {
+function QtyMultiplier({ qty, onChange }: { qty: number; onChange?: (n: number) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
 
@@ -172,7 +172,7 @@ function QtyLabel({ qty, onChange }: { qty: number; onChange?: (n: number) => vo
   if (!onChange) {
     return (
       <span className="font-mono text-[12px] lowercase text-muted-foreground tabular-nums">
-        qty: {qty}
+        {qty}x
       </span>
     );
   }
@@ -185,7 +185,7 @@ function QtyLabel({ qty, onChange }: { qty: number; onChange?: (n: number) => vo
         className="font-mono text-[12px] lowercase text-muted-foreground hover:text-foreground transition-colors tabular-nums"
         aria-label="Edit quantity"
       >
-        qty: {qty}
+        {qty}x
       </button>
     );
   }
