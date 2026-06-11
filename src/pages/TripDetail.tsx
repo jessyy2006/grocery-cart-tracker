@@ -125,10 +125,6 @@ export default function TripDetail() {
     };
   }, [id]);
 
-  const storeName = useMemo(() => {
-    const first = items.find((it) => it.store_name_snapshot)?.store_name_snapshot;
-    return first ?? "Grocery Run";
-  }, [items]);
 
   const highestItem = useMemo(() => {
     if (items.length === 0) return null;
