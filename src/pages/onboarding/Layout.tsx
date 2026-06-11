@@ -71,7 +71,7 @@ export default function OnboardingLayout({
       {footer && <div className="mb-3">{footer}</div>}
 
       {onPrimary && (
-        <Button size="lg" className="w-full" onClick={onPrimary} disabled={primaryDisabled}>
+        <Button variant="primaryLight" size="lg" className="w-full" onClick={onPrimary} disabled={primaryDisabled}>
           {primaryLabel}
         </Button>
       )}

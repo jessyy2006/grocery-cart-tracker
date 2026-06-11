@@ -492,7 +492,7 @@ export default function Finance() {
             <Button variant="ghost" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={saveBudget}>Save</Button>
+            <Button variant="primaryLight" size="lg" onClick={saveBudget}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -527,7 +527,7 @@ function FinanceCardView(props: any) {
         <div className="text-sm text-muted-foreground">
           Track how much you have left to spend on groceries.
         </div>
-        <Button onClick={openEditBudget}>Set budget</Button>
+        <Button variant="primaryLight" size="lg" onClick={openEditBudget}>Set budget</Button>
       </div>
     );
   }
@@ -720,7 +720,7 @@ function FinanceCardView(props: any) {
           <div className="mt-1 text-sm text-muted-foreground">
             Start tracking trips to see your spending insights.
           </div>
-          <Button asChild className="mt-3">
+          <Button variant="primaryLight" size="lg" asChild className="mt-3">
             <Link to="/">Start a trip</Link>
           </Button>
         </div>

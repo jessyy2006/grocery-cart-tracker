@@ -436,7 +436,7 @@ export default function ScanReceipt() {
               <Button variant="secondary" size="lg" onClick={retake} className="flex-1 mr-2">
                 <RefreshCw className="h-4 w-4" /> Retake
               </Button>
-              <Button size="lg" onClick={parse} className="flex-1 ml-2">
+              <Button variant="primaryLight" size="lg" onClick={parse} className="flex-1 ml-2">
                 Use photo
               </Button>
             </>
@@ -614,7 +614,7 @@ export default function ScanReceipt() {
               <Button variant="secondary" className="flex-1" onClick={close} disabled={saving}>
                 Cancel
               </Button>
-              <Button className="flex-1" onClick={save} disabled={saving}>
+              <Button variant="primaryLight" size="lg" className="flex-1" onClick={save} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save trip"}
               </Button>
             </div>

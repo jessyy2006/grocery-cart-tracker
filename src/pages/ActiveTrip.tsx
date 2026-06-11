@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -734,7 +734,7 @@ export default function ActiveTrip() {
                 <AlertDialogCancel className="bg-primary text-primary-foreground hover:bg-primary/90">
                   No, go back
                 </AlertDialogCancel>
-                <AlertDialogAction onClick={exitTrip} className="bg-transparent text-foreground hover:bg-muted">
+                <AlertDialogAction onClick={exitTrip} className={buttonVariants({ variant: "primaryLight", size: "lg" })}>
                   Exit
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -883,14 +883,16 @@ export default function ActiveTrip() {
               </span>
             )}
           </p>
-          <button
+          <Button
             type="button"
+            variant="primaryDark"
+            size="lg"
             onClick={() => setScanning(true)}
-            className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[4px] border border-forest-foreground bg-transparent font-mono text-[14px] lowercase tracking-wide text-forest-foreground hover:bg-forest-foreground/5 transition-colors"
+            className="mt-4 w-full"
           >
             <Camera className="h-4 w-4" />
             scan barcode
-          </button>
+          </Button>
         </div>
       </footer>
 
@@ -975,7 +977,7 @@ export default function ActiveTrip() {
               {pending.barcode && (
                 <p className="text-xs text-muted-foreground">Barcode: {pending.barcode}</p>
               )}
-              <Button className="w-full" onClick={confirmAdd}>
+              <Button variant="primaryLight" size="lg" className="w-full" onClick={confirmAdd}>
                 <Plus className="mr-1 h-4 w-4" /> Add
               </Button>
             </div>
@@ -1022,7 +1024,7 @@ export default function ActiveTrip() {
                   />
                 </div>
               </div>
-              <Button className="w-full" onClick={confirmManualCheck}>
+              <Button variant="primaryLight" size="lg" className="w-full" onClick={confirmManualCheck}>
                 <Check className="mr-1 h-4 w-4" /> Check off
               </Button>
             </div>

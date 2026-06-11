@@ -168,7 +168,7 @@ export default function OnboardingSignup() {
                   onChange={(e) => setSigninPassword(e.target.value)}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={busy}>
+              <Button variant="primaryLight" size="lg" type="submit" className="w-full" disabled={busy}>
                 Sign in
               </Button>
             </form>

@@ -37,7 +37,7 @@ export default function FeatureIntroDialog({ open, onClose }: Props) {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button className="w-full" size="lg" onClick={dismiss}>
+          <Button variant="primaryLight" size="lg" className="w-full" onClick={dismiss}>
             Got it
           </Button>
         </DialogFooter>
