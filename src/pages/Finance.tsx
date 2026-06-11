@@ -598,7 +598,7 @@ function FinanceCardView(props: any) {
       {derived.monthSpend > 0 && (
         <section className="space-y-4">
           <div>
-            <div className={monoLabel}>breakdown by group</div>
+            <div className={sectionAnchor}>breakdown by group</div>
             <div className={`mt-0.5 ${monoTiny}`}>compared to last month</div>
           </div>
           <div className="space-y-3">
