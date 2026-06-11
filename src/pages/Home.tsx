@@ -38,6 +38,7 @@ export default function Home() {
   const [introOpen, setIntroOpen] = useState(false);
   const [recent, setRecent] = useState<(Trip & { itemCount: number; title: string })[]>([]);
   const [monthSpend, setMonthSpend] = useState(0);
+  const [monthlyBudget, setMonthlyBudget] = useState<number | null>(null);
   const [ready, setReady] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [step, setStep] = useState<"choose" | "list">("choose");
