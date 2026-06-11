@@ -721,7 +721,7 @@ function FinanceCardView(props: any) {
                     {dottedLeader}
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-sm font-semibold tabular-nums text-foreground">
+                    <div className="text-money text-sm tabular-nums text-foreground">
                       {formatMoney(cents)}
                     </div>
                     {showDelta && (
