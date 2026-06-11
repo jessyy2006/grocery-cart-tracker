@@ -13,7 +13,7 @@ export default function TripDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   useCurrency();
-  const [trip, setTrip] = useState<{ started_at: string; total_cents: number } | null>(null);
+  const [trip, setTrip] = useState<{ started_at: string; total_cents: number; title: string } | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [ready, setReady] = useState(false);
 
@@ -22,7 +22,11 @@ export default function TripDetail() {
     let cancelled = false;
     (async () => {
       const [{ data: t }, { data: i }] = await Promise.all([
-        supabase.from("trips").select("started_at, total_cents").eq("id", id).maybeSingle(),
+        supabase
+          .from("trips")
+          .select("started_at, total_cents, shopping_lists:list_id(name, hidden)")
+          .eq("id", id)
+          .maybeSingle(),
         supabase
           .from("trip_items")
           .select("id, name_snapshot, price_cents, qty, store_name_snapshot")
@@ -30,10 +34,20 @@ export default function TripDetail() {
           .order("scanned_at", { ascending: true }),
       ]);
       if (cancelled) return;
-      setTrip(t);
+      if (t) {
+        const list: any = (t as any).shopping_lists;
+        const title =
+          list && !list.hidden && list.name
+            ? list.name
+            : format(new Date(t.started_at), "EEEE · MMM d, yyyy");
+        setTrip({ started_at: t.started_at, total_cents: t.total_cents, title });
+      } else {
+        setTrip(null);
+      }
       setItems(i ?? []);
       setReady(true);
     })();
+
     return () => {
       cancelled = true;
     };
