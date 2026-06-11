@@ -192,40 +192,33 @@ export default function Home() {
 
           {/* Recent trips */}
           <section>
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-h2">Recent trips</h2>
+            <div className="mb-1 flex items-baseline justify-between">
+              <h2 className="text-small lowercase text-muted-foreground">recent trips</h2>
               {recent.length > 0 && (
                 <button
                   onClick={() => navigate("/history")}
-                  className="text-small text-muted-foreground hover:text-primary inline-flex items-center gap-1"
+                  className="text-small lowercase text-muted-foreground hover:text-primary inline-flex items-center gap-1"
                 >
-                  See all <ArrowRight className="h-3 w-3" />
+                  see all <ArrowRight className="h-3 w-3" />
                 </button>
               )}
             </div>
             {recent.length === 0 ? (
-              <Card className="p-6 text-center">
+              <div className="py-8 text-center">
                 <Sparkles className="mx-auto h-5 w-5 text-accent-honey" strokeWidth={1.75} />
                 <p className="mt-2 text-small text-muted-foreground">Your saved trips will live here.</p>
-              </Card>
+              </div>
             ) : (
-              <ul className="space-y-3">
+              <ul className="divide-y divide-dashed divide-foreground/15">
                 {recent.map((t) => (
                   <li key={t.id}>
-                    <button
+                    <TripTapeRow
+                      title={t.title}
+                      date={t.started_at}
+                      itemCount={t.itemCount}
+                      totalCents={t.total_cents}
                       onClick={() => navigate(`/trip/${t.id}`)}
-                      className="flex w-full items-center justify-between rounded-lg bg-card p-4 text-left shadow-soft border border-hairline hover:bg-surface-sunk transition-colors"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-h3 truncate">{format(new Date(t.started_at), "EEE, MMM d")}</p>
-                        {t.stores.length > 0 && (
-                          <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
-                            <MapPin className="h-3 w-3" /> {t.stores.join(" · ")}
-                          </p>
-                        )}
-                      </div>
-                      <Money cents={t.total_cents} size="lg" />
-                    </button>
+                    />
                   </li>
                 ))}
               </ul>
