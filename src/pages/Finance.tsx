@@ -507,7 +507,7 @@ function FinanceCardView(props: any) {
     return v;
   })();
   const yTicks = [niceMax, niceMax / 2, 0];
-  const selectedMonth = derived.series.find((s: { key: string }) => s.key === selectedMonthKey) ?? null;
+  
 
   return (
     <div className="space-y-10">
@@ -516,7 +516,7 @@ function FinanceCardView(props: any) {
         <div className={sectionAnchor}>spending budget</div>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="font-display text-[44px] font-medium leading-[1.02] tracking-tight text-foreground">
+            <div className="text-money text-[44px] leading-[1.02] tracking-tight text-foreground">
               {formatMoney(Math.abs(remaining))}{" "}
               <span className={over ? "text-destructive" : "text-foreground"}>
                 {over ? "over" : "left"}
@@ -574,27 +574,7 @@ function FinanceCardView(props: any) {
 
       {/* C — BAR CHART */}
       <section className="space-y-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <div className={sectionAnchor}>6-month overview</div>
-          <div className={monoTiny}>budget limit {formatMoney(budgetCents!)}</div>
-        </div>
-
-        {/* Selected month readout */}
-        <div className="flex items-baseline justify-between gap-3 min-h-[20px]">
-          {selectedMonth ? (
-            <>
-              <div className="text-[12px] lowercase text-muted-foreground">
-                {selectedMonth.label.toLowerCase()}
-                {selectedMonth.key === currentMonthKey ? " (this month)" : ""}
-              </div>
-              <div className="font-display text-[15px] font-medium tabular-nums text-foreground">
-                {formatMoney(selectedMonth.cents)}
-              </div>
-            </>
-          ) : (
-            <div className="text-[12px] text-muted-foreground">tap a bar to see the total</div>
-          )}
-        </div>
+        <div className={sectionAnchor}>6-month overview</div>
 
         <div className="flex gap-2">
           {/* Y axis */}
@@ -617,6 +597,7 @@ function FinanceCardView(props: any) {
               const isCurrent = s.key === currentMonthKey;
               const isPast = !isCurrent && s.cents > 0;
               const isSelected = s.key === selectedMonthKey;
+              const goalPct = budgetCents ? Math.min(100, (budgetCents / niceMax) * 100) : 0;
               return (
                 <button
                   key={s.key}
@@ -625,6 +606,21 @@ function FinanceCardView(props: any) {
                   className="relative z-10 flex flex-1 flex-col justify-end focus:outline-none"
                   aria-label={`${s.key} total ${formatMoney(s.cents)}`}
                 >
+                  {isSelected && (
+                    <div
+                      className="text-money pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[12px] tabular-nums text-foreground"
+                      style={{ bottom: `calc(${h}% + 6px)` }}
+                    >
+                      {formatMoney(s.cents)}
+                    </div>
+                  )}
+                  {budgetCents ? (
+                    <div
+                      className="pointer-events-none absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-foreground"
+                      style={{ bottom: `${goalPct}%` }}
+                      aria-hidden
+                    />
+                  ) : null}
                   <div
                     className={`w-full rounded-t-[4px] transition-all ${
                       isCurrent
@@ -644,7 +640,10 @@ function FinanceCardView(props: any) {
           <div className="w-10" />
           <div className="flex flex-1 gap-3 border-t border-[hsl(40_26%_86%)] px-1 pt-1.5">
             {derived.series.map((s: { key: string; label: string }) => (
-              <div key={s.key} className={`flex-1 text-center ${monoTiny}`}>
+              <div
+                key={s.key}
+                className={`flex-1 text-center ${monoTiny} ${s.key === selectedMonthKey ? "text-foreground" : ""}`}
+              >
                 {s.label.toLowerCase()}
               </div>
             ))}
@@ -756,7 +755,7 @@ function StatColumn({
       <div className="text-[10px] font-semibold uppercase tracking-[0.10em] text-foreground">
         {label}
       </div>
-      <div className="font-display text-[22px] font-medium leading-tight tabular-nums text-foreground">
+      <div className="text-money text-[22px] leading-tight tabular-nums text-foreground">
         {value}
       </div>
       <div className="text-[11px] lowercase tracking-wide text-muted-foreground">
