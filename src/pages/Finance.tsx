@@ -320,7 +320,20 @@ export default function Finance() {
       toast.error(error.message);
       return;
     }
+    const nowD = new Date();
+    const monthStart = new Date(nowD.getFullYear(), nowD.getMonth(), 1);
+    await supabase
+      .from("user_budget_history")
+      .upsert(
+        { user_id: user.id, month_start: monthStart.toISOString().slice(0, 10), monthly_cents: cents },
+        { onConflict: "user_id,month_start" },
+      );
     setBudgetCents(cents);
+    setBudgetHistory((prev) => {
+      const next = new Map(prev);
+      next.set(monthKey(nowD), cents);
+      return next;
+    });
     setEditOpen(false);
     toast.success("Budget updated");
   };
