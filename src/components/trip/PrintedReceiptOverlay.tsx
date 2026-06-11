@@ -100,15 +100,27 @@ interface Props {
 export default function PrintedReceiptOverlay({ open, payload, onDismiss }: Props) {
   const reduce = useReducedMotion();
   const [ready, setReady] = useState(false);
+  const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setReady(false);
+      setExiting(false);
       return;
     }
     const t = setTimeout(() => setReady(true), reduce ? 200 : 1100);
     return () => clearTimeout(t);
   }, [open, reduce]);
+
+  const handleDismiss = () => {
+    if (!ready || exiting) return;
+    if (reduce) {
+      onDismiss();
+      return;
+    }
+    setExiting(true);
+    setTimeout(onDismiss, 700);
+  };
 
   const ANIMATE_FIRST = 8;
   const animatedItems = useMemo(() => {
@@ -119,21 +131,24 @@ export default function PrintedReceiptOverlay({ open, payload, onDismiss }: Prop
     };
   }, [payload]);
 
-  const containerVariants = reduce
-    ? { hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0.2 } } }
+  // Whole overlay (background + content) slides as one unit.
+  const overlayVariants = reduce
+    ? {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { duration: 0.2 } },
+        exit: { opacity: 0, transition: { duration: 0.2 } },
+      }
     : {
-        hidden: { y: "-110%" },
-        show: {
-          y: 0,
-          transition: { type: "spring" as const, stiffness: 260, damping: 30, mass: 0.8 },
-        },
+        hidden: { y: "-100%" },
+        show: { y: 0, transition: { duration: 0.75, ease: EASE } },
+        exit: { y: "100%", transition: { duration: 0.7, ease: EASE } },
       };
 
   const listVariants = reduce
     ? { hidden: {}, show: {} }
     : {
         hidden: {},
-        show: { transition: { staggerChildren: 0.04, delayChildren: 0.25 } },
+        show: { transition: { staggerChildren: 0.04, delayChildren: 0.45 } },
       };
 
   const rowVariants = reduce
@@ -149,24 +164,22 @@ export default function PrintedReceiptOverlay({ open, payload, onDismiss }: Prop
     <AnimatePresence>
       {open && payload && (
         <motion.div
-          className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-foreground/40 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          onClick={() => ready && onDismiss()}
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden"
+          variants={overlayVariants}
+          initial="hidden"
+          animate={exiting ? "exit" : "show"}
+          exit="exit"
+          onClick={handleDismiss}
           role="dialog"
           aria-label="Trip receipt"
           style={{
+            backgroundColor: GREEN_BG,
             paddingTop: "calc(env(safe-area-inset-top) + 0.5rem)",
             paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)",
           }}
         >
           <div className="relative flex w-full flex-1 items-center justify-center overflow-hidden px-4 py-4">
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="show"
+            <div
               className="relative flex max-h-full w-full max-w-sm flex-col"
               onClick={(e) => e.stopPropagation()}
             >
