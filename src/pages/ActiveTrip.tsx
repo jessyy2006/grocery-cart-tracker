@@ -5,8 +5,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -20,7 +18,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Scanner } from "@/components/Scanner";
-import { ScanLine, Plus, MapPin, Trash2, Check, X, Search, Loader2 } from "lucide-react";
+import { ScanLine, Plus, MapPin, Check, X, Search, Loader2 } from "lucide-react";
 import { formatMoney, parsePriceToCents, useCurrency, getCurrency } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
 import { findListMatch, getCategory, guessCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
@@ -35,6 +33,7 @@ import {
 import { TagPill } from "@/components/TagPill";
 import { toast } from "sonner";
 import { MarketLoader } from "@/components/MarketLoader";
+import { LedgerRow } from "@/components/LedgerRow";
 
 type TripItem = {
   id: string;
@@ -72,7 +71,7 @@ export default function ActiveTrip() {
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [items, setItems] = useState<TripItem[]>([]);
   const [extras, setExtras] = useState<TripItem[]>([]);
-  const [extrasOpen, setExtrasOpen] = useState(false);
+  
   const [confetti, setConfetti] = useState<{ id: number; emoji: string } | null>(null);
   const [scanning, setScanning] = useState(false);
   const [pending, setPending] = useState<{
@@ -678,15 +677,6 @@ export default function ActiveTrip() {
           </button>
         </div>
         <div className="flex items-center gap-2">
-          {extras.length > 0 && (
-            <button
-              onClick={() => setExtrasOpen((o) => !o)}
-              aria-label="Show extras"
-              className="flex h-7 min-w-7 items-center justify-center rounded-full bg-accent-honey px-2 text-xs font-bold text-[hsl(30_50%_18%)] shadow-soft"
-            >
-              {extras.length}
-            </button>
-          )}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -711,143 +701,121 @@ export default function ActiveTrip() {
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 pb-8">
         {!listReady ? (
           <MarketLoader minHeight="40vh" />
         ) : (
           <>
-            {extrasOpen && extras.length > 0 && (
-              <section className="rounded-lg border border-[hsl(40_80%_78%)] bg-accent-honey/15 p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-h3 text-[hsl(30_60%_28%)]">Extras (off-list)</h3>
-                  <span className="text-small font-medium text-[hsl(30_60%_28%)]">{extras.length}</span>
-                </div>
-                <ul className="space-y-2">
-                  {extras.map((ex) => (
-                    <li
-                      key={ex.id}
-                      className="flex items-center justify-between rounded-xl border border-red-500 bg-card p-2"
-                    >
-                      <div className="min-w-0 flex-1 pr-2">
-                        <p className="truncate text-sm font-medium">{ex.name_snapshot}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {ex.qty} × {formatMoney(ex.price_cents)}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => removeExtra(ex.id)}
-                        className="text-muted-foreground hover:text-destructive"
-                        aria-label="Remove extra"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {listItems.length === 0 ? (
+            {listItems.length === 0 && extras.length === 0 ? (
               <p className="py-10 text-center text-sm text-muted-foreground">
                 {listHidden
                   ? "Scan or add items as you shop — we'll sort them by category."
                   : "No shopping list linked to this trip."}
               </p>
             ) : (
-              groupedList.map(({ slug, items: lis }) => {
-                const meta = getCategory(slug);
-                return (
-                  <section key={slug}>
-                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      {meta.emoji} {meta.label}
-                    </h3>
-                    <ul className="space-y-2">
-                      {lis.map((it) => (
-                        <li key={it.id}>
-                          <Card className="flex items-center gap-3 p-3">
-                            <Checkbox
+              <div className="space-y-6">
+                {groupedList.map(({ slug, items: lis }) => {
+                  const meta = getCategory(slug);
+                  return (
+                    <section key={slug}>
+                      <h3 className="mb-1 px-[60px] font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                        {meta.emoji} {meta.label.toLowerCase()}
+                      </h3>
+                      <ul className="divide-y divide-foreground/10 border-y border-foreground/10">
+                        {lis.map((it) => {
+                          const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
+                          const noteParts: string[] = [];
+                          if (it.notes) noteParts.push(it.notes);
+                          if (sub) noteParts.push(`↔ ${sub.name_snapshot}`);
+                          const note = noteParts.length ? noteParts.join(" · ") : null;
+                          return (
+                            <LedgerRow
+                              key={it.id}
+                              name={it.name}
+                              qty={it.qty}
+                              note={note}
+                              tag={it.tag}
+                              priceCents={it.price_cents}
+                              showCheckbox
                               checked={!!it.checked_at}
-                              onCheckedChange={() => (it.checked_at ? uncheckListItem(it) : openManualCheck(it))}
-                              aria-label="Toggle item"
+                              onToggle={() =>
+                                it.checked_at ? uncheckListItem(it) : openManualCheck(it)
+                              }
                             />
-                            <div className="min-w-0 flex-1">
-                              <p
-                                className={`truncate font-medium ${
-                                  it.checked_at ? "text-muted-foreground line-through" : ""
-                                }`}
-                              >
-                                {it.name}
-                              </p>
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                {(it.qty > 1 || it.notes) && (
-                                  <p className="truncate text-xs text-muted-foreground">
-                                    {it.qty > 1 ? `Qty ${it.qty}` : ""}
-                                    {it.qty > 1 && it.notes ? " · " : ""}
-                                    {it.notes ?? ""}
-                                  </p>
-                                )}
-                                {it.tag && <TagPill tag={it.tag} size="xs" />}
-                                {(() => {
-                                  const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
-                                  return sub ? (
-                                    <span className="truncate text-[10px] font-medium text-amber-700 dark:text-amber-300">
-                                      ↔ {sub.name_snapshot}
-                                    </span>
-                                  ) : null;
-                                })()}
-                              </div>
-                            </div>
-                            {it.price_cents != null && (
-                              <span className="shrink-0 text-right text-sm font-semibold text-primary">
-                                {formatMoney(it.price_cents)}
-                              </span>
-                            )}
-                          </Card>
-                        </li>
+                          );
+                        })}
+                      </ul>
+                    </section>
+                  );
+                })}
+
+                {extras.length > 0 && (
+                  <section>
+                    <h3 className="mb-1 px-[60px] font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground">
+                      unplanned additions
+                    </h3>
+                    <ul className="divide-y divide-foreground/10 border-y border-foreground/10">
+                      {extras.map((ex) => (
+                        <LedgerRow
+                          key={ex.id}
+                          name={ex.name_snapshot}
+                          qty={ex.qty}
+                          multiplierLine={`${ex.qty} × ${formatMoney(ex.price_cents)}`}
+                          priceCents={ex.price_cents * ex.qty}
+                          showCheckbox
+                          checked
+                          onToggle={() => removeExtra(ex.id)}
+                          onDelete={() => removeExtra(ex.id)}
+                        />
                       ))}
                     </ul>
                   </section>
-                );
-              })
+                )}
+              </div>
             )}
           </>
         )}
       </div>
 
+      {/* Forest-green velvet utility footer */}
       <footer
-        className="shrink-0 border-t border-hairline glass px-5 pt-4"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
+        className="shrink-0 px-3"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)", paddingTop: "0.5rem" }}
       >
-        <div className="mb-3 flex items-end justify-between">
-          <div>
-            <p className="text-eyebrow">Cart total</p>
-            <div className="flex items-center gap-2">
-              <p className="text-money text-3xl font-medium">{formatMoney(total)}</p>
+        <div
+          className="rounded-[4px] bg-forest px-5 pt-3 pb-4 text-forest-foreground shadow-raised"
+        >
+          <div className="flex items-baseline justify-between">
+            <p className="font-mono text-[13px] lowercase">
+              cart total:{" "}
+              <span className="font-mono tabular-nums">{formatMoney(total)}</span>
               {listItems.length > 0 && (() => {
                 const checked = listItems.filter((i) => i.checked_at).length;
                 const denom = listItems.length;
                 const numer = checked + extras.length;
-                const cls =
-                  numer > denom
-                    ? "bg-red-500 text-white"
-                    : numer === denom && denom > 0
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-muted text-muted-foreground";
                 return (
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>
-                    {numer}/{denom}
+                  <span className="ml-2 font-mono text-[11px] opacity-70">
+                    [{numer}/{denom}]
                   </span>
                 );
               })()}
-            </div>
+            </p>
+            <button
+              type="button"
+              onClick={saveTrip}
+              className="font-mono text-[12px] lowercase tracking-wide text-forest-foreground/90 hover:text-forest-foreground"
+            >
+              [ save trip ]
+            </button>
           </div>
-          <Button variant="outline" onClick={saveTrip}>
-            <Check className="mr-1 h-4 w-4" /> Save trip
-          </Button>
+          <button
+            type="button"
+            onClick={() => setScanning(true)}
+            className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[4px] border border-forest-foreground/25 bg-forest-foreground/5 font-mono text-[13px] lowercase tracking-wide text-forest-foreground hover:bg-forest-foreground/10 transition-colors"
+          >
+            <ScanLine className="h-4 w-4" /> [ scan barcode ]
+          </button>
         </div>
-        <Button size="lg" className="h-14 w-full text-base" onClick={() => setScanning(true)}>
-          <ScanLine className="mr-2 h-5 w-5" /> Scan barcode
-        </Button>
       </footer>
 
       {confetti && (
