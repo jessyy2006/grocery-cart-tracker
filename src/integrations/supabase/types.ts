@@ -236,6 +236,66 @@ export type Database = {
           },
         ]
       }
+      trip_planned_items: {
+        Row: {
+          barcode: string | null
+          category: string
+          checked_at: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          price_cents: number | null
+          qty: number
+          source_list_item_id: string | null
+          tag: string | null
+          trip_id: string
+        }
+        Insert: {
+          barcode?: string | null
+          category?: string
+          checked_at?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          price_cents?: number | null
+          qty?: number
+          source_list_item_id?: string | null
+          tag?: string | null
+          trip_id: string
+        }
+        Update: {
+          barcode?: string | null
+          category?: string
+          checked_at?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          price_cents?: number | null
+          qty?: number
+          source_list_item_id?: string | null
+          tag?: string | null
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_planned_items_source_list_item_id_fkey"
+            columns: ["source_list_item_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trip_planned_items_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
           ended_at: string | null
