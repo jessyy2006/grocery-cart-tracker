@@ -252,7 +252,10 @@ export default function ScanReceipt() {
       // Resolve store
       let storeId: string | null = null;
       let storeNameSnap: string | null = null;
-      if (storeChoice === NEW_STORE && storeName.trim()) {
+      if (matchedStore) {
+        storeId = matchedStore.id;
+        storeNameSnap = matchedStore.name;
+      } else if (saveAsNewStore && storeName.trim()) {
         const { data, error } = await supabase
           .from("stores")
           .insert({ user_id: user.id, name: storeName.trim() })
@@ -261,14 +264,7 @@ export default function ScanReceipt() {
         if (error) throw error;
         storeId = data.id;
         storeNameSnap = data.name;
-      } else if (storeChoice !== NO_STORE && storeChoice !== NEW_STORE) {
-        const s = stores.find((x) => x.id === storeChoice);
-        if (s) {
-          storeId = s.id;
-          storeNameSnap = s.name;
-        }
       } else if (storeName.trim()) {
-        // Free-typed name but user chose not to link — keep as snapshot only
         storeNameSnap = storeName.trim();
       }
 
