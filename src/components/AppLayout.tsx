@@ -4,8 +4,9 @@ import { PageTransition } from "./PageTransition";
 
 export const AppLayout = () => {
   const { pathname } = useLocation();
-  const fullscreen = pathname === "/trip" || pathname === "/trip/new" || pathname === "/scan-receipt";
-  const hideNav = fullscreen || /^\/lists\/[^/]+$/.test(pathname);
+  const isListDetail = /^\/lists\/[^/]+$/.test(pathname);
+  const fullscreen = pathname === "/trip" || pathname === "/trip/new" || pathname === "/scan-receipt" || isListDetail;
+  const hideNav = fullscreen;
 
   return (
     <div className="flex min-h-dvh h-full flex-col bg-background overscroll-none">
