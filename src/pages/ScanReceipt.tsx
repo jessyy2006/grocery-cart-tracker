@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, useMotionValue, animate, type PanInfo } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -7,8 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Camera, Loader2, Trash2, Plus, Image as ImageIcon, RefreshCw } from "lucide-react";
+import { X, Loader2, Plus, Image as ImageIcon, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney, parsePriceToCents } from "@/lib/format";
 import { guessCategory, tokens } from "@/lib/categories";
@@ -30,8 +30,42 @@ type Parsed = {
 type Store = { id: string; name: string };
 type ListLite = { id: string; name: string; items: { id: string; name: string; checked_at: string | null }[] };
 
-const NEW_STORE = "__new__";
-const NO_STORE = "__none__";
+const REVEAL = 76;
+
+function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete: () => void }) {
+  const x = useMotionValue(0);
+  const onDragEnd = (_e: unknown, info: PanInfo) => {
+    const target = info.offset.x < -REVEAL / 2 || info.velocity.x < -300 ? -REVEAL : 0;
+    animate(x, target, { type: "spring", stiffness: 500, damping: 40 });
+  };
+  const handleDelete = () => {
+    animate(x, 0, { duration: 0.12 });
+    onDelete();
+  };
+  return (
+    <li className="relative overflow-hidden">
+      <button
+        type="button"
+        onClick={handleDelete}
+        aria-label="Delete item"
+        className="absolute inset-y-0 right-0 flex items-center justify-center bg-destructive text-destructive-foreground"
+        style={{ width: REVEAL }}
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: -REVEAL, right: 0 }}
+        dragElastic={0.05}
+        style={{ x }}
+        onDragEnd={onDragEnd}
+        className="relative bg-card touch-pan-y"
+      >
+        {children}
+      </motion.div>
+    </li>
+  );
+}
 
 export default function ScanReceipt() {
   const { user } = useAuth();
@@ -45,16 +79,30 @@ export default function ScanReceipt() {
 
   // Review state
   const [storeName, setStoreName] = useState("");
-  const [storeChoice, setStoreChoice] = useState<string>(NO_STORE);
+  const [saveAsNewStore, setSaveAsNewStore] = useState(false);
   const [stores, setStores] = useState<Store[]>([]);
   const [tripDate, setTripDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [items, setItems] = useState<ParsedItem[]>([]);
+  const [priceDrafts, setPriceDrafts] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState(false);
   const [lists, setLists] = useState<ListLite[]>([]);
   const [matchListId, setMatchListId] = useState<string | null>(null);
   const [linkMatch, setLinkMatch] = useState(true);
   const [saveAsList, setSaveAsList] = useState(false);
   const [newListName, setNewListName] = useState("");
+
+  // Derive matched store from typed name
+  const matchedStore = useMemo(() => {
+    const t = storeName.toLowerCase().trim();
+    if (!t) return null;
+    return (
+      stores.find((s) => s.name.toLowerCase() === t) ??
+      stores.find(
+        (s) => s.name.toLowerCase().includes(t) || t.includes(s.name.toLowerCase()),
+      ) ??
+      null
+    );
+  }, [storeName, stores]);
 
   // Start camera on mount
   useEffect(() => {
@@ -173,19 +221,18 @@ export default function ScanReceipt() {
     const allStores = (storeRows ?? []) as Store[];
     setStores(allStores);
 
-    // Pre-select fuzzy-match store
+    // Default: if no exact/partial match found, suggest saving as new store
     const target = (p.store_name ?? "").toLowerCase().trim();
-    let pre: string = NO_STORE;
+    let isMatch = false;
     if (target) {
-      const exact = allStores.find((s) => s.name.toLowerCase() === target);
-      const partial =
-        exact ??
-        allStores.find(
-          (s) => s.name.toLowerCase().includes(target) || target.includes(s.name.toLowerCase()),
-        );
-      pre = partial ? partial.id : NEW_STORE;
+      isMatch = allStores.some(
+        (s) =>
+          s.name.toLowerCase() === target ||
+          s.name.toLowerCase().includes(target) ||
+          target.includes(s.name.toLowerCase()),
+      );
     }
-    setStoreChoice(pre);
+    setSaveAsNewStore(Boolean(target) && !isMatch);
 
     // List match: ≥85% overlap with uncompleted items
     const candidates: ListLite[] = (listRows ?? []).map((l: any) => ({
@@ -241,7 +288,10 @@ export default function ScanReceipt() {
       // Resolve store
       let storeId: string | null = null;
       let storeNameSnap: string | null = null;
-      if (storeChoice === NEW_STORE && storeName.trim()) {
+      if (matchedStore) {
+        storeId = matchedStore.id;
+        storeNameSnap = matchedStore.name;
+      } else if (saveAsNewStore && storeName.trim()) {
         const { data, error } = await supabase
           .from("stores")
           .insert({ user_id: user.id, name: storeName.trim() })
@@ -250,14 +300,7 @@ export default function ScanReceipt() {
         if (error) throw error;
         storeId = data.id;
         storeNameSnap = data.name;
-      } else if (storeChoice !== NO_STORE && storeChoice !== NEW_STORE) {
-        const s = stores.find((x) => x.id === storeChoice);
-        if (s) {
-          storeId = s.id;
-          storeNameSnap = s.name;
-        }
       } else if (storeName.trim()) {
-        // Free-typed name but user chose not to link — keep as snapshot only
         storeNameSnap = storeName.trim();
       }
 
@@ -449,23 +492,17 @@ export default function ScanReceipt() {
                 onChange={(e) => setStoreName(e.target.value)}
                 placeholder="Store name"
               />
-              {(stores.length > 0 || storeName.trim()) && (
-                <Select value={storeChoice} onValueChange={setStoreChoice}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Link to a saved store" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NO_STORE}>Don't link to a store</SelectItem>
-                    {storeName.trim() && (
-                      <SelectItem value={NEW_STORE}>+ Save "{storeName.trim()}" as new store</SelectItem>
-                    )}
-                    {stores.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {storeName.trim() && !matchedStore && (
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-hairline p-3">
+                  <Checkbox
+                    checked={saveAsNewStore}
+                    onCheckedChange={(v) => setSaveAsNewStore(v === true)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-small">
+                    Save <strong>"{storeName.trim()}"</strong> as a new store
+                  </span>
+                </label>
               )}
             </div>
 
@@ -488,39 +525,43 @@ export default function ScanReceipt() {
                   <li className="p-4 text-center text-small text-muted-foreground">No items detected</li>
                 )}
                 {items.map((it, idx) => (
-                  <li key={idx} className="grid grid-cols-[1fr_56px_92px_28px] items-center gap-2 p-2.5">
-                    <Input
-                      value={it.name}
-                      onChange={(e) => updateItem(idx, { name: e.target.value })}
-                      placeholder="Item"
-                      className="h-10"
-                    />
-                    <Input
-                      type="number"
-                      min={1}
-                      value={it.qty}
-                      onChange={(e) =>
-                        updateItem(idx, { qty: Math.max(1, parseInt(e.target.value || "1", 10)) })
-                      }
-                      className="h-10 px-2 text-center"
-                    />
-                    <Input
-                      inputMode="decimal"
-                      value={(it.line_total_cents / 100).toFixed(2)}
-                      onChange={(e) => {
-                        const c = parsePriceToCents(e.target.value) ?? 0;
-                        updateItem(idx, { line_total_cents: c });
-                      }}
-                      className="h-10 px-2 text-right"
-                    />
-                    <button
-                      onClick={() => removeItem(idx)}
-                      className="flex h-8 w-8 items-center justify-center rounded text-muted-foreground hover:text-destructive"
-                      aria-label="Remove"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </li>
+                  <SwipeRow key={idx} onDelete={() => removeItem(idx)}>
+                    <div className="grid grid-cols-[1fr_44px_72px] items-center gap-2 bg-card p-2.5">
+                      <Input
+                        value={it.name}
+                        onChange={(e) => updateItem(idx, { name: e.target.value })}
+                        placeholder="Item"
+                        className="h-10"
+                      />
+                      <Input
+                        type="number"
+                        min={1}
+                        max={99}
+                        value={it.qty}
+                        onChange={(e) =>
+                          updateItem(idx, { qty: Math.max(1, parseInt(e.target.value || "1", 10)) })
+                        }
+                        className="h-10 px-1 text-center"
+                      />
+                      <Input
+                        inputMode="decimal"
+                        pattern="[0-9]*[.,]?[0-9]*"
+                        value={priceDrafts[idx] ?? (it.line_total_cents / 100).toFixed(2)}
+                        onChange={(e) =>
+                          setPriceDrafts((d) => ({ ...d, [idx]: e.target.value }))
+                        }
+                        onBlur={(e) => {
+                          const c = parsePriceToCents(e.target.value) ?? 0;
+                          updateItem(idx, { line_total_cents: c });
+                          setPriceDrafts((d) => {
+                            const { [idx]: _, ...rest } = d;
+                            return rest;
+                          });
+                        }}
+                        className="h-10 px-2 text-right"
+                      />
+                    </div>
+                  </SwipeRow>
                 ))}
               </ul>
               <div className="mt-3 flex items-baseline justify-between">
