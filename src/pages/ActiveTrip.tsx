@@ -758,23 +758,27 @@ export default function ActiveTrip() {
             ) : (
               <div className="space-y-6">
                 {listItems.length > 0 && (
-                  <div className="flex items-center justify-end gap-1 text-xs">
-                    <span className="mr-1 text-muted-foreground">Group by</span>
+                  <div className="flex items-center gap-2 text-[12px] lowercase">
+                    <span className="text-muted-foreground">group by:</span>
                     <button
                       onClick={() => setTripGroupBy("category")}
-                      className={`rounded-full px-2 py-0.5 font-medium ${
-                        tripGroupBy === "category" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                      }`}
+                      className={
+                        tripGroupBy === "category"
+                          ? "font-mono text-foreground"
+                          : "text-muted-foreground"
+                      }
                     >
-                      Category
+                      {tripGroupBy === "category" ? "[ category ]" : "category"}
                     </button>
                     <button
                       onClick={() => setTripGroupBy("tag")}
-                      className={`rounded-full px-2 py-0.5 font-medium ${
-                        tripGroupBy === "tag" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                      }`}
+                      className={
+                        tripGroupBy === "tag"
+                          ? "font-mono text-foreground"
+                          : "text-muted-foreground"
+                      }
                     >
-                      Tag
+                      {tripGroupBy === "tag" ? "[ tag ]" : "tag"}
                     </button>
                   </div>
                 )}
