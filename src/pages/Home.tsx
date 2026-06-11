@@ -202,9 +202,11 @@ export default function Home() {
                     >
                       <div className="min-w-0">
                         <p className="text-h3 truncate">{format(new Date(t.started_at), "EEE, MMM d")}</p>
-                        <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
-                          <MapPin className="h-3 w-3" /> {t.stores.join(" · ") || "No store"}
-                        </p>
+                        {t.stores.length > 0 && (
+                          <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
+                            <MapPin className="h-3 w-3" /> {t.stores.join(" · ")}
+                          </p>
+                        )}
                       </div>
                       <Money cents={t.total_cents} size="lg" />
                     </button>
