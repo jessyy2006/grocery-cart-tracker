@@ -4,7 +4,7 @@ import { PageTransition } from "./PageTransition";
 
 export const AppLayout = () => {
   const { pathname } = useLocation();
-  const fullscreen = pathname === "/trip" || pathname === "/trip/new";
+  const fullscreen = pathname === "/trip" || pathname === "/trip/new" || pathname === "/scan-receipt";
 
   return (
     <div className="flex min-h-dvh h-full flex-col bg-background overscroll-none">
