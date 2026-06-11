@@ -144,32 +144,22 @@ export default function History() {
           </p>
         </Card>
       ) : (
-        <div className="space-y-7">
+        <div className="space-y-8">
           {grouped.map(([k, items]) => (
             <section key={k}>
-              <div className="sticky top-0 z-10 py-2">
-                <p className="text-eyebrow">{monthLabel(k)}</p>
+              <div className="sticky top-0 z-10 bg-background py-2">
+                <p className="text-small lowercase text-muted-foreground">{monthLabel(k).toLowerCase()}</p>
               </div>
-              <ul className="mt-3 space-y-3">
+              <ul className="mt-1 divide-y divide-dashed divide-foreground/15">
                 {items.map((t) => (
                   <li key={t.id}>
-                    <button onClick={() => navigate(`/trip/${t.id}`)} className="w-full text-left">
-                      <Card className="flex items-center justify-between p-4 transition hover:border-primary">
-                        <div>
-                          <p className="text-h3">{t.title}</p>
-                          <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
-                            {t.stores.length > 0 && (
-                              <>
-                                <MapPin className="h-3 w-3" />
-                                {t.stores.join(" · ")} ·{" "}
-                              </>
-                            )}
-                            {t.itemCount} items
-                          </p>
-                        </div>
-                        <Money cents={t.total_cents} size="lg" />
-                      </Card>
-                    </button>
+                    <TripTapeRow
+                      title={t.title}
+                      date={t.started_at}
+                      itemCount={t.itemCount}
+                      totalCents={t.total_cents}
+                      onClick={() => navigate(`/trip/${t.id}`)}
+                    />
                   </li>
                 ))}
               </ul>
