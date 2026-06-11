@@ -369,7 +369,7 @@ export default function ScanReceipt() {
       }
 
       toast.success("Receipt saved");
-      navigate(`/trip/${trip.id}`);
+      navigate(`/trip/${trip.id}`, { replace: true });
     } catch (e: any) {
       toast.error(e.message ?? "Couldn't save trip");
       setSaving(false);
@@ -520,7 +520,7 @@ export default function ScanReceipt() {
                   <Plus className="h-3 w-3" /> Add
                 </button>
               </div>
-              <ul className="mt-2 divide-y divide-hairline rounded-lg border border-hairline">
+              <ul className="mt-2 divide-y divide-hairline overflow-hidden rounded-lg border border-hairline">
                 {items.length === 0 && (
                   <li className="p-4 text-center text-small text-muted-foreground">No items detected</li>
                 )}
