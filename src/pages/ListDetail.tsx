@@ -546,11 +546,11 @@ export default function ListDetail() {
               }
             }}
           />
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setRenameOpen(false)}>
-              Cancel
-            </Button>
+          <DialogFooter className="flex-row gap-2 sm:justify-stretch sm:space-x-0">
             <Button
+              variant="primaryLight"
+              size="lg"
+              className="flex-1"
               onClick={async () => {
                 const next = renameValue.trim();
                 if (!next || !id) return;
@@ -566,6 +566,9 @@ export default function ListDetail() {
               disabled={!renameValue.trim()}
             >
               Save
+            </Button>
+            <Button variant="secondaryLight" size="lg" className="flex-1" onClick={() => setRenameOpen(false)}>
+              Cancel
             </Button>
           </DialogFooter>
         </DialogContent>
