@@ -62,7 +62,7 @@ export default function Lists() {
   return (
     <div className="relative min-h-[calc(100dvh-6rem)] px-5 pt-3 pb-12">
       {/* Header */}
-      <header className="flex items-end justify-between gap-3 pt-2 pb-2">
+      <header className="flex items-center justify-between gap-3 pt-2 pb-2">
         <div className="min-w-0">
           <p className="font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground mb-1.5">
             plan your run
@@ -73,11 +73,12 @@ export default function Lists() {
         </div>
         <button
           onClick={() => setOpen(true)}
-          className="font-mono text-[12px] lowercase tracking-tight text-forest hover:opacity-70 transition-opacity whitespace-nowrap pb-2"
+          className="h-10 rounded-[4px] bg-forest text-forest-foreground px-4 font-mono text-[12px] lowercase tracking-tight hover:opacity-90 transition-opacity whitespace-nowrap"
         >
           + new list
         </button>
       </header>
+
 
       {/* Notebook margin rule */}
       <div
