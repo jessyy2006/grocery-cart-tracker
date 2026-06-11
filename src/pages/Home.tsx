@@ -16,6 +16,7 @@ import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
 import { PageHeader } from "@/components/PageHeader";
 import { Money } from "@/components/Money";
 import { MarketLoader } from "@/components/MarketLoader";
+import { TripTapeRow } from "@/components/trip/TripTapeRow";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
 type ShortList = { id: string; name: string };
