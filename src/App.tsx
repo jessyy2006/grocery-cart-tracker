@@ -18,6 +18,7 @@ import Profile from "./pages/Profile";
 import Lists from "./pages/Lists";
 import ListDetail from "./pages/ListDetail";
 import Finance from "./pages/Finance";
+import ScanReceipt from "./pages/ScanReceipt";
 import NotFound from "./pages/NotFound.tsx";
 import OnboardingIntro from "./pages/onboarding/Intro";
 import OnboardingSignup from "./pages/onboarding/Signup";
@@ -98,6 +99,7 @@ const App = () => (
                 <Route path="/lists" element={<Lists />} />
                 <Route path="/lists/:id" element={<ListDetail />} />
                 <Route path="/finance" element={<Finance />} />
+                <Route path="/scan-receipt" element={<ScanReceipt />} />
               </Route>
               <Route path="/index" element={<Navigate to="/" replace />} />
               <Route path="*" element={<NotFound />} />
