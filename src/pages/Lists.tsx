@@ -17,7 +17,7 @@ type ShoppingList = {
   id: string;
   name: string;
   updated_at: string;
-  shopping_list_items: { id: string; checked_at: string | null }[];
+  shopping_list_items: { id: string }[];
 };
 
 export default function Lists() {
@@ -31,7 +31,7 @@ export default function Lists() {
   const load = async () => {
     const { data } = await supabase
       .from("shopping_lists")
-      .select("id, name, updated_at, shopping_list_items(id, checked_at)")
+      .select("id, name, updated_at, shopping_list_items(id)")
       .eq("hidden", false)
       .order("updated_at", { ascending: false });
     setLists((data as any) ?? []);
@@ -81,7 +81,6 @@ export default function Lists() {
         <ul className="space-y-3 pb-4">
           {lists.map((l) => {
             const total = l.shopping_list_items?.length ?? 0;
-            const done = l.shopping_list_items?.filter((i) => i.checked_at).length ?? 0;
             return (
               <li key={l.id}>
                 <Card className="group relative overflow-hidden">
@@ -92,7 +91,6 @@ export default function Lists() {
                     <div className="min-w-0 flex-1">
                       <p className="text-eyebrow">
                         {total === 0 ? "Empty list" : `${total} item${total === 1 ? "" : "s"}`}
-                        {total > 0 && ` · ${done} picked`}
                       </p>
                       <p className="mt-1 text-h2 truncate">{l.name}</p>
                       <p className="mt-1 text-small text-muted-foreground">
