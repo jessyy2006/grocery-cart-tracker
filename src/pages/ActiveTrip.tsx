@@ -769,10 +769,10 @@ export default function ActiveTrip() {
 
                 {extras.length > 0 && (
                   <section>
-                    <h3 className="mb-1 px-[60px] font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground">
+                    <h3 className="mb-1 px-1 font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground">
                       unplanned additions
                     </h3>
-                    <ul className="divide-y divide-foreground/10 border-y border-foreground/10">
+                    <ul className="divide-y divide-[hsl(20_40%_18%/0.3)] border-y border-[hsl(20_40%_18%/0.3)]">
                       {extras.map((ex) => (
                         <LedgerRow
                           key={ex.id}
