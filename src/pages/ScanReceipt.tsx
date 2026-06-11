@@ -369,7 +369,7 @@ export default function ScanReceipt() {
       }
 
       toast.success("Receipt saved");
-      navigate(`/trip/${trip.id}`);
+      navigate(`/trip/${trip.id}`, { replace: true });
     } catch (e: any) {
       toast.error(e.message ?? "Couldn't save trip");
       setSaving(false);
