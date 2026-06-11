@@ -17,7 +17,9 @@ type Row = {
   total_cents: number;
   stores: string[];
   itemCount: number;
+  title: string;
 };
+
 
 const ALL = "all";
 const monthKey = (iso: string) => {
@@ -46,22 +48,31 @@ export default function History() {
       await supabase.from("trips").delete().lt("started_at", cutoff.toISOString());
       const { data } = await supabase
         .from("trips")
-        .select("id, started_at, total_cents, trip_items(store_name_snapshot)")
+        .select("id, started_at, total_cents, trip_items(store_name_snapshot), shopping_lists:list_id(name, hidden)")
         .eq("status", "saved")
         .gte("started_at", cutoff.toISOString())
         .order("started_at", { ascending: false });
       if (cancelled) return;
       setRows(
-        (data ?? []).map((t: any) => ({
-          id: t.id,
-          started_at: t.started_at,
-          total_cents: t.total_cents,
-          itemCount: (t.trip_items ?? []).length,
-          stores: Array.from(
-            new Set((t.trip_items ?? []).map((i: any) => i.store_name_snapshot).filter(Boolean)),
-          ) as string[],
-        })),
+        (data ?? []).map((t: any) => {
+          const list = t.shopping_lists;
+          const title =
+            list && !list.hidden && list.name
+              ? list.name
+              : format(new Date(t.started_at), "EEE, MMM d");
+          return {
+            id: t.id,
+            started_at: t.started_at,
+            total_cents: t.total_cents,
+            itemCount: (t.trip_items ?? []).length,
+            stores: Array.from(
+              new Set((t.trip_items ?? []).map((i: any) => i.store_name_snapshot).filter(Boolean)),
+            ) as string[],
+            title,
+          };
+        }),
       );
+
       setReady(true);
     })();
     return () => {
@@ -135,7 +146,7 @@ export default function History() {
                     <button onClick={() => navigate(`/trip/${t.id}`)} className="w-full text-left">
                       <Card className="flex items-center justify-between p-4 transition hover:border-primary">
                         <div>
-                          <p className="text-h3">{format(new Date(t.started_at), "EEE, MMM d")}</p>
+                          <p className="text-h3">{t.title}</p>
                           <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
                             <MapPin className="h-3 w-3" />
                             {t.stores.join(" · ") || "No store"} · {t.itemCount} items
