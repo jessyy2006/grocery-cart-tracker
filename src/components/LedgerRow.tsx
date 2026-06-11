@@ -91,19 +91,19 @@ export function LedgerRow({
           {hasSecondLine && (
             <p className="mt-0.5 leading-snug">
               {multiplierLine ? (
-                <span className="font-display italic text-[13px] text-muted-foreground">
+                <span className="font-display italic text-[11px] text-muted-foreground/70">
                   {multiplierLine}
                 </span>
               ) : (
                 <>
                   {note && (
-                    <span className="font-display italic text-[13px] text-muted-foreground">
+                    <span className="font-display italic text-[11px] text-muted-foreground/70">
                       {note}
                     </span>
                   )}
-                  {note && tag && <span className="text-muted-foreground"> · </span>}
+                  {note && tag && <span className="text-muted-foreground/60"> · </span>}
                   {tag && (
-                    <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/70">
                       {tag}
                     </span>
                   )}
@@ -171,7 +171,7 @@ function QtyMultiplier({ qty, onChange }: { qty: number; onChange?: (n: number) 
 
   if (!onChange) {
     return (
-      <span className="font-mono text-[12px] lowercase text-muted-foreground tabular-nums">
+      <span className="font-mono text-[11px] lowercase text-muted-foreground/70 tabular-nums">
         {qty}x
       </span>
     );
@@ -182,7 +182,7 @@ function QtyMultiplier({ qty, onChange }: { qty: number; onChange?: (n: number) 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="font-mono text-[12px] lowercase text-muted-foreground hover:text-foreground transition-colors tabular-nums"
+        className="font-mono text-[11px] lowercase text-muted-foreground/70 hover:text-foreground transition-colors tabular-nums"
         aria-label="Edit quantity"
       >
         {qty}x
