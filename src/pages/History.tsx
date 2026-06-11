@@ -17,7 +17,9 @@ type Row = {
   total_cents: number;
   stores: string[];
   itemCount: number;
+  title: string;
 };
+
 
 const ALL = "all";
 const monthKey = (iso: string) => {
