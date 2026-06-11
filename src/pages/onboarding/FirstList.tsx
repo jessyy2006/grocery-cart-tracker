@@ -257,7 +257,7 @@ export default function OnboardingFirstList() {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={add} disabled={!name.trim()}>
+            <Button variant="primaryLight" size="lg" onClick={add} disabled={!name.trim()}>
               <Plus className="mr-1 h-4 w-4" /> Add
             </Button>
           </div>
@@ -344,7 +344,7 @@ export default function OnboardingFirstList() {
             <Button variant="ghost" onClick={() => setEditing(null)}>
               Cancel
             </Button>
-            <Button onClick={saveEdit}>Save</Button>
+            <Button variant="primaryLight" size="lg" onClick={saveEdit}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

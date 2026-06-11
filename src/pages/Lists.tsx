@@ -71,12 +71,14 @@ export default function Lists() {
             your lists
           </h1>
         </div>
-        <button
+        <Button
+          variant="primaryLight"
+          size="compact"
           onClick={() => setOpen(true)}
-          className="mb-2 h-10 rounded-[4px] bg-forest text-forest-foreground px-4 font-mono text-[12px] lowercase tracking-tight hover:opacity-90 transition-opacity whitespace-nowrap"
+          className="mb-2 whitespace-nowrap"
         >
           + new list
-        </button>
+        </Button>
       </header>
 
 
@@ -150,7 +152,7 @@ export default function Lists() {
               autoFocus
               onKeyDown={(e) => e.key === "Enter" && create()}
             />
-            <Button variant="hero" size="lg" className="w-full" onClick={create} disabled={!name.trim()}>
+            <Button variant="primaryLight" size="lg" className="w-full" onClick={create} disabled={!name.trim()}>
               Create list
             </Button>
           </div>

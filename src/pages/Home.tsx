@@ -182,12 +182,14 @@ export default function Home() {
                       ── {pct}% of this month's budget utilized
                     </p>
                   )}
-                  <button
+                  <Button
+                    variant="primaryLight"
+                    size="lg"
+                    className="mt-6 w-full"
                     onClick={openSheet}
-                    className="mt-6 h-12 w-full rounded-[4px] bg-forest text-forest-foreground text-[14px] lowercase tracking-tight transition-opacity hover:opacity-90"
                   >
-                    [ start a live trip ]
-                  </button>
+                    start a live trip
+                  </Button>
                 </div>
               </section>
             );

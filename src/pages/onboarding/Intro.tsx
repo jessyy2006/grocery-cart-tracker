@@ -68,7 +68,7 @@ export default function OnboardingIntro() {
         </Card>
       </div>
 
-      <Button size="lg" className="relative z-10 mt-6 w-full" onClick={next}>
+      <Button variant="primaryLight" size="lg" className="relative z-10 mt-6 w-full" onClick={next}>
         Start saving
       </Button>
     </div>

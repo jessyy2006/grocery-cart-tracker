@@ -382,8 +382,9 @@ export default function ListDetail() {
 
       <footer className="px-4 pt-3 pb-3">
         <Button
+          variant="primaryLight"
           size="lg"
-          className="h-14 w-full rounded-[4px] bg-forest text-forest-foreground text-base font-mono lowercase tracking-wide hover:bg-forest/90"
+          className="w-full"
           onClick={startRun}
         >
           <ShoppingBasket className="mr-2 h-5 w-5" /> start grocery run
@@ -445,7 +446,7 @@ export default function ListDetail() {
             <Button variant="ghost" onClick={() => setAddOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={addItem} disabled={!name.trim()}>
+            <Button variant="primaryLight" size="lg" onClick={addItem} disabled={!name.trim()}>
               <Plus className="mr-1 h-4 w-4" /> Add
             </Button>
           </DialogFooter>
@@ -513,7 +514,7 @@ export default function ListDetail() {
             <Button variant="ghost" onClick={() => setEditing(null)}>
               Cancel
             </Button>
-            <Button onClick={saveEdit}>Save</Button>
+            <Button variant="primaryLight" size="lg" onClick={saveEdit}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
