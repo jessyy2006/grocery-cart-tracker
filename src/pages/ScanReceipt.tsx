@@ -185,19 +185,18 @@ export default function ScanReceipt() {
     const allStores = (storeRows ?? []) as Store[];
     setStores(allStores);
 
-    // Pre-select fuzzy-match store
+    // Default: if no exact/partial match found, suggest saving as new store
     const target = (p.store_name ?? "").toLowerCase().trim();
-    let pre: string = NO_STORE;
+    let isMatch = false;
     if (target) {
-      const exact = allStores.find((s) => s.name.toLowerCase() === target);
-      const partial =
-        exact ??
-        allStores.find(
-          (s) => s.name.toLowerCase().includes(target) || target.includes(s.name.toLowerCase()),
-        );
-      pre = partial ? partial.id : NEW_STORE;
+      isMatch = allStores.some(
+        (s) =>
+          s.name.toLowerCase() === target ||
+          s.name.toLowerCase().includes(target) ||
+          target.includes(s.name.toLowerCase()),
+      );
     }
-    setStoreChoice(pre);
+    setSaveAsNewStore(Boolean(target) && !isMatch);
 
     // List match: ≥85% overlap with uncompleted items
     const candidates: ListLite[] = (listRows ?? []).map((l: any) => ({
