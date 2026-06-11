@@ -507,7 +507,7 @@ function FinanceCardView(props: any) {
     return v;
   })();
   const yTicks = [niceMax, niceMax / 2, 0];
-  const selectedMonth = derived.series.find((s: { key: string }) => s.key === selectedMonthKey) ?? null;
+  
 
   return (
     <div className="space-y-10">
