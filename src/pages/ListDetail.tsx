@@ -306,7 +306,10 @@ export default function ListDetail() {
                   .insert(insert)
                   .select("*")
                   .single();
-                if (error) return toast.error(error.message);
+                if (error) {
+                  toast.error(error.message);
+                  return;
+                }
                 setItems((c) => [...c, data as Item]);
               }}
             />
