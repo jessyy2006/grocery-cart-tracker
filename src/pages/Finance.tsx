@@ -486,212 +486,197 @@ function FinanceCardView(props: any) {
     maxBar,
     rotatingInsight,
   } = props;
-  return (
-    <>
-
-      {/* Budget card */}
-      <Card className="p-5">
-        {!hasBudget ? (
-          <div className="flex flex-col items-start gap-3">
-            <div>
-              <div className="text-lg font-semibold">Set your monthly budget</div>
-              <div className="text-sm text-muted-foreground">
-                Track how much you have left to spend on groceries.
-              </div>
-            </div>
-            <Button onClick={openEditBudget}>Set budget</Button>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-baseline justify-between">
-              <div>
-                <div className="text-3xl font-bold tracking-tight">
-                  {formatMoney(Math.abs(remaining))}{" "}
-                  <span className={over ? "text-destructive" : "text-muted-foreground"}>
-                    {over ? "over" : "left"}
-                  </span>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  of {formatMoney(budgetCents!)} monthly budget
-                </div>
-              </div>
-              <div
-                className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                  over ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {pctUsed}% used
-              </div>
-            </div>
-            <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className={`h-full ${over ? "bg-destructive" : "bg-accent"}`}
-                style={{ width: `${Math.min(100, pctUsed)}%` }}
-              />
-            </div>
-          </>
-        )}
-      </Card>
-
-
-      {/* Behavior signals */}
-      <div className="grid grid-cols-3 gap-2">
-        <SignalCard
-          label="Impulse"
-          value={formatMoney(derived.extrasNow.cents)}
-          sub={`${derived.extrasNow.count} items · ${impulseRate}%`}
-          delta={extrasDelta}
-          invert
-        />
-        <SignalCard
-          label="Avg trip"
-          value={formatMoney(derived.avgTrip)}
-          sub={`${derived.monthTrips} trip${derived.monthTrips === 1 ? "" : "s"}`}
-        />
-        <SignalCard
-          label="vs last month"
-          value={`${derived.momDelta < 0 ? "↓" : derived.momDelta > 0 ? "↑" : ""} ${formatMoney(
-            Math.abs(derived.momDelta)
-          )}`}
-          sub={derived.momDelta === 0 ? "no change" : derived.momDelta < 0 ? "less spent" : "more spent"}
-        />
+  if (!hasBudget) {
+    return (
+      <div className="space-y-3">
+        <div className="text-lg font-semibold">Set your monthly budget</div>
+        <div className="text-sm text-muted-foreground">
+          Track how much you have left to spend on groceries.
+        </div>
+        <Button onClick={openEditBudget}>Set budget</Button>
       </div>
+    );
+  }
 
-      {/* Monthly chart */}
-      <Card className="p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <div className="text-sm font-semibold">Last 6 months</div>
-          {hasBudget && (
-            <div className="text-xs text-muted-foreground">
-              Budget {formatMoney(budgetCents!)}
+  const monoLabel = "font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground";
+  const monoTiny = "font-mono text-[10px] lowercase tracking-wider text-muted-foreground";
+  const maxBarVal = Math.max(...derived.series.map((s: { cents: number }) => s.cents), 1);
+  const currentMonthKey = derived.series[derived.series.length - 1]?.key;
+  const hasAnyTrips = derived.series.some((s: { cents: number }) => s.cents > 0);
+  const dottedLeader = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .";
+
+  return (
+    <div className="space-y-10">
+      {/* A — SUMMARY HERO */}
+      <section className="space-y-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-[40px] font-bold leading-[1.05] tracking-tight text-foreground">
+              {formatMoney(Math.abs(remaining))}{" "}
+              <span className={over ? "text-destructive" : "text-foreground"}>
+                {over ? "over" : "left"}
+              </span>
             </div>
-          )}
+            <div className={`mt-1.5 ${monoTiny}`}>
+              of {formatMoney(budgetCents!)} monthly budget threshold
+            </div>
+          </div>
+          <div className="shrink-0 pt-2 font-mono text-[10px] font-bold tracking-wider text-foreground">
+            [ {pctUsed}% used ]
+          </div>
         </div>
-        <div className="h-48 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={derived.series.map((s) => ({ ...s, value: s.cents / 100 }))}>
-              <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} />
-              <YAxis hide />
-              <Tooltip
-                cursor={{ fill: "hsl(var(--muted))" }}
-                formatter={(v: number) => formatMoney(Math.round(v * 100))}
-                labelClassName="text-xs"
-                contentStyle={{
-                  background: "hsl(var(--popover))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-              />
-              {hasBudget && (
-                <ReferenceLine
-                  y={(budgetCents ?? 0) / 100}
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeDasharray="3 3"
-                />
-              )}
-              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                {derived.series.map((s, i) => (
-                  <Cell
-                    key={i}
-                    fill={
-                      hasBudget && s.cents > (budgetCents ?? 0)
-                        ? "hsl(var(--destructive))"
-                        : "hsl(var(--accent))"
-                    }
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-[hsl(40_26%_86%)]">
+          <div
+            className={`h-full ${over ? "bg-destructive" : "bg-foreground"}`}
+            style={{ width: `${Math.min(100, pctUsed)}%` }}
+          />
         </div>
-      </Card>
+      </section>
 
-      {/* Breakdown */}
-      <Card className="p-4">
-        <div className="mb-3 text-sm font-semibold">This month's breakdown</div>
-        {derived.monthSpend === 0 ? (
-          <EmptyMonth />
-        ) : (
-          <Tabs defaultValue="categories">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="categories">Categories</TabsTrigger>
-              <TabsTrigger value="stores">Stores</TabsTrigger>
-            </TabsList>
-            <TabsContent value="categories" className="mt-3 space-y-2">
-              {derived.byCategory.map(([slug, cents]: [string, number]) => {
-                const cat = getCategory(slug);
-                const pct = Math.round((cents / derived.monthSpend) * 100);
-                const prevCents = derived.byCategoryPrev.get(slug) ?? 0;
-                const hasPrevData = derived.byCategoryPrev.size > 0;
-                const delta = cents - prevCents;
-                const showDelta = hasPrevData && delta !== 0;
-                const isUp = delta > 0;
-                return (
-                  <div key={slug} className="rounded-xl border border-border p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="text-sm font-medium">
-                        <span className="mr-2">{cat.emoji}</span>
-                        {cat.label}
-                      </div>
-                      <div className="flex items-center gap-2 text-right">
-                        <div className="text-sm font-semibold">{formatMoney(cents)}</div>
-                        {showDelta && (
-                          <div
-                            className={`flex items-center gap-0.5 text-[11px] ${
-                              isUp ? "text-destructive" : "text-success"
-                            }`}
-                          >
-                            <span>{isUp ? "↑" : "↓"}</span>
-                            <span className="tabular-nums">
-                              {isUp ? "+" : "-"}
-                              {formatMoney(Math.abs(delta))}
-                            </span>
-                            <span className="text-muted-foreground">vs last mo</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full bg-accent"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </TabsContent>
-            <TabsContent value="stores" className="mt-3 space-y-2">
-              {derived.byStore.map(([store, cents]) => (
+      {/* B — STATS GRID */}
+      <section className="grid grid-cols-3">
+        <StatColumn
+          label="impulse"
+          value={formatMoney(derived.extrasNow.cents)}
+          meta={`${derived.extrasNow.count} item${derived.extrasNow.count === 1 ? "" : "s"} · ${impulseRate}%`}
+        />
+        <StatColumn
+          label="avg/trip"
+          value={formatMoney(derived.avgTrip)}
+          meta={`${derived.monthTrips} trip${derived.monthTrips === 1 ? "" : "s"} total`}
+          bordered
+        />
+        <StatColumn
+          label="vs last"
+          value={
+            <span className={derived.momDelta < 0 ? "text-[hsl(163_94%_24%)]" : derived.momDelta > 0 ? "text-destructive" : ""}>
+              {derived.momDelta < 0 ? "↓ " : derived.momDelta > 0 ? "↑ " : ""}
+              {formatMoney(Math.abs(derived.momDelta))}
+            </span>
+          }
+          meta={
+            derived.momDelta === 0 ? (
+              <span>no change</span>
+            ) : derived.momDelta < 0 ? (
+              <span className="font-bold text-[hsl(163_94%_24%)]">SAVED</span>
+            ) : (
+              <span className="font-bold text-destructive">OVER</span>
+            )
+          }
+          bordered
+        />
+      </section>
+
+      {/* C — BAR CHART */}
+      <section>
+        <div className="flex h-40 items-end gap-3 px-1">
+          {derived.series.map((s: { key: string; cents: number }) => {
+            const h = Math.max(2, Math.round((s.cents / maxBarVal) * 100));
+            const isCurrent = s.key === currentMonthKey;
+            const isPast = !isCurrent && s.cents > 0;
+            return (
+              <div key={s.key} className="flex flex-1 flex-col items-stretch justify-end">
                 <div
-                  key={store}
-                  className="flex items-center justify-between rounded-xl border border-border p-3"
-                >
-                  <div className="text-sm font-medium">{store}</div>
-                  <div className="text-sm font-semibold">{formatMoney(cents)}</div>
+                  className={`rounded-t-[4px] ${
+                    isCurrent
+                      ? "bg-foreground"
+                      : isPast
+                      ? "bg-[hsl(40_26%_86%)]"
+                      : "bg-[hsl(40_26%_86%)] opacity-50"
+                  }`}
+                  style={{ height: `${h}%` }}
+                />
+              </div>
+            );
+          })}
+        </div>
+        <div className="border-t border-[hsl(40_26%_86%)]" />
+        <div className="flex gap-3 px-1 pt-1.5">
+          {derived.series.map((s: { key: string; label: string }) => (
+            <div key={s.key} className={`flex-1 text-center ${monoTiny}`}>
+              {s.label.toLowerCase()}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* D — BREAKDOWN MANIFEST */}
+      {derived.monthSpend > 0 && (
+        <section className="space-y-4">
+          <div>
+            <div className={monoLabel}>breakdown by group</div>
+            <div className={`mt-0.5 ${monoTiny}`}>compared to last month</div>
+          </div>
+          <div className="space-y-3">
+            {derived.byCategory.map(([slug, cents]: [string, number]) => {
+              const cat = getCategory(slug);
+              const prevCents = derived.byCategoryPrev.get(slug) ?? 0;
+              const hasPrevData = derived.byCategoryPrev.size > 0;
+              const delta = cents - prevCents;
+              const showDelta = hasPrevData && delta !== 0;
+              const isUp = delta > 0;
+              return (
+                <div key={slug} className="flex items-baseline gap-2">
+                  <div className="flex shrink-0 items-baseline gap-1.5 text-sm text-foreground">
+                    <span>{cat.emoji}</span>
+                    <span className="lowercase">{cat.label}</span>
+                  </div>
+                  <div className="min-w-0 flex-1 select-none overflow-hidden whitespace-nowrap text-muted-foreground/50">
+                    {dottedLeader}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-sm font-semibold tabular-nums text-foreground">
+                      {formatMoney(cents)}
+                    </div>
+                    {showDelta && (
+                      <div
+                        className={`text-[11px] tabular-nums ${
+                          isUp ? "text-destructive" : "text-[hsl(163_94%_24%)]"
+                        }`}
+                      >
+                        {isUp ? "↑ +" : "↓ -"}
+                        {formatMoney(Math.abs(delta))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {derived.byStore.length > 0 && (
+            <div className="space-y-3 pt-4">
+              <div className={monoLabel}>by store</div>
+              {derived.byStore.map(([store, cents]: [string, number]) => (
+                <div key={store} className="flex items-baseline gap-2">
+                  <div className="shrink-0 text-sm lowercase text-foreground">{store}</div>
+                  <div className="min-w-0 flex-1 select-none overflow-hidden whitespace-nowrap text-muted-foreground/50">
+                    {dottedLeader}
+                  </div>
+                  <div className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
+                    {formatMoney(cents)}
+                  </div>
                 </div>
               ))}
-            </TabsContent>
-          </Tabs>
-        )}
-      </Card>
-
-      {/* Single rotating insight */}
-      {rotatingInsight && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4" /> Insight
-          </div>
-          <Card className="p-4">
-            <div className="text-sm font-semibold">{rotatingInsight.title}</div>
-            <div className="mt-1 text-sm text-muted-foreground">{rotatingInsight.body}</div>
-          </Card>
-        </div>
+            </div>
+          )}
+        </section>
       )}
 
-      {!derived.series.some((s: { cents: number }) => s.cents > 0) && (
-        <Card className="p-6 text-center">
+      {/* E — INSIGHT FOOTNOTE */}
+      {rotatingInsight && (
+        <section className="space-y-2 border-t border-[hsl(40_26%_86%)] pt-5">
+          <div className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+            insights
+          </div>
+          <p className="font-display text-[15px] italic leading-snug text-foreground">
+            {rotatingInsight.body}
+          </p>
+        </section>
+      )}
+
+      {!hasAnyTrips && (
+        <div className="border-t border-[hsl(40_26%_86%)] pt-6 text-center">
           <div className="text-sm font-medium">No trips yet</div>
           <div className="mt-1 text-sm text-muted-foreground">
             Start tracking trips to see your spending insights.
@@ -699,52 +684,35 @@ function FinanceCardView(props: any) {
           <Button asChild className="mt-3">
             <Link to="/">Start a trip</Link>
           </Button>
-        </Card>
+        </div>
       )}
-    </>
-  );
-}
-
-function SignalCard({
-  label,
-  value,
-  sub,
-  delta,
-  invert,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  delta?: number;
-  invert?: boolean;
-}) {
-  // For "invert" (extras): up is bad → red, down is good → green.
-  const showDelta = typeof delta === "number" && delta !== 0;
-  const isUp = (delta ?? 0) > 0;
-  const good = invert ? !isUp : isUp;
-  return (
-    <Card className="p-3">
-      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </div>
-      <div className="mt-1 text-base font-bold leading-tight">{value}</div>
-      <div className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-        {showDelta &&
-          (isUp ? (
-            <ArrowUp className={`h-3 w-3 ${good ? "text-success" : "text-destructive"}`} />
-          ) : (
-            <ArrowDown className={`h-3 w-3 ${good ? "text-success" : "text-destructive"}`} />
-          ))}
-        <span>{sub}</span>
-      </div>
-    </Card>
-  );
-}
-
-function EmptyMonth() {
-  return (
-    <div className="py-6 text-center text-sm text-muted-foreground">
-      No spending recorded this month yet.
     </div>
   );
 }
+
+function StatColumn({
+  label,
+  value,
+  meta,
+  bordered,
+}: {
+  label: string;
+  value: React.ReactNode;
+  meta: React.ReactNode;
+  bordered?: boolean;
+}) {
+  return (
+    <div className={`flex flex-col items-start gap-1 px-3 ${bordered ? "border-l border-[hsl(40_26%_86%)]" : ""}`}>
+      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+        [ {label} ]
+      </div>
+      <div className="text-[17px] font-bold leading-tight tabular-nums text-foreground">
+        {value}
+      </div>
+      <div className="font-mono text-[10px] lowercase tracking-wide text-muted-foreground">
+        {meta}
+      </div>
+    </div>
+  );
+}
+
