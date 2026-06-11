@@ -63,6 +63,10 @@
     --input: 36 20% 86%;
     --ring: 145 55% 28%;
 
+    /* Deep forest green — primary CTA color */
+    --forest: 150 45% 18%;
+    --forest-foreground: 38 40% 97%;
+
     --receipt-paper: 40 35% 97%;
     --receipt-ink: 150 35% 10%;
 

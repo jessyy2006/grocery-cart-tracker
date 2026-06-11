@@ -3,13 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, ListChecks, Trash2, ArrowRight } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/PageHeader";
-import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { MarketLoader } from "@/components/MarketLoader";
 import { formatDistanceToNow } from "date-fns";
 
@@ -58,63 +56,64 @@ export default function Lists() {
     await supabase.from("shopping_lists").delete().eq("id", id);
   };
 
+  const ctaClasses =
+    "h-12 w-full rounded-[4px] bg-forest text-forest-foreground text-[14px] lowercase tracking-tight transition-opacity hover:opacity-90";
+
   return (
-    <div className="space-y-7 px-5 pt-3">
-      <PageHeader eyebrow="Plan your run" title="Your lists" />
+    <div className="space-y-7 px-5 pt-3 pb-8">
+      <PageHeader
+        eyebrow="plan your run"
+        title="your lists"
+        className="[&_h1]:text-display [&_h1]:lowercase [&_.text-eyebrow]:font-mono [&_.text-eyebrow]:normal-case [&_.text-eyebrow]:tracking-[0.14em] [&_.text-eyebrow]:font-normal"
+      />
 
       {!ready ? (
         <MarketLoader minHeight="55vh" />
       ) : lists.length === 0 ? (
-        <Card className="flex flex-col items-center justify-center p-10 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/60">
-            <ListChecks className="h-6 w-6 text-primary" strokeWidth={1.75} />
-          </div>
-          <p className="mt-4 text-h2">No lists yet</p>
-          <p className="mt-1 text-small text-muted-foreground max-w-[26ch]">
-            Build a list to plan your next market run.
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <p className="font-display text-[1.5rem] lowercase tracking-tight">no lists yet</p>
+          <p className="mt-2 font-mono text-[12px] lowercase text-muted-foreground max-w-[28ch]">
+            build a list to plan your next market run.
           </p>
-          <Button variant="hero" size="lg" className="mt-5" onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4" /> New list
-          </Button>
-        </Card>
+          <button onClick={() => setOpen(true)} className={`${ctaClasses} mt-8 max-w-xs`}>
+            [ + create a new list ]
+          </button>
+        </div>
       ) : (
-        <ul className="space-y-3 pb-4">
-          {lists.map((l) => {
-            const total = l.shopping_list_items?.length ?? 0;
-            return (
-              <li key={l.id}>
-                <Card className="group relative overflow-hidden">
+        <>
+          <ul className="divide-y divide-foreground/10">
+            {lists.map((l) => {
+              const total = l.shopping_list_items?.length ?? 0;
+              const sub = `→ ${total} item${total === 1 ? "" : "s"} · updated ${formatDistanceToNow(new Date(l.updated_at), { addSuffix: true })}`.toLowerCase();
+              return (
+                <li key={l.id} className="group relative">
                   <button
                     onClick={() => navigate(`/lists/${l.id}`)}
-                    className="flex w-full items-center gap-3 p-5 text-left"
+                    className="flex w-full flex-col items-start gap-0.5 py-5 pr-10 text-left transition-opacity hover:opacity-70"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-eyebrow">
-                        {total === 0 ? "Empty list" : `${total} item${total === 1 ? "" : "s"}`}
-                      </p>
-                      <p className="mt-1 text-h2 truncate">{l.name}</p>
-                      <p className="mt-1 text-small text-muted-foreground">
-                        Updated {formatDistanceToNow(new Date(l.updated_at), { addSuffix: true })}
-                      </p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <p className="text-[15px] lowercase text-foreground truncate max-w-full">
+                      {l.name.toLowerCase()}
+                    </p>
+                    <p className="font-mono text-[12px] lowercase text-muted-foreground truncate max-w-full">
+                      {sub}
+                    </p>
                   </button>
                   <button
                     onClick={() => remove(l.id)}
-                    className="absolute right-3 top-3 p-2 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                     aria-label="Delete list"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
-                </Card>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                </li>
+              );
+            })}
+          </ul>
 
-      {ready && lists.length > 0 && (
-        <FloatingActionButton label="New list" position="center" onClick={() => setOpen(true)} />
+          <button onClick={() => setOpen(true)} className={ctaClasses}>
+            [ + create a new list ]
+          </button>
+        </>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>

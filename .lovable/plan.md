@@ -1,62 +1,62 @@
-# Editorial Market Ledger Overhaul
+# Forest-green CTAs + Lists notebook overhaul
 
-A typographic refresh across Home + History, plus a redesigned Hero Card on Home. No data-model changes, no behavior changes — pure presentation.
+A focused presentation pass: introduce a deep forest-green primary CTA, rebuild the Lists page in the same editorial ledger style as Home/History, and confirm the typographic hierarchy is consistent everywhere.
 
-## 1. Typographic hierarchy (shared)
+## 1. Forest-green design token
 
-Establish two contrasting type registers used app-wide on these screens:
+Add a new semantic color in `src/index.css`:
 
-- **Section anchors** (Home: "recent trips"; History: page title "history") — `font-display` (Fraunces) at ~28px, weight 500, lowercase, tight tracking. Drops the current tiny `text-small lowercase muted` styling.
-- **Group subheads** (History month bands "june 2026", "may 2026") — `font-mono` (JetBrains Mono) at ~11px, uppercase-lowercase preserved as lowercase, muted-foreground, `tracking-[0.14em]`. A typewriter-style ledger label that visibly differs from the serif anchors.
-- All text in headers, subheads, and list rows stays lowercase (already in TripTapeRow; extended to new spots).
+- `--forest: 150 45% 18%` (deep, velvety — darker and slightly cooler than current `--primary` leaf green)
+- `--forest-foreground: 38 40% 97%` (cream)
 
-## 2. Home Hero Card redesign
+Register matching Tailwind colors `forest` / `forest-foreground` in `tailwind.config.ts` so we can write `bg-forest text-forest-foreground` without hardcoded hex.
 
-Greeting/title (`PageHeader` with "Thursday market run?") stays **outside and above** the card — unchanged structurally, just confirmed.
+Scope: only the two primary CTAs ("start a live trip", "+ create a new list") use this token. The existing `--primary` leaf green stays for incidental UI (links, focus rings, icon accents).
 
-Rebuild the `HeroCard` block on `src/pages/Home.tsx` as:
+## 2. Home page (`src/pages/Home.tsx`)
 
-```text
-┌─────────────────────────────────────────┐
-│  THIS MONTH                       [ 📷 ] │
-│                                          │
-│  $45.85                                  │
-│                                          │
-│  tracked across your saved trips.        │
-│  ── 32% of this month's budget utilized  │
-│                                          │
-│  [        start a live trip         ]    │
-└─────────────────────────────────────────┘
-```
+- Replace the CTA classes on the hero "[ start a live trip ]" button:
+  - From `bg-foreground text-background ... rounded-[4px]`
+  - To `bg-forest text-forest-foreground rounded-[4px] h-12 w-full text-[14px] lowercase tracking-tight hover:opacity-90`
+- Greeting (`Thursday market run?`) already lives outside the card via `PageHeader` — no change.
+- Scan icon stays top-right of card — no change.
+- Budget monospace line stays — no change.
 
-Specifics:
-- Replace `HeroCard` (rounded-xl, soft cream) with a plain `<section>`: `bg-surface-raised` (pure white), `rounded-[6px]`, `shadow-soft`, no border. Padding `p-6`, button row flush to bottom edges via inner layout.
-- Top row: `THIS MONTH` eyebrow on the left; the existing scan icon button absolutely positioned top-right inside the card (same icon button styling already used).
-- `$45.85` rendered via existing `<Money size="display" />`.
-- Subtext line unchanged ("tracked across your saved trips." / empty-state copy).
-- New budget line beneath subtext: `font-mono text-[12px] lowercase text-muted-foreground` reading `── {pct}% of this month's budget utilized`. Fetch `user_budgets.monthly_cents` in the same Home `useEffect` (parallel with existing queries). Hide the line entirely when no budget is set or `monthSpend === 0`.
-- Full-width CTA: replace the current green `variant="hero"` Button with a sharp rectangular button — `bg-foreground text-background`, `rounded-[4px]`, `h-12`, `w-full`, lowercase label `start a live trip`, no icon. Sits as the bottom row of the card with a small top margin.
+## 3. Lists page (`src/pages/Lists.tsx`) — full overhaul
 
-## 3. History page header
+Rebuild to match the receipt-tape / editorial-ledger style used on Home & History.
 
-`src/pages/History.tsx`:
-- Replace the `PageHeader` title styling for "History" so the title renders lowercase serif at the same scale as Home's "recent trips" anchor. Easiest: keep `PageHeader` but pass `title="history"` (lowercase) — the existing `text-h1` is already Fraunces. Bump to `text-display` for parity. Drop the "Past runs" eyebrow.
-- Month group headers: swap current `text-small lowercase text-muted-foreground` to `font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground`. Keep `sticky top-0 bg-background`.
-- Keep the scan icon + month select in the top-right action slot (already there).
+- `PageHeader`: keep `eyebrow="Plan your run"` (renders lowercase mono via existing PageHeader styling — verify it matches History; otherwise pass a className override identical to History's `[&_h1]:text-display [&_h1]:lowercase`). Title becomes `"your lists"` (lowercase serif).
+- Remove `Card` wrapper around each list row. Render as a flat `<ul className="divide-y divide-foreground/10">` (solid hairline, not dashed — notebook ruling).
+- Each row: borderless `<button>` mirroring `TripTapeRow` structure:
+  - Line 1: `text-[15px] lowercase text-foreground` — list name
+  - Line 2: `font-mono text-[12px] lowercase text-muted-foreground` — `→ {n} items · updated {relative}`
+  - Right side: small chevron/arrow in muted gray, OR omit for max cleanliness
+  - Trash action stays on hover (absolute, top-right of row, smaller)
+- Empty state: keep simple — strip the heavy Card; use a flat centered block with serif title + mono subtext + the new forest CTA below.
+- Replace the floating `FloatingActionButton` with a full-width, in-flow CTA at the bottom of the canvas:
+  - `bg-forest text-forest-foreground rounded-[4px] h-12 w-full text-[14px] lowercase tracking-tight`
+  - Label: `[ + create a new list ]`
+  - Remove `FloatingActionButton` import + usage.
+- Keep the New-list `Dialog` flow exactly as is (functionality untouched).
 
-## 4. Home "recent trips" section
+## 4. History typographic check
 
-`src/pages/Home.tsx`:
-- Section heading "recent trips" → `font-display text-[1.75rem] leading-none lowercase` (matches History anchor). The "see all →" link stays small/muted on the right, vertically aligned to baseline.
-- List already uses `TripTapeRow` with `divide-dashed`; soften the perforation: `divide-foreground/10` (paper-thin) and confirm rows render two-line layout (already correct).
+Already conforms:
+- Title `"history"` renders via `[&_h1]:text-display [&_h1]:lowercase` (serif).
+- Month group headers use `font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground`.
 
-## 5. Out of scope
-
-- No changes to `TripTapeRow` internals (already matches the 2-line spec).
-- No changes to `FloatingActionButton`, bottom sheet, drawers, TripDetail, or any data writes.
-- No new dependencies. No design tokens added (uses existing `font-display`, `font-mono`, `--shadow-soft`, `--foreground`/`--background`).
+No changes needed unless something visually drifts after the token addition — will spot-check after build.
 
 ## Files touched
 
-- `src/pages/Home.tsx` — rebuild HeroCard JSX, fetch budget, restyle "recent trips" heading, soften divider.
-- `src/pages/History.tsx` — restyle PageHeader title, restyle month subheads.
+- `src/index.css` — add `--forest` + `--forest-foreground`
+- `tailwind.config.ts` — register `forest` / `forest-foreground` color tokens
+- `src/pages/Home.tsx` — swap CTA color classes
+- `src/pages/Lists.tsx` — full rebuild of list rows + CTA, remove FAB
+
+## Out of scope
+
+- No backend/data changes
+- No changes to `TripTapeRow`, `FloatingActionButton` component, dialogs, or History page
+- `--primary` token unchanged (other surfaces still use leaf green)
