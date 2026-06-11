@@ -309,7 +309,7 @@ export default function TripDetail() {
         </div>
 
         {/* Bag-handle tab */}
-        <div className="relative mx-auto mt-3 flex flex-col items-center">
+        <div className="relative mx-auto mt-10 flex flex-col items-center">
           <button
             type="button"
             onClick={handleRevisit}
