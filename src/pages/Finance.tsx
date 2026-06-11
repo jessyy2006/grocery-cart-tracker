@@ -47,6 +47,7 @@ export default function Finance() {
   // currency hook called below
   const [loading, setLoading] = useState(true);
   const [budgetCents, setBudgetCents] = useState<number | null>(null);
+  const [budgetHistory, setBudgetHistory] = useState<Map<string, number>>(new Map());
   const [trips, setTrips] = useState<Trip[]>([]);
   const [items, setItems] = useState<TripItem[]>([]);
   const [listItems, setListItems] = useState<ListItem[]>([]);
@@ -71,7 +72,7 @@ export default function Finance() {
       sixMonthsAgo.setDate(1);
       sixMonthsAgo.setHours(0, 0, 0, 0);
 
-      const [budgetRes, tripsRes] = await Promise.all([
+      const [budgetRes, tripsRes, historyRes] = await Promise.all([
         supabase.from("user_budgets").select("monthly_cents").eq("user_id", user.id).maybeSingle(),
         supabase
           .from("trips")
@@ -79,11 +80,37 @@ export default function Finance() {
           .eq("status", "saved")
           .gte("started_at", sixMonthsAgo.toISOString())
           .order("started_at", { ascending: false }),
+        supabase
+          .from("user_budget_history")
+          .select("month_start, monthly_cents")
+          .eq("user_id", user.id)
+          .gte("month_start", sixMonthsAgo.toISOString().slice(0, 10)),
       ]);
 
-      setBudgetCents(budgetRes.data?.monthly_cents ?? null);
+      const currentBudget = budgetRes.data?.monthly_cents ?? null;
+      setBudgetCents(currentBudget);
       const tripRows = (tripsRes.data ?? []) as Trip[];
       setTrips(tripRows);
+
+      const hist = new Map<string, number>();
+      for (const row of (historyRes.data ?? []) as { month_start: string; monthly_cents: number }[]) {
+        const d = new Date(row.month_start);
+        hist.set(monthKey(d), row.monthly_cents);
+      }
+      // Backfill current month from current budget if missing
+      const nowD = new Date();
+      const curKey = monthKey(nowD);
+      if (currentBudget && !hist.has(curKey)) {
+        const monthStart = new Date(nowD.getFullYear(), nowD.getMonth(), 1);
+        hist.set(curKey, currentBudget);
+        await supabase
+          .from("user_budget_history")
+          .upsert(
+            { user_id: user.id, month_start: monthStart.toISOString().slice(0, 10), monthly_cents: currentBudget },
+            { onConflict: "user_id,month_start" },
+          );
+      }
+      setBudgetHistory(hist);
 
       if (tripRows.length) {
         const ids = tripRows.map((t) => t.id);
@@ -293,7 +320,20 @@ export default function Finance() {
       toast.error(error.message);
       return;
     }
+    const nowD = new Date();
+    const monthStart = new Date(nowD.getFullYear(), nowD.getMonth(), 1);
+    await supabase
+      .from("user_budget_history")
+      .upsert(
+        { user_id: user.id, month_start: monthStart.toISOString().slice(0, 10), monthly_cents: cents },
+        { onConflict: "user_id,month_start" },
+      );
     setBudgetCents(cents);
+    setBudgetHistory((prev) => {
+      const next = new Map(prev);
+      next.set(monthKey(nowD), cents);
+      return next;
+    });
     setEditOpen(false);
     toast.success("Budget updated");
   };
@@ -429,6 +469,7 @@ export default function Finance() {
           impulseClass={impulseClass}
           extrasDelta={extrasDelta}
           maxBar={maxBar}
+          budgetHistory={budgetHistory}
           rotatingInsight={rotatingInsight}
         />
       )}
@@ -473,8 +514,10 @@ function FinanceCardView(props: any) {
     impulseClass,
     extrasDelta,
     maxBar,
+    budgetHistory,
     rotatingInsight,
   } = props;
+  const budgetHistMap: Map<string, number> = budgetHistory ?? new Map();
   const currentMonthKey = derived.series[derived.series.length - 1]?.key as string | undefined;
   const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(currentMonthKey ?? null);
   if (!hasBudget) {
@@ -491,7 +534,8 @@ function FinanceCardView(props: any) {
 
   const sectionAnchor = "text-eyebrow";
   const monoTiny = "text-[11px] lowercase tracking-wide text-muted-foreground";
-  const maxBarVal = Math.max(...derived.series.map((s: { cents: number }) => s.cents), 1);
+  const maxHistBudget = Math.max(0, ...Array.from(budgetHistMap.values()));
+  const maxBarVal = Math.max(maxHistBudget, budgetCents ?? 0, 1);
   const hasAnyTrips = derived.series.some((s: { cents: number }) => s.cents > 0);
   const dottedLeader = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .";
 
@@ -518,7 +562,7 @@ function FinanceCardView(props: any) {
           <div className="min-w-0">
             <div className="text-money text-[44px] leading-[1.02] tracking-tight text-foreground">
               {formatMoney(Math.abs(remaining))}{" "}
-              <span className={over ? "text-destructive" : "text-foreground"}>
+              <span className={over ? "text-destructive" : "text-muted-foreground"}>
                 {over ? "over" : "left"}
               </span>
             </div>
@@ -597,7 +641,8 @@ function FinanceCardView(props: any) {
               const isCurrent = s.key === currentMonthKey;
               const isPast = !isCurrent && s.cents > 0;
               const isSelected = s.key === selectedMonthKey;
-              const goalPct = budgetCents ? Math.min(100, (budgetCents / niceMax) * 100) : 0;
+              const monthBudget = budgetHistMap.get(s.key) ?? (isCurrent ? budgetCents : null);
+              const goalPct = monthBudget ? Math.min(100, (monthBudget / niceMax) * 100) : 0;
               return (
                 <button
                   key={s.key}
@@ -614,7 +659,7 @@ function FinanceCardView(props: any) {
                       {formatMoney(s.cents)}
                     </div>
                   )}
-                  {budgetCents ? (
+                  {monthBudget ? (
                     <div
                       className="pointer-events-none absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-foreground"
                       style={{ bottom: `${goalPct}%` }}
@@ -676,12 +721,12 @@ function FinanceCardView(props: any) {
                     {dottedLeader}
                   </div>
                   <div className="shrink-0 text-right">
-                    <div className="text-sm font-semibold tabular-nums text-foreground">
+                    <div className="text-money text-sm tabular-nums text-foreground">
                       {formatMoney(cents)}
                     </div>
                     {showDelta && (
                       <div
-                        className={`text-[11px] tabular-nums ${
+                        className={`text-money text-[11px] tabular-nums ${
                           isUp ? "text-destructive" : "text-[hsl(163_94%_24%)]"
                         }`}
                       >
@@ -704,7 +749,7 @@ function FinanceCardView(props: any) {
                   <div className="min-w-0 flex-1 select-none overflow-hidden whitespace-nowrap text-muted-foreground/50">
                     {dottedLeader}
                   </div>
-                  <div className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
+                  <div className="text-money shrink-0 text-sm tabular-nums text-foreground">
                     {formatMoney(cents)}
                   </div>
                 </div>
@@ -755,7 +800,7 @@ function StatColumn({
       <div className="text-[10px] font-semibold uppercase tracking-[0.10em] text-foreground">
         {label}
       </div>
-      <div className="text-money text-[22px] leading-tight tabular-nums text-foreground">
+      <div className="text-money text-[18px] leading-tight tabular-nums text-foreground">
         {value}
       </div>
       <div className="text-[11px] lowercase tracking-wide text-muted-foreground">

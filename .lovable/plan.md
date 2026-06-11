@@ -1,62 +1,31 @@
-# Forest-green CTAs + Lists notebook overhaul
+## Plan
 
-A focused presentation pass: introduce a deep forest-green primary CTA, rebuild the Lists page in the same editorial ledger style as Home/History, and confirm the typographic hierarchy is consistent everywhere.
+### 1. Budget history → drives y-axis max
+Add a per-month budget snapshot so the chart can scale to the largest budget you've ever set in the last 6 months.
 
-## 1. Forest-green design token
+- New table `public.user_budget_history(user_id, month_start date, monthly_cents, created_at)` with `unique(user_id, month_start)`.
+- Standard RLS (`auth.uid() = user_id`) + GRANTs for `authenticated` and `service_role`.
+- On every save in the budget dialog (`saveBudget` in `Finance.tsx`): also upsert a row for the current month (`month_start = first day of current month`). Backfill the current month from existing `user_budgets` on first load if no row exists.
+- `Finance.tsx` fetches the last 6 months of history alongside trips. `niceMax` becomes `max(history.monthly_cents over last 6 months)`, falling back to current `budgetCents` if history is empty. Bars still render at their true height — if a month's spend exceeds the axis max it'll clip at 100% (acceptable; the goal-dot still marks that month's budget).
+- Goal dot per bar now uses **that month's** historical budget (not the current one), so each bar shows its own target.
 
-Add a new semantic color in `src/index.css`:
+### 2. Stat number sizing
+Only the three stat columns wrap. Shrink them by 4px; leave hero untouched.
 
-- `--forest: 150 45% 18%` (deep, velvety — darker and slightly cooler than current `--primary` leaf green)
-- `--forest-foreground: 38 40% 97%` (cream)
+- `StatColumn` value: `text-[22px]` → `text-[18px]`.
+- Hero `$XXX.XX left` stays at `text-[44px]`.
 
-Register matching Tailwind colors `forest` / `forest-foreground` in `tailwind.config.ts` so we can write `bg-forest text-forest-foreground` without hardcoded hex.
+### 3. "left" / "over" color
+Currently `text-foreground` (near-black). Change to `text-muted-foreground` (the lighter warm brown already used app-wide, `hsl(35 7% 45%)`). `over` stays `text-destructive`.
 
-Scope: only the two primary CTAs ("start a live trip", "+ create a new list") use this token. The existing `--primary` leaf green stays for incidental UI (links, focus rings, icon accents).
+### 4. Unify breakdown number font
+The "breakdown by group" and "breakdown by store" rows use `text-sm font-semibold tabular-nums` (Inter Tight). Switch the dollar values (and the ↑/↓ delta amounts beneath them) to the `text-money` utility (JetBrains Mono) so they match `$3.00`, `$17.28`, etc. elsewhere on the page.
 
-## 2. Home page (`src/pages/Home.tsx`)
+### Files touched
+- `supabase/migrations/*` — new `user_budget_history` table (via migration tool, approval required).
+- `src/pages/Finance.tsx` — fetch + write history, recompute `niceMax`, per-bar goal dots, stat font size, "left" color, breakdown font.
 
-- Replace the CTA classes on the hero "[ start a live trip ]" button:
-  - From `bg-foreground text-background ... rounded-[4px]`
-  - To `bg-forest text-forest-foreground rounded-[4px] h-12 w-full text-[14px] lowercase tracking-tight hover:opacity-90`
-- Greeting (`Thursday market run?`) already lives outside the card via `PageHeader` — no change.
-- Scan icon stays top-right of card — no change.
-- Budget monospace line stays — no change.
-
-## 3. Lists page (`src/pages/Lists.tsx`) — full overhaul
-
-Rebuild to match the receipt-tape / editorial-ledger style used on Home & History.
-
-- `PageHeader`: keep `eyebrow="Plan your run"` (renders lowercase mono via existing PageHeader styling — verify it matches History; otherwise pass a className override identical to History's `[&_h1]:text-display [&_h1]:lowercase`). Title becomes `"your lists"` (lowercase serif).
-- Remove `Card` wrapper around each list row. Render as a flat `<ul className="divide-y divide-foreground/10">` (solid hairline, not dashed — notebook ruling).
-- Each row: borderless `<button>` mirroring `TripTapeRow` structure:
-  - Line 1: `text-[15px] lowercase text-foreground` — list name
-  - Line 2: `font-mono text-[12px] lowercase text-muted-foreground` — `→ {n} items · updated {relative}`
-  - Right side: small chevron/arrow in muted gray, OR omit for max cleanliness
-  - Trash action stays on hover (absolute, top-right of row, smaller)
-- Empty state: keep simple — strip the heavy Card; use a flat centered block with serif title + mono subtext + the new forest CTA below.
-- Replace the floating `FloatingActionButton` with a full-width, in-flow CTA at the bottom of the canvas:
-  - `bg-forest text-forest-foreground rounded-[4px] h-12 w-full text-[14px] lowercase tracking-tight`
-  - Label: `[ + create a new list ]`
-  - Remove `FloatingActionButton` import + usage.
-- Keep the New-list `Dialog` flow exactly as is (functionality untouched).
-
-## 4. History typographic check
-
-Already conforms:
-- Title `"history"` renders via `[&_h1]:text-display [&_h1]:lowercase` (serif).
-- Month group headers use `font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground`.
-
-No changes needed unless something visually drifts after the token addition — will spot-check after build.
-
-## Files touched
-
-- `src/index.css` — add `--forest` + `--forest-foreground`
-- `tailwind.config.ts` — register `forest` / `forest-foreground` color tokens
-- `src/pages/Home.tsx` — swap CTA color classes
-- `src/pages/Lists.tsx` — full rebuild of list rows + CTA, remove FAB
-
-## Out of scope
-
-- No backend/data changes
-- No changes to `TripTapeRow`, `FloatingActionButton` component, dialogs, or History page
-- `--primary` token unchanged (other surfaces still use leaf green)
+### Risks
+- Migration needs your approval before code changes ship — I'll run it first, then edit `Finance.tsx`.
+- Bars for months that spent above the axis max will visually clip at the top. Tell me if you'd rather the axis grow to `max(budget, spend)` in that case.
+- No rollback needed for the UI changes; the new table is additive.
