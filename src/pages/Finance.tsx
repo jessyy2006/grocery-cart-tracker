@@ -475,6 +475,8 @@ function FinanceCardView(props: any) {
     maxBar,
     rotatingInsight,
   } = props;
+  const currentMonthKey = derived.series[derived.series.length - 1]?.key as string | undefined;
+  const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(currentMonthKey ?? null);
   if (!hasBudget) {
     return (
       <div className="space-y-3">
@@ -490,9 +492,22 @@ function FinanceCardView(props: any) {
   const sectionAnchor = "text-eyebrow";
   const monoTiny = "text-[11px] lowercase tracking-wide text-muted-foreground";
   const maxBarVal = Math.max(...derived.series.map((s: { cents: number }) => s.cents), 1);
-  const currentMonthKey = derived.series[derived.series.length - 1]?.key;
   const hasAnyTrips = derived.series.some((s: { cents: number }) => s.cents > 0);
   const dottedLeader = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .";
+
+  // Nice axis max: round up to a clean step
+  const niceMax = (() => {
+    const v = maxBarVal;
+    const pow = Math.pow(10, Math.floor(Math.log10(v)));
+    const steps = [1, 2, 2.5, 5, 10];
+    for (const s of steps) {
+      const candidate = s * pow;
+      if (candidate >= v) return candidate;
+    }
+    return v;
+  })();
+  const yTicks = [niceMax, niceMax / 2, 0];
+  const selectedMonth = derived.series.find((s: { key: string }) => s.key === selectedMonthKey) ?? null;
 
   return (
     <div className="space-y-10">
@@ -563,34 +578,77 @@ function FinanceCardView(props: any) {
           <div className={sectionAnchor}>6-month overview</div>
           <div className={monoTiny}>budget limit {formatMoney(budgetCents!)}</div>
         </div>
-        <div className="flex h-40 items-stretch gap-3 px-1">
-          {derived.series.map((s: { key: string; cents: number }) => {
-            const h = Math.max(s.cents > 0 ? 4 : 0, Math.round((s.cents / maxBarVal) * 100));
-            const isCurrent = s.key === currentMonthKey;
-            const isPast = !isCurrent && s.cents > 0;
-            return (
-              <div key={s.key} className="flex flex-1 flex-col justify-end">
-                <div
-                  className={`w-full rounded-t-[4px] ${
-                    isCurrent
-                      ? "bg-primary"
-                      : isPast
-                      ? "bg-[hsl(145_25%_70%)]"
-                      : "bg-[hsl(145_20%_85%)] opacity-60"
-                  }`}
-                  style={{ height: `${h}%` }}
-                />
+
+        {/* Selected month readout */}
+        <div className="flex items-baseline justify-between gap-3 min-h-[20px]">
+          {selectedMonth ? (
+            <>
+              <div className="text-[12px] lowercase text-muted-foreground">
+                {selectedMonth.label.toLowerCase()}
+                {selectedMonth.key === currentMonthKey ? " (this month)" : ""}
               </div>
-            );
-          })}
+              <div className="font-display text-[15px] font-medium tabular-nums text-foreground">
+                {formatMoney(selectedMonth.cents)}
+              </div>
+            </>
+          ) : (
+            <div className="text-[12px] text-muted-foreground">tap a bar to see the total</div>
+          )}
         </div>
-        <div className="border-t border-[hsl(40_26%_86%)]" />
-        <div className="flex gap-3 px-1 pt-1.5">
-          {derived.series.map((s: { key: string; label: string }) => (
-            <div key={s.key} className={`flex-1 text-center ${monoTiny}`}>
-              {s.label.toLowerCase()}
-            </div>
-          ))}
+
+        <div className="flex gap-2">
+          {/* Y axis */}
+          <div className="flex h-40 w-10 flex-col justify-between py-0.5 text-right text-[10px] tabular-nums text-muted-foreground">
+            {yTicks.map((t) => (
+              <div key={t} className="leading-none">{formatMoney(t)}</div>
+            ))}
+          </div>
+          {/* Bars + gridlines */}
+          <div className="relative flex h-40 flex-1 items-stretch gap-3 px-1">
+            {yTicks.map((t, i) => (
+              <div
+                key={i}
+                className="pointer-events-none absolute inset-x-0 border-t border-dashed border-[hsl(40_26%_86%)]"
+                style={{ top: `${(i / (yTicks.length - 1)) * 100}%` }}
+              />
+            ))}
+            {derived.series.map((s: { key: string; cents: number }) => {
+              const h = Math.max(s.cents > 0 ? 4 : 0, Math.round((s.cents / niceMax) * 100));
+              const isCurrent = s.key === currentMonthKey;
+              const isPast = !isCurrent && s.cents > 0;
+              const isSelected = s.key === selectedMonthKey;
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => setSelectedMonthKey(s.key)}
+                  className="relative z-10 flex flex-1 flex-col justify-end focus:outline-none"
+                  aria-label={`${s.key} total ${formatMoney(s.cents)}`}
+                >
+                  <div
+                    className={`w-full rounded-t-[4px] transition-all ${
+                      isCurrent
+                        ? "bg-primary"
+                        : isPast
+                        ? "bg-[hsl(145_25%_70%)]"
+                        : "bg-[hsl(145_20%_85%)] opacity-60"
+                    } ${isSelected ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : ""}`}
+                    style={{ height: `${h}%` }}
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <div className="w-10" />
+          <div className="flex flex-1 gap-3 border-t border-[hsl(40_26%_86%)] px-1 pt-1.5">
+            {derived.series.map((s: { key: string; label: string }) => (
+              <div key={s.key} className={`flex-1 text-center ${monoTiny}`}>
+                {s.label.toLowerCase()}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
