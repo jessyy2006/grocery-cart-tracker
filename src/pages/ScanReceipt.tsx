@@ -489,39 +489,43 @@ export default function ScanReceipt() {
                   <li className="p-4 text-center text-small text-muted-foreground">No items detected</li>
                 )}
                 {items.map((it, idx) => (
-                  <li key={idx} className="grid grid-cols-[1fr_56px_92px_28px] items-center gap-2 p-2.5">
-                    <Input
-                      value={it.name}
-                      onChange={(e) => updateItem(idx, { name: e.target.value })}
-                      placeholder="Item"
-                      className="h-10"
-                    />
-                    <Input
-                      type="number"
-                      min={1}
-                      value={it.qty}
-                      onChange={(e) =>
-                        updateItem(idx, { qty: Math.max(1, parseInt(e.target.value || "1", 10)) })
-                      }
-                      className="h-10 px-2 text-center"
-                    />
-                    <Input
-                      inputMode="decimal"
-                      value={(it.line_total_cents / 100).toFixed(2)}
-                      onChange={(e) => {
-                        const c = parsePriceToCents(e.target.value) ?? 0;
-                        updateItem(idx, { line_total_cents: c });
-                      }}
-                      className="h-10 px-2 text-right"
-                    />
-                    <button
-                      onClick={() => removeItem(idx)}
-                      className="flex h-8 w-8 items-center justify-center rounded text-muted-foreground hover:text-destructive"
-                      aria-label="Remove"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </li>
+                  <SwipeRow key={idx} onDelete={() => removeItem(idx)}>
+                    <div className="grid grid-cols-[1fr_44px_72px] items-center gap-2 bg-card p-2.5">
+                      <Input
+                        value={it.name}
+                        onChange={(e) => updateItem(idx, { name: e.target.value })}
+                        placeholder="Item"
+                        className="h-10"
+                      />
+                      <Input
+                        type="number"
+                        min={1}
+                        max={99}
+                        value={it.qty}
+                        onChange={(e) =>
+                          updateItem(idx, { qty: Math.max(1, parseInt(e.target.value || "1", 10)) })
+                        }
+                        className="h-10 px-1 text-center"
+                      />
+                      <Input
+                        inputMode="decimal"
+                        pattern="[0-9]*[.,]?[0-9]*"
+                        value={priceDrafts[idx] ?? (it.line_total_cents / 100).toFixed(2)}
+                        onChange={(e) =>
+                          setPriceDrafts((d) => ({ ...d, [idx]: e.target.value }))
+                        }
+                        onBlur={(e) => {
+                          const c = parsePriceToCents(e.target.value) ?? 0;
+                          updateItem(idx, { line_total_cents: c });
+                          setPriceDrafts((d) => {
+                            const { [idx]: _, ...rest } = d;
+                            return rest;
+                          });
+                        }}
+                        className="h-10 px-2 text-right"
+                      />
+                    </div>
+                  </SwipeRow>
                 ))}
               </ul>
               <div className="mt-3 flex items-baseline justify-between">
