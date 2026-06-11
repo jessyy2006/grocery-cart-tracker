@@ -54,15 +54,15 @@ export default function TripDetail() {
   }, [id]);
 
   const grouped = useMemo(() => {
-    const m = new Map<string, { name: string; items: Item[]; subtotal: number }>();
+    const m = new Map<string, { name: string | null; items: Item[]; subtotal: number }>();
     for (const i of items) {
-      const name = i.store_name_snapshot ?? "Unspecified";
-      if (!m.has(name)) m.set(name, { name, items: [], subtotal: 0 });
-      const g = m.get(name)!;
+      const key = i.store_name_snapshot ?? "__none__";
+      if (!m.has(key)) m.set(key, { name: i.store_name_snapshot, items: [], subtotal: 0 });
+      const g = m.get(key)!;
       g.items.push(i);
       g.subtotal += i.price_cents * i.qty;
     }
-    return Array.from(m.values());
+    return Array.from(m.entries()).map(([key, v]) => ({ key, ...v }));
   }, [items]);
 
   return (
@@ -83,11 +83,15 @@ export default function TripDetail() {
           )}
 
           {grouped.map((g) => (
-            <section key={g.name}>
+            <section key={g.key}>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="flex items-center gap-1 text-sm font-semibold">
-                  <MapPin className="h-4 w-4 text-primary" /> {g.name}
-                </h2>
+                {g.name ? (
+                  <h2 className="flex items-center gap-1 text-sm font-semibold">
+                    <MapPin className="h-4 w-4 text-primary" /> {g.name}
+                  </h2>
+                ) : (
+                  <span />
+                )}
                 <span className="text-sm font-medium">{formatMoney(g.subtotal)}</span>
               </div>
               <ul className="space-y-2">
