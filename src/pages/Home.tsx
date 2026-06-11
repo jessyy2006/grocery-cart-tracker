@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, HeroCard } from "@/components/ui/card";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import { ShoppingCart, ListChecks, ArrowRight, ChevronLeft, Sparkles, ScanLine } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
