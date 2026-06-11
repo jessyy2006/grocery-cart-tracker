@@ -1054,18 +1054,18 @@ export default function ActiveTrip() {
 
 
       <Dialog open={!!offList && !subPickerOpen} onOpenChange={(o) => { if (!o) setOffList(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader className="sm:text-center">
+        <DialogContent className="w-[min(22rem,calc(100vw-2rem))] max-w-[22rem] mx-auto p-5 text-center sm:text-center">
+          <DialogHeader className="space-y-2 text-center sm:text-center">
             <DialogTitle className="text-center">Not on your list</DialogTitle>
             <DialogDescription className="text-center">
               "{offList?.productName}" isn't on your shopping list. How should we count it?
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-row gap-2">
+          <div className="flex w-full flex-row gap-2">
             <Button
               variant="primaryLight"
               size="lg"
-              className="flex-1"
+              className="flex-1 min-w-0"
               onClick={openSubstitutePicker}
               disabled={!listItems.some((i) => !i.checked_at)}
             >
@@ -1074,7 +1074,7 @@ export default function ActiveTrip() {
             <Button
               variant="secondaryLight"
               size="lg"
-              className="flex-1"
+              className="flex-1 min-w-0"
               onClick={confirmAsExtra}
             >
               Add as Extra
