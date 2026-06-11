@@ -739,7 +739,7 @@ export default function ActiveTrip() {
                       <h3 className="mb-1 px-[60px] font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                         {meta.emoji} {meta.label.toLowerCase()}
                       </h3>
-                      <ul className="divide-y divide-foreground/10 border-y border-foreground/10">
+                      <ul className="divide-y divide-[hsl(20_40%_18%/0.3)] border-y border-[hsl(20_40%_18%/0.3)]">
                         {lis.map((it) => {
                           const sub = items.find((ti) => ti.substitutes_list_item_id === it.id);
                           const noteParts: string[] = [];
