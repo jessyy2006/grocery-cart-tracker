@@ -148,8 +148,13 @@ export default function History() {
                         <div>
                           <p className="text-h3">{t.title}</p>
                           <p className="mt-0.5 flex items-center gap-1 text-small text-muted-foreground">
-                            <MapPin className="h-3 w-3" />
-                            {t.stores.join(" · ") || "No store"} · {t.itemCount} items
+                            {t.stores.length > 0 && (
+                              <>
+                                <MapPin className="h-3 w-3" />
+                                {t.stores.join(" · ")} ·{" "}
+                              </>
+                            )}
+                            {t.itemCount} items
                           </p>
                         </div>
                         <Money cents={t.total_cents} size="lg" />

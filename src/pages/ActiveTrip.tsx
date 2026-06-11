@@ -8,6 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Scanner } from "@/components/Scanner";
 import { ScanLine, Plus, MapPin, Trash2, Check, X, Search, Loader2 } from "lucide-react";
 import { formatMoney, parsePriceToCents, useCurrency, getCurrency } from "@/lib/format";
@@ -676,9 +687,27 @@ export default function ActiveTrip() {
               {extras.length}
             </button>
           )}
-          <Button variant="ghost" size="sm" onClick={exitTrip}>
-            <X className="mr-1 h-4 w-4" /> Exit
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm">
+                <X className="mr-1 h-4 w-4" /> Exit
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to exit?</AlertDialogTitle>
+                <AlertDialogDescription>Your trip won't be saved.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  No, go back
+                </AlertDialogCancel>
+                <AlertDialogAction onClick={exitTrip} className="bg-transparent text-foreground hover:bg-muted">
+                  Exit
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </header>
 
