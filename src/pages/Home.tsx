@@ -97,6 +97,7 @@ export default function Home() {
         })
       );
       setMonthSpend((allRes.data ?? []).reduce((a, t: any) => a + (t.total_cents ?? 0), 0));
+      setMonthlyBudget(budgetRes.data?.monthly_cents ?? null);
       setReady(true);
     })();
     return () => {
