@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { formatMoney, type Currency } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+
 
 export type TripReceiptPayload = {
   storeName: string;
