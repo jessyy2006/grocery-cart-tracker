@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, HeroCard } from "@/components/ui/card";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { ShoppingCart, ListChecks, MapPin, ArrowRight, ChevronLeft, Sparkles } from "lucide-react";
+import { ShoppingCart, ListChecks, MapPin, ArrowRight, ChevronLeft, Sparkles, ScanLine } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
@@ -162,6 +162,23 @@ export default function Home() {
               </Button>
             </div>
           </HeroCard>
+
+          {/* Scan past receipt — secondary entry */}
+          <button
+            onClick={() => navigate("/scan-receipt")}
+            className="flex w-full items-center gap-3 rounded-lg border border-hairline bg-card px-4 py-3.5 text-left transition-colors hover:border-foreground/40"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline">
+              <ScanLine className="h-4 w-4" strokeWidth={1.75} />
+            </span>
+            <span className="flex-1">
+              <span className="block text-body font-medium">Scan past receipt</span>
+              <span className="block text-small text-muted-foreground">Log a trip from a paper receipt</span>
+            </span>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" strokeWidth={1.75} />
+          </button>
+
+
 
           {/* Quiet link to lists */}
           <button

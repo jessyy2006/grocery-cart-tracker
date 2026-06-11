@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
-import { MapPin } from "lucide-react";
+import { MapPin, ScanLine } from "lucide-react";
 import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -109,19 +109,28 @@ export default function History() {
         eyebrow="Past runs"
         title="History"
         action={
-          monthOptions.length > 0 ? (
-            <Select value={month} onValueChange={setMonth}>
-              <SelectTrigger className="h-10 w-[150px] rounded-md bg-surface border-hairline text-small">
-                <SelectValue placeholder="All months" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>All months</SelectItem>
-                {monthOptions.map((k) => (
-                  <SelectItem key={k} value={k}>{monthLabel(k)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null
+          <div className="flex items-center gap-2">
+            {monthOptions.length > 0 && (
+              <Select value={month} onValueChange={setMonth}>
+                <SelectTrigger className="h-10 w-[150px] rounded-md bg-surface border-hairline text-small">
+                  <SelectValue placeholder="All months" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>All months</SelectItem>
+                  {monthOptions.map((k) => (
+                    <SelectItem key={k} value={k}>{monthLabel(k)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <button
+              onClick={() => navigate("/scan-receipt")}
+              aria-label="Scan past receipt"
+              className="flex h-10 w-10 items-center justify-center rounded-md border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
+            >
+              <ScanLine className="h-4 w-4" strokeWidth={1.75} />
+            </button>
+          </div>
         }
       />
 
