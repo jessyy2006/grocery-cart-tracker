@@ -88,7 +88,7 @@ export default function Lists() {
         style={{
           left: `${MARGIN_LEFT}px`,
           width: "1px",
-          backgroundColor: "hsl(18 35% 70% / 0.45)",
+          backgroundColor: "hsl(20 40% 18% / 0.85)",
         }}
       />
 
