@@ -227,7 +227,15 @@ export default function TripDetail() {
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
 
-      <div className="mx-auto mt-8 flex w-full max-w-sm flex-col items-stretch">
+      <div className="mx-auto mt-6 flex w-full max-w-sm flex-col items-stretch">
+        {/* Trip title header */}
+        <header className="mb-6 text-center">
+          <p className="text-eyebrow">
+            {format(new Date(trip.started_at), "EEEE · MMM d, yyyy")}
+          </p>
+          <h1 className="mt-1 text-h1">{trip.title}</h1>
+        </header>
+
         {/* Receipt sheet */}
         <div style={{ filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.18))" }}>
           <JaggedEdge position="top" />
@@ -238,7 +246,7 @@ export default function TripDetail() {
             <div className="px-6 pb-6 pt-5">
               {/* Header */}
               <div className="text-center">
-                <div className="text-base font-bold uppercase tracking-widest">{storeName}</div>
+                <div className="text-base font-bold uppercase tracking-widest">Grocery Receipt</div>
                 <div className="mt-1 text-xs text-neutral-600">
                   {fmtDateTime(new Date(trip.started_at))}
                 </div>
