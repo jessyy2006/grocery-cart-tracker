@@ -13,7 +13,7 @@ const items = [
 
 export const BottomNav = () => {
   const { pathname } = useLocation();
-  if (pathname === "/trip" || pathname === "/trip/new") return null;
+  if (pathname === "/trip" || pathname === "/trip/new" || pathname === "/scan-receipt") return null;
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
       <nav className="pointer-events-auto glass shadow-raised border border-hairline rounded-full px-2 py-1.5">
