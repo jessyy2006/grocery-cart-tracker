@@ -730,13 +730,18 @@ export default function ActiveTrip() {
                 <AlertDialogTitle>Are you sure you want to exit?</AlertDialogTitle>
                 <AlertDialogDescription>Your trip won't be saved.</AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  No, go back
-                </AlertDialogCancel>
-                <AlertDialogAction onClick={exitTrip} className={buttonVariants({ variant: "primaryLight", size: "lg" })}>
+              <AlertDialogFooter className="flex-row gap-2 sm:justify-stretch">
+                <AlertDialogAction
+                  onClick={exitTrip}
+                  className={cn(buttonVariants({ variant: "primaryLight", size: "lg" }), "flex-1")}
+                >
                   Exit
                 </AlertDialogAction>
+                <AlertDialogCancel
+                  className={cn(buttonVariants({ variant: "secondaryLight", size: "lg" }), "mt-0 flex-1")}
+                >
+                  No, go back
+                </AlertDialogCancel>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
