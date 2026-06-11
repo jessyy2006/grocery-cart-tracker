@@ -1,31 +1,72 @@
-## Plan
+# Unify primary button styling
 
-### 1. Budget history → drives y-axis max
-Add a per-month budget snapshot so the chart can scale to the largest budget you've ever set in the last 6 months.
+## Goal
 
-- New table `public.user_budget_history(user_id, month_start date, monthly_cents, created_at)` with `unique(user_id, month_start)`.
-- Standard RLS (`auth.uid() = user_id`) + GRANTs for `authenticated` and `service_role`.
-- On every save in the budget dialog (`saveBudget` in `Finance.tsx`): also upsert a row for the current month (`month_start = first day of current month`). Backfill the current month from existing `user_budgets` on first load if no row exists.
-- `Finance.tsx` fetches the last 6 months of history alongside trips. `niceMax` becomes `max(history.monthly_cents over last 6 months)`, falling back to current `budgetCents` if history is empty. Bars still render at their true height — if a month's spend exceeds the axis max it'll clip at 100% (acceptable; the goal-dot still marks that month's budget).
-- Goal dot per bar now uses **that month's** historical budget (not the current one), so each bar shows its own target.
+Collapse the app's many ad-hoc primary buttons into exactly **two** canonical styles, matching the reference screenshots, and apply them consistently.
 
-### 2. Stat number sizing
-Only the three stat columns wrap. Shrink them by 4px; leave hero untouched.
+## The two canonical styles
 
-- `StatColumn` value: `text-[22px]` → `text-[18px]`.
-- Hero `$XXX.XX left` stays at `text-[44px]`.
+**primary-light** (reference: `+ new list` on Lists)
 
-### 3. "left" / "over" color
-Currently `text-foreground` (near-black). Change to `text-muted-foreground` (the lighter warm brown already used app-wide, `hsl(35 7% 45%)`). `over` stays `text-destructive`.
+- Solid `bg-forest` / `text-forest-foreground`
+- `font-mono`, lowercase, `tracking-tight`, **not** bold (mono regular)
+- `rounded-[4px]`
+- Hover: `opacity-90`
+- Sizes: `lg` = `h-12 px-5 text-[14px]` (full-width CTAs), `sm` = `h-10 px-4 text-[12px]` (inline header buttons)
 
-### 4. Unify breakdown number font
-The "breakdown by group" and "breakdown by store" rows use `text-sm font-semibold tabular-nums` (Inter Tight). Switch the dollar values (and the ↑/↓ delta amounts beneath them) to the `text-money` utility (JetBrains Mono) so they match `$3.00`, `$17.28`, etc. elsewhere on the page.
+**primary-dark** (reference: `scan barcode` on ActiveTrip footer)
 
-### Files touched
-- `supabase/migrations/*` — new `user_budget_history` table (via migration tool, approval required).
-- `src/pages/Finance.tsx` — fetch + write history, recompute `niceMax`, per-bar goal dots, stat font size, "left" color, breakdown font.
+- Transparent background with `border border-forest-foreground`, `text-forest-foreground`
+- `font-mono`, lowercase, `tracking-wide`, `rounded-[4px]`
+- Hover: `bg-forest-foreground/5`
+- Sizes: same `lg` / `sm` scale
+- Used only on dark `forest` surfaces
 
-### Risks
-- Migration needs your approval before code changes ship — I'll run it first, then edit `Finance.tsx`.
-- Bars for months that spent above the axis max will visually clip at the top. Tell me if you'd rather the axis grow to `max(budget, spend)` in that case.
-- No rollback needed for the UI changes; the new table is additive.
+## Implementation
+
+### 1. Add variants to `src/components/ui/button.tsx`
+
+Add `primaryLight` and `primaryDark` to `buttonVariants` cva, plus `compact` size token (h-10, px-4, text-[12px]). Keep existing variants for non-primary uses (ghost, outline, destructive, secondary). The old `hero` and `default` variants are no longer used for primary CTAs but stay available to avoid breakage in any third-party flows; we replace all current call sites.
+
+### 2. Replace call sites. make sure that each button's RELATIVE SIZE is still the same so there is no container overflow etc. 
+
+
+| File                                                                      | Current                                 | New                                                                                        |
+| ------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `src/pages/Lists.tsx` L77-81                                              | bare `<button>` `+ new list`            | `<Button variant="primaryLight" size="compact">` (reference — visual identical)            |
+| `src/pages/ActiveTrip.tsx` L886-893                                       | bare `<button>` scan barcode            | `<Button variant="primaryDark" size="lg">` (reference — visual identical)                  |
+| `src/pages/Home.tsx` L185-190                                             | bare `<button>` `[ start a live trip ]` | `<Button variant="primaryLight" size="lg">` label → `start a live trip` (brackets dropped) |
+| `src/pages/ListDetail.tsx` L384-390                                       | `<Button>` start grocery run            | `variant="primaryLight" size="lg"` (drop custom className)                                 |
+| `src/pages/ListDetail.tsx` L448 (Add item modal confirm)                  | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
+| `src/pages/ListDetail.tsx` L516 (Edit item Save)                          | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
+| `src/pages/Lists.tsx` L153 (Create list modal)                            | `variant="hero"`                        | `variant="primaryLight" size="lg"`                                                         |
+| `src/pages/ActiveTrip.tsx` L978 (Add as substitute confirm)               | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
+| `src/pages/ActiveTrip.tsx` L1025 (manual check confirm)                   | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
+| `src/pages/ActiveTrip.tsx` L737 (Exit trip AlertDialogAction)             | custom transparent                      | `variant="primaryLight" size="lg"`                                                         |
+| `src/pages/ScanReceipt.tsx` L439 (Parse) and L617 (Save)                  | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
+| `src/pages/Finance.tsx` L495 (Save budget), L530 (Set budget), L723 (CTA) | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
+| `src/pages/onboarding/Layout.tsx` L74 (Continue)                          | default `<Button size="lg">`            | `variant="primaryLight" size="lg"` (cascades to all onboarding steps)                      |
+| `src/pages/onboarding/Signup.tsx` L171 (Sign up submit)                   | default                                 | `variant="primaryLight" size="lg"`                                                         |
+| `src/pages/onboarding/Intro.tsx` L71                                      | default                                 | `variant="primaryLight" size="lg"`                                                         |
+| `src/pages/onboarding/FirstList.tsx` L260, L347 (modal confirms)          | default                                 | `variant="primaryLight" size="lg"`                                                         |
+| `src/components/FeatureIntroDialog.tsx` L40 (Got it)                      | default                                 | `variant="primaryLight" size="lg"`                                                         |
+
+
+### 3. Out of scope (intentionally NOT changed)
+
+- Destructive confirms (Delete, AlertDialog destructive actions) — stay `variant="destructive"`.
+- Cancel / secondary / ghost buttons in modals — unchanged.
+- Sign out (`Profile.tsx` outline) — unchanged.
+- Icon-only buttons (edit budget pencil, scanner close, FAB, bottom nav) — unchanged.
+- The Onboarding progress bar's primary color tokens — unchanged.
+
+## Risks
+
+- Onboarding Continue button restyle cascades to all 7 steps — verify visually after build.
+- AlertDialogAction in the Exit modal uses a different primitive; passing `className={buttonVariants(...)}` keeps it visually correct since it's not a `<Button>` component.
+- Any future contributor must use these two variants only; we'll add a one-line comment in `button.tsx` documenting that `primaryLight` / `primaryDark` are the only canonical primaries.
+
+## Verification
+
+- Build succeeds.
+- Visually spot-check: Lists, Home, ListDetail, ActiveTrip (footer + all modals), Finance budget modal, ScanReceipt, every onboarding step, FeatureIntroDialog.
