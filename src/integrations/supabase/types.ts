@@ -224,7 +224,7 @@ export type Database = {
             foreignKeyName: "trip_items_substitutes_list_item_id_fkey"
             columns: ["substitutes_list_item_id"]
             isOneToOne: false
-            referencedRelation: "shopping_list_items"
+            referencedRelation: "trip_planned_items"
             referencedColumns: ["id"]
           },
           {

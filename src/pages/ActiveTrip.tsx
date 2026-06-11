@@ -1047,22 +1047,23 @@ export default function ActiveTrip() {
               "{offList?.productName}" isn't on your shopping list. How should we count it?
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-row gap-2">
             <Button
+              variant="primaryLight"
               size="lg"
-              className="w-full rounded-xl"
-              variant="outline"
-              onClick={confirmAsExtra}
-            >
-              Add as Extra
-            </Button>
-            <Button
-              size="lg"
-              className="w-full rounded-xl"
+              className="flex-1"
               onClick={openSubstitutePicker}
               disabled={!listItems.some((i) => !i.checked_at)}
             >
               Mark as Substitute
+            </Button>
+            <Button
+              variant="secondaryLight"
+              size="lg"
+              className="flex-1"
+              onClick={confirmAsExtra}
+            >
+              Add as Extra
             </Button>
           </div>
         </DialogContent>
