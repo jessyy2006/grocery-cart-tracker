@@ -800,7 +800,7 @@ function StatColumn({
       <div className="text-[10px] font-semibold uppercase tracking-[0.10em] text-foreground">
         {label}
       </div>
-      <div className="text-money text-[22px] leading-tight tabular-nums text-foreground">
+      <div className="text-money text-[18px] leading-tight tabular-nums text-foreground">
         {value}
       </div>
       <div className="text-[11px] lowercase tracking-wide text-muted-foreground">
