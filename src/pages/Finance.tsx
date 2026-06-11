@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { MarketLoader } from "@/components/MarketLoader";
 import {
   Dialog,
@@ -17,20 +15,11 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { guessCategory, getCategory, tokens } from "@/lib/categories";
-import { Pencil, ArrowDown, ArrowUp, Sparkles, LayoutGrid, Receipt as ReceiptIcon, Flame } from "lucide-react";
+import { Pencil, LayoutGrid, Receipt as ReceiptIcon } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import ReceiptView from "@/components/finance/ReceiptView";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  ReferenceLine,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
 import { toast } from "sonner";
+
 
 type Trip = {
   id: string;
