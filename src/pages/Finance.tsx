@@ -487,7 +487,7 @@ function FinanceCardView(props: any) {
     );
   }
 
-  const monoLabel = "font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground";
+  const sectionAnchor = "font-mono text-[10px] font-bold uppercase tracking-widest text-[#7C756B]";
   const monoTiny = "font-mono text-[10px] lowercase tracking-wider text-muted-foreground";
   const maxBarVal = Math.max(...derived.series.map((s: { cents: number }) => s.cents), 1);
   const currentMonthKey = derived.series[derived.series.length - 1]?.key;
@@ -498,6 +498,7 @@ function FinanceCardView(props: any) {
     <div className="space-y-10">
       {/* A — SUMMARY HERO */}
       <section className="space-y-3">
+        <div className={sectionAnchor}>spending budget</div>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="text-[40px] font-bold leading-[1.05] tracking-tight text-foreground">
@@ -505,9 +506,6 @@ function FinanceCardView(props: any) {
               <span className={over ? "text-destructive" : "text-foreground"}>
                 {over ? "over" : "left"}
               </span>
-            </div>
-            <div className={`mt-1.5 ${monoTiny}`}>
-              of {formatMoney(budgetCents!)} monthly budget threshold
             </div>
           </div>
           <div className="shrink-0 pt-2 font-mono text-[10px] font-bold tracking-wider text-foreground">
@@ -519,6 +517,9 @@ function FinanceCardView(props: any) {
             className={`h-full ${over ? "bg-destructive" : "bg-foreground"}`}
             style={{ width: `${Math.min(100, pctUsed)}%` }}
           />
+        </div>
+        <div className={monoTiny}>
+          of {formatMoney(budgetCents!)} monthly budget threshold
         </div>
       </section>
 
@@ -557,20 +558,24 @@ function FinanceCardView(props: any) {
       </section>
 
       {/* C — BAR CHART */}
-      <section>
-        <div className="flex h-40 items-end gap-3 px-1">
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <div className={sectionAnchor}>6-month overview</div>
+          <div className={monoTiny}>budget limit {formatMoney(budgetCents!)}</div>
+        </div>
+        <div className="flex h-40 items-stretch gap-3 px-1">
           {derived.series.map((s: { key: string; cents: number }) => {
-            const h = Math.max(2, Math.round((s.cents / maxBarVal) * 100));
+            const h = Math.max(s.cents > 0 ? 4 : 0, Math.round((s.cents / maxBarVal) * 100));
             const isCurrent = s.key === currentMonthKey;
             const isPast = !isCurrent && s.cents > 0;
             return (
-              <div key={s.key} className="flex flex-1 flex-col items-stretch justify-end">
+              <div key={s.key} className="flex flex-1 flex-col justify-end">
                 <div
-                  className={`rounded-t-[4px] ${
+                  className={`w-full rounded-t-[4px] ${
                     isCurrent
                       ? "bg-foreground"
                       : isPast
-                      ? "bg-[hsl(40_26%_86%)]"
+                      ? "bg-[hsl(36_10%_45%)]"
                       : "bg-[hsl(40_26%_86%)] opacity-50"
                   }`}
                   style={{ height: `${h}%` }}
@@ -593,7 +598,7 @@ function FinanceCardView(props: any) {
       {derived.monthSpend > 0 && (
         <section className="space-y-4">
           <div>
-            <div className={monoLabel}>breakdown by group</div>
+            <div className={sectionAnchor}>breakdown by group</div>
             <div className={`mt-0.5 ${monoTiny}`}>compared to last month</div>
           </div>
           <div className="space-y-3">
@@ -635,7 +640,7 @@ function FinanceCardView(props: any) {
 
           {derived.byStore.length > 0 && (
             <div className="space-y-3 pt-4">
-              <div className={monoLabel}>by store</div>
+              <div className={sectionAnchor}>breakdown by store</div>
               {derived.byStore.map(([store, cents]: [string, number]) => (
                 <div key={store} className="flex items-baseline gap-2">
                   <div className="shrink-0 text-sm lowercase text-foreground">{store}</div>
@@ -692,8 +697,8 @@ function StatColumn({
 }) {
   return (
     <div className={`flex flex-col items-start gap-1 px-3 ${bordered ? "border-l border-[hsl(40_26%_86%)]" : ""}`}>
-      <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-        [ {label} ]
+      <div className="font-mono text-[8px] font-semibold uppercase tracking-wide text-[#1C1A17]">
+        {label}
       </div>
       <div className="text-[17px] font-bold leading-tight tabular-nums text-foreground">
         {value}
