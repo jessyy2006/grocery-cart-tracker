@@ -184,7 +184,7 @@ export default function Home() {
                   )}
                   <button
                     onClick={openSheet}
-                    className="mt-6 h-12 w-full rounded-[4px] bg-foreground text-background text-[14px] lowercase tracking-tight transition-opacity hover:opacity-90"
+                    className="mt-6 h-12 w-full rounded-[4px] bg-forest text-forest-foreground text-[14px] lowercase tracking-tight transition-opacity hover:opacity-90"
                   >
                     [ start a live trip ]
                   </button>
