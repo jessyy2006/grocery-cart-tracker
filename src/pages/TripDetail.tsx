@@ -83,11 +83,15 @@ export default function TripDetail() {
           )}
 
           {grouped.map((g) => (
-            <section key={g.name}>
+            <section key={g.key}>
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="flex items-center gap-1 text-sm font-semibold">
-                  <MapPin className="h-4 w-4 text-primary" /> {g.name}
-                </h2>
+                {g.name ? (
+                  <h2 className="flex items-center gap-1 text-sm font-semibold">
+                    <MapPin className="h-4 w-4 text-primary" /> {g.name}
+                  </h2>
+                ) : (
+                  <span />
+                )}
                 <span className="text-sm font-medium">{formatMoney(g.subtotal)}</span>
               </div>
               <ul className="space-y-2">
