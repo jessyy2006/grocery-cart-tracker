@@ -501,20 +501,20 @@ function FinanceCardView(props: any) {
         <div className={sectionAnchor}>spending budget</div>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="text-[40px] font-bold leading-[1.05] tracking-tight text-foreground">
+            <div className="font-display text-[44px] font-medium leading-[1.02] tracking-tight text-foreground">
               {formatMoney(Math.abs(remaining))}{" "}
               <span className={over ? "text-destructive" : "text-foreground"}>
                 {over ? "over" : "left"}
               </span>
             </div>
           </div>
-          <div className="shrink-0 pt-2 font-mono text-[10px] font-bold tracking-wider text-foreground">
+          <div className="shrink-0 pt-2 text-[11px] font-semibold tracking-wide text-foreground">
             [ {pctUsed}% used ]
           </div>
         </div>
         <div className="h-2 w-full overflow-hidden rounded-full bg-[hsl(40_26%_86%)]">
           <div
-            className={`h-full ${over ? "bg-destructive" : "bg-foreground"}`}
+            className={`h-full ${over ? "bg-destructive" : "bg-primary"}`}
             style={{ width: `${Math.min(100, pctUsed)}%` }}
           />
         </div>
