@@ -30,8 +30,6 @@ type Parsed = {
 type Store = { id: string; name: string };
 type ListLite = { id: string; name: string; items: { id: string; name: string; checked_at: string | null }[] };
 
-const NEW_STORE = "__new__";
-const NO_STORE = "__none__";
 
 export default function ScanReceipt() {
   const { user } = useAuth();
