@@ -148,9 +148,9 @@ export default function History() {
           {grouped.map(([k, items]) => (
             <section key={k}>
               <div className="sticky top-0 z-10 bg-background py-2">
-                <p className="text-small lowercase text-muted-foreground">{monthLabel(k).toLowerCase()}</p>
+                <p className="font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground">{monthLabel(k).toLowerCase()}</p>
               </div>
-              <ul className="mt-1 divide-y divide-dashed divide-foreground/15">
+              <ul className="mt-1 divide-y divide-dashed divide-foreground/10">
                 {items.map((t) => (
                   <li key={t.id}>
                     <TripTapeRow
