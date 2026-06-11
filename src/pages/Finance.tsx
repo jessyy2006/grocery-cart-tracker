@@ -641,7 +641,8 @@ function FinanceCardView(props: any) {
               const isCurrent = s.key === currentMonthKey;
               const isPast = !isCurrent && s.cents > 0;
               const isSelected = s.key === selectedMonthKey;
-              const goalPct = budgetCents ? Math.min(100, (budgetCents / niceMax) * 100) : 0;
+              const monthBudget = budgetHistMap.get(s.key) ?? (isCurrent ? budgetCents : null);
+              const goalPct = monthBudget ? Math.min(100, (monthBudget / niceMax) * 100) : 0;
               return (
                 <button
                   key={s.key}
