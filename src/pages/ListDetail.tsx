@@ -380,7 +380,7 @@ export default function ListDetail() {
         )}
       </div>
 
-      <footer className="border-t border-hairline bg-card px-4 pt-3 pb-3">
+      <footer className="px-4 pt-3 pb-3">
         <Button
           size="lg"
           className="h-14 w-full rounded-[4px] bg-forest text-forest-foreground text-base font-mono lowercase tracking-wide hover:bg-forest/90"
