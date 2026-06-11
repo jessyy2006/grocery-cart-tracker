@@ -137,7 +137,7 @@ export default function History() {
         <div className="space-y-7">
           {grouped.map(([k, items]) => (
             <section key={k}>
-              <div className="sticky top-0 z-10 -mx-5 px-5 py-2 glass">
+              <div className="sticky top-0 z-10 py-2">
                 <p className="text-eyebrow">{monthLabel(k)}</p>
               </div>
               <ul className="mt-3 space-y-3">
