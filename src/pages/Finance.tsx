@@ -629,7 +629,7 @@ function FinanceCardView(props: any) {
           </div>
           {/* Bars + gridlines */}
           <div className="relative flex h-40 flex-1 items-stretch gap-3 px-1">
-            {yTicks.map((t, i) => (
+            {yTicks.slice(0, -1).map((t, i) => (
               <div
                 key={i}
                 className="pointer-events-none absolute inset-x-0 border-t border-dashed border-[hsl(40_26%_86%)]"
