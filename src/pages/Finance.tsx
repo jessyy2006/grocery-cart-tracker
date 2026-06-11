@@ -573,10 +573,10 @@ function FinanceCardView(props: any) {
                 <div
                   className={`w-full rounded-t-[4px] ${
                     isCurrent
-                      ? "bg-foreground"
+                      ? "bg-primary"
                       : isPast
-                      ? "bg-[hsl(36_10%_45%)]"
-                      : "bg-[hsl(40_26%_86%)] opacity-50"
+                      ? "bg-[hsl(145_25%_70%)]"
+                      : "bg-[hsl(145_20%_85%)] opacity-60"
                   }`}
                   style={{ height: `${h}%` }}
                 />
