@@ -71,7 +71,7 @@ export default function ActiveTrip() {
   const [activeStore, setActiveStore] = useState<Store | null>(null);
   const [items, setItems] = useState<TripItem[]>([]);
   const [extras, setExtras] = useState<TripItem[]>([]);
-  const [extrasOpen, setExtrasOpen] = useState(false);
+  
   const [confetti, setConfetti] = useState<{ id: number; emoji: string } | null>(null);
   const [scanning, setScanning] = useState(false);
   const [pending, setPending] = useState<{
