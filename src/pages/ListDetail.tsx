@@ -314,37 +314,12 @@ export default function ListDetail() {
               </div>
             )}
 
-            <QuickAddRow
-              tagSuggestions={tagSuggestions}
-              onSubmit={async ({ name: n, qty, note, tag: t }) => {
-                if (!id) return;
-                const slug = guessCategory(n);
-                const insert = {
-                  list_id: id,
-                  name: n,
-                  qty,
-                  category: slug,
-                  notes: note ? note.slice(0, 25) : null,
-                  tag: t,
-                };
-                const { data, error } = await supabase
-                  .from("shopping_list_items")
-                  .insert(insert)
-                  .select("*")
-                  .single();
-                if (error) {
-                  toast.error(error.message);
-                  return;
-                }
-                setItems((c) => [...c, data as Item]);
-              }}
-            />
-
             {items.length === 0 && (
               <p className="py-10 text-center text-sm text-muted-foreground">
-                No items yet — type above to add your first one.
+                No items yet — add your first one below.
               </p>
             )}
+
 
             {(groupBy === "category" ? groupedByCategory : groupedByTag).map((group) => (
               <section key={group.key}>
@@ -380,6 +355,33 @@ export default function ListDetail() {
         )}
       </div>
 
+      <div className="border-t border-hairline bg-background px-4 pt-3">
+        <QuickAddRow
+          tagSuggestions={tagSuggestions}
+          onSubmit={async ({ name: n, qty, note, tag: t }) => {
+            if (!id) return;
+            const slug = guessCategory(n);
+            const insert = {
+              list_id: id,
+              name: n,
+              qty,
+              category: slug,
+              notes: note ? note.slice(0, 25) : null,
+              tag: t,
+            };
+            const { data, error } = await supabase
+              .from("shopping_list_items")
+              .insert(insert)
+              .select("*")
+              .single();
+            if (error) {
+              toast.error(error.message);
+              return;
+            }
+            setItems((c) => [...c, data as Item]);
+          }}
+        />
+      </div>
       <footer className="px-4 pt-3 pb-3">
         <Button
           variant="primaryLight"
@@ -390,6 +392,7 @@ export default function ListDetail() {
           <ShoppingBasket className="mr-2 h-5 w-5" /> start grocery run
         </Button>
       </footer>
+
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
