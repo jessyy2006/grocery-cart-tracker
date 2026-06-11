@@ -193,19 +193,6 @@ export default function Home() {
             );
           })()}
 
-
-
-          {/* Quiet link to lists */}
-          <button
-            onClick={() => navigate("/lists")}
-            className="flex w-full items-center justify-between text-left text-body text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <span className="inline-flex items-center gap-2">
-              <ListChecks className="h-4 w-4" strokeWidth={1.75} /> Manage your shopping lists
-            </span>
-            <ArrowRight className="h-4 w-4" strokeWidth={1.75} />
-          </button>
-
           {/* Recent trips */}
           <section>
             <div className="mb-2 flex items-baseline justify-between">
