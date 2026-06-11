@@ -64,7 +64,7 @@ export default function Home() {
       const [savedRes, allRes] = await Promise.all([
         supabase
           .from("trips")
-          .select("id, started_at, total_cents, status, trip_items(store_name_snapshot)")
+          .select("id, started_at, total_cents, status, trip_items(id), shopping_lists:list_id(name, hidden)")
           .eq("status", "saved")
           .order("started_at", { ascending: false })
           .limit(3),
