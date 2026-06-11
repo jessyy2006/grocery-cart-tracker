@@ -698,65 +698,7 @@ function FinanceCardView(props: any) {
 
       {/* D — BREAKDOWN MANIFEST */}
       {derived.monthSpend > 0 && (
-        <section className="space-y-4">
-          <div>
-            <div className={sectionAnchor}>breakdown by group</div>
-            <div className={`mt-0.5 ${monoTiny}`}>compared to last month</div>
-          </div>
-          <div className="space-y-3">
-            {derived.byCategory.map(([slug, cents]: [string, number]) => {
-              const cat = getCategory(slug);
-              const prevCents = derived.byCategoryPrev.get(slug) ?? 0;
-              const hasPrevData = derived.byCategoryPrev.size > 0;
-              const delta = cents - prevCents;
-              const showDelta = hasPrevData && delta !== 0;
-              const isUp = delta > 0;
-              return (
-                <div key={slug} className="flex items-baseline gap-2">
-                  <div className="flex shrink-0 items-baseline gap-1.5 text-sm text-foreground">
-                    <span>{cat.emoji}</span>
-                    <span className="lowercase">{cat.label}</span>
-                  </div>
-                  <div className="min-w-0 flex-1 select-none overflow-hidden whitespace-nowrap text-muted-foreground/50">
-                    {dottedLeader}
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <div className="text-money text-sm tabular-nums text-foreground">
-                      {formatMoney(cents)}
-                    </div>
-                    {showDelta && (
-                      <div
-                        className={`text-money text-[11px] tabular-nums ${
-                          isUp ? "text-destructive" : "text-[hsl(163_94%_24%)]"
-                        }`}
-                      >
-                        {isUp ? "↑ +" : "↓ -"}
-                        {formatMoney(Math.abs(delta))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {derived.byStore.length > 0 && (
-            <div className="space-y-3 pt-4">
-              <div className={sectionAnchor}>breakdown by store</div>
-              {derived.byStore.map(([store, cents]: [string, number]) => (
-                <div key={store} className="flex items-baseline gap-2">
-                  <div className="shrink-0 text-sm lowercase text-foreground">{store}</div>
-                  <div className="min-w-0 flex-1 select-none overflow-hidden whitespace-nowrap text-muted-foreground/50">
-                    {dottedLeader}
-                  </div>
-                  <div className="text-money shrink-0 text-sm tabular-nums text-foreground">
-                    {formatMoney(cents)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+        <BreakdownSection derived={derived} dottedLeader={dottedLeader} />
       )}
 
       {/* E — INSIGHT FOOTNOTE */}
