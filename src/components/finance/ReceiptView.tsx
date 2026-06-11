@@ -505,18 +505,20 @@ export default function ReceiptView(props: Props) {
       </p>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Receipt ready</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="w-[min(22rem,calc(100vw-2rem))] max-w-[22rem] mx-auto p-5 text-center sm:text-center">
+          <DialogHeader className="sm:text-center">
+            <DialogTitle className="sm:text-center">Receipt ready</DialogTitle>
+            <DialogDescription className="sm:text-center">
               {preparingExport
                 ? "Preparing your receipt image…"
                 : "Save the receipt image to your device, or share it through your phone's share sheet."}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-2">
+          <DialogFooter className="flex-row gap-2 sm:gap-2 sm:justify-stretch sm:space-x-0">
             <Button
-              variant="outline"
+              variant="secondaryLight"
+              size="lg"
+              className="flex-1 min-w-0"
               onClick={handleSave}
               disabled={busy || preparingExport || !exportFile}
             >
@@ -524,6 +526,9 @@ export default function ReceiptView(props: Props) {
               Save image
             </Button>
             <Button
+              variant="primaryLight"
+              size="lg"
+              className="flex-1 min-w-0"
               onClick={handleShare}
               disabled={busy || preparingExport || !exportFile}
             >
@@ -532,6 +537,7 @@ export default function ReceiptView(props: Props) {
             </Button>
           </DialogFooter>
         </DialogContent>
+
       </Dialog>
 
       {/* Mobile fallback: full image so the user can long-press → Save to Photos */}
