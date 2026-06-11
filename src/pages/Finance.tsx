@@ -643,6 +643,7 @@ function FinanceCardView(props: any) {
               const isSelected = s.key === selectedMonthKey;
               const monthBudget = budgetHistMap.get(s.key) ?? (isCurrent ? budgetCents : null);
               const goalPct = monthBudget ? Math.min(100, (monthBudget / niceMax) * 100) : 0;
+              const labelOverlapsDot = isSelected && monthBudget && goalPct >= h && (goalPct - h) < 14;
               return (
                 <button
                   key={s.key}
@@ -659,7 +660,7 @@ function FinanceCardView(props: any) {
                       {formatMoney(s.cents)}
                     </div>
                   )}
-                  {monthBudget ? (
+                  {monthBudget && !labelOverlapsDot ? (
                     <div
                       className="pointer-events-none absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-foreground"
                       style={{ bottom: `${goalPct}%` }}
