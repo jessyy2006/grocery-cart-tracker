@@ -59,7 +59,7 @@ const AlertDialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Title
     ref={ref}
-    className={cn("font-display text-2xl font-semibold leading-tight tracking-tight text-center", className)}
+    className={cn("font-display text-h2 font-semibold leading-tight tracking-tight text-center", className)}
     {...props}
   />
 ));
