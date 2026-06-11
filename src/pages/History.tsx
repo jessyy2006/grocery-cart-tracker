@@ -48,22 +48,31 @@ export default function History() {
       await supabase.from("trips").delete().lt("started_at", cutoff.toISOString());
       const { data } = await supabase
         .from("trips")
-        .select("id, started_at, total_cents, trip_items(store_name_snapshot)")
+        .select("id, started_at, total_cents, trip_items(store_name_snapshot), shopping_lists:list_id(name, hidden)")
         .eq("status", "saved")
         .gte("started_at", cutoff.toISOString())
         .order("started_at", { ascending: false });
       if (cancelled) return;
       setRows(
-        (data ?? []).map((t: any) => ({
-          id: t.id,
-          started_at: t.started_at,
-          total_cents: t.total_cents,
-          itemCount: (t.trip_items ?? []).length,
-          stores: Array.from(
-            new Set((t.trip_items ?? []).map((i: any) => i.store_name_snapshot).filter(Boolean)),
-          ) as string[],
-        })),
+        (data ?? []).map((t: any) => {
+          const list = t.shopping_lists;
+          const title =
+            list && !list.hidden && list.name
+              ? list.name
+              : format(new Date(t.started_at), "EEE, MMM d");
+          return {
+            id: t.id,
+            started_at: t.started_at,
+            total_cents: t.total_cents,
+            itemCount: (t.trip_items ?? []).length,
+            stores: Array.from(
+              new Set((t.trip_items ?? []).map((i: any) => i.store_name_snapshot).filter(Boolean)),
+            ) as string[],
+            title,
+          };
+        }),
       );
+
       setReady(true);
     })();
     return () => {
