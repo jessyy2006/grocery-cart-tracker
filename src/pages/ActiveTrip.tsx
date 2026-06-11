@@ -795,46 +795,42 @@ export default function ActiveTrip() {
         )}
       </div>
 
-      {/* Forest-green velvet utility footer */}
+      {/* High-contrast utility footer */}
       <footer
-        className="shrink-0 px-3"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)", paddingTop: "0.5rem" }}
+        className="shrink-0 border-t border-[hsl(20_40%_18%/0.3)] bg-background px-5 pt-3"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
       >
-        <div
-          className="rounded-[4px] bg-forest px-5 pt-3 pb-4 text-forest-foreground shadow-raised"
-        >
-          <div className="flex items-baseline justify-between">
-            <p className="font-mono text-[13px] lowercase">
-              cart total:{" "}
-              <span className="font-mono tabular-nums">{formatMoney(total)}</span>
-              {listItems.length > 0 && (() => {
-                const checked = listItems.filter((i) => i.checked_at).length;
-                const denom = listItems.length;
-                const numer = checked + extras.length;
-                return (
-                  <span className="ml-2 font-mono text-[11px] opacity-70">
-                    [{numer}/{denom}]
-                  </span>
-                );
-              })()}
-            </p>
-            <button
-              type="button"
-              onClick={saveTrip}
-              className="font-mono text-[12px] lowercase tracking-wide text-forest-foreground/90 hover:text-forest-foreground"
-            >
-              [ save trip ]
-            </button>
-          </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="flex items-baseline gap-2 leading-none">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              cart total
+            </span>
+            <span className="font-mono text-[18px] font-semibold tabular-nums text-foreground">
+              {formatMoney(total)}
+            </span>
+            {totalCount > 0 && (
+              <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                [ {checkedCount}/{totalCount} ]
+              </span>
+            )}
+          </p>
           <button
             type="button"
-            onClick={() => setScanning(true)}
-            className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[4px] border border-forest-foreground/25 bg-forest-foreground/5 font-mono text-[13px] lowercase tracking-wide text-forest-foreground hover:bg-forest-foreground/10 transition-colors"
+            onClick={saveTrip}
+            className="font-mono text-[12px] lowercase tracking-wide text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ScanLine className="h-4 w-4" /> [ scan barcode ]
+            [ save trip ]
           </button>
         </div>
+        <button
+          type="button"
+          onClick={() => setScanning(true)}
+          className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-[4px] bg-forest font-mono text-[14px] lowercase tracking-wide text-forest-foreground hover:bg-forest/92 transition-colors"
+        >
+          📷 scan barcode
+        </button>
       </footer>
+
 
       {confetti && (
         <div
