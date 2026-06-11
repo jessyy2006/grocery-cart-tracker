@@ -679,15 +679,6 @@ export default function ActiveTrip() {
           </button>
         </div>
         <div className="flex items-center gap-2">
-          {extras.length > 0 && (
-            <button
-              onClick={() => setExtrasOpen((o) => !o)}
-              aria-label="Show extras"
-              className="flex h-7 min-w-7 items-center justify-center rounded-full bg-accent-honey px-2 text-xs font-bold text-[hsl(30_50%_18%)] shadow-soft"
-            >
-              {extras.length}
-            </button>
-          )}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="sm">
