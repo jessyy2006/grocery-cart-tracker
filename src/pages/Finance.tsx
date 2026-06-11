@@ -749,7 +749,7 @@ function FinanceCardView(props: any) {
                   <div className="min-w-0 flex-1 select-none overflow-hidden whitespace-nowrap text-muted-foreground/50">
                     {dottedLeader}
                   </div>
-                  <div className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
+                  <div className="text-money shrink-0 text-sm tabular-nums text-foreground">
                     {formatMoney(cents)}
                   </div>
                 </div>
