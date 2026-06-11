@@ -514,8 +514,10 @@ function FinanceCardView(props: any) {
     impulseClass,
     extrasDelta,
     maxBar,
+    budgetHistory,
     rotatingInsight,
   } = props;
+  const budgetHistMap: Map<string, number> = budgetHistory ?? new Map();
   const currentMonthKey = derived.series[derived.series.length - 1]?.key as string | undefined;
   const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(currentMonthKey ?? null);
   if (!hasBudget) {
