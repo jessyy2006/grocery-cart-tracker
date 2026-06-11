@@ -93,7 +93,7 @@ export default function TripDetail() {
       const title =
         list && !list.hidden && list.name
           ? list.name
-          : format(new Date(t.started_at), "EEEE · MMM d, yyyy");
+          : formatTripTitle(new Date(t.started_at));
       setTrip({ started_at: t.started_at, total_cents: t.total_cents, title, user_id: t.user_id });
       setItems(i ?? []);
 
