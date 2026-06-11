@@ -16,6 +16,14 @@ export const Scanner = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const handleRef = useRef<ScannerHandle | null>(null);
 
+  const inIframe = (() => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  })();
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -27,7 +35,18 @@ export const Scanner = ({
         });
         handleRef.current = h;
       } catch (e: any) {
-        toast.error(e.message ?? "Couldn't open camera");
+        const msg = e?.message ?? "Couldn't open camera";
+        if (inIframe && /camera/i.test(msg)) {
+          toast.error(msg, {
+            action: {
+              label: "Open in new tab",
+              onClick: () => window.open(window.location.href, "_blank", "noopener"),
+            },
+            duration: 8000,
+          });
+        } else {
+          toast.error(msg);
+        }
         onClose();
       }
     })();
@@ -35,7 +54,7 @@ export const Scanner = ({
       cancelled = true;
       handleRef.current?.stop();
     };
-  }, [onCode, onClose]);
+  }, [onCode, onClose, inIframe]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
