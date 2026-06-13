@@ -821,10 +821,10 @@ function FinanceCardView(props: any) {
             })}
           </div>
         </div>
-        <div className="-mt-3 flex gap-2">
+        <div className="-mt-3 flex">
 
-          <div className="w-10" />
-          <div className="flex flex-1 gap-3 border-t border-[hsl(40_26%_86%)] px-1 pt-1.5">
+          <div className="w-8" />
+          <div className="flex flex-1 gap-3 border-t border-[hsl(40_26%_86%)] pt-1.5">
 
             {derived.series.map((s: { key: string; label: string }) => (
               <div
