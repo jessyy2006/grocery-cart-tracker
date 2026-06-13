@@ -73,8 +73,37 @@ export default function ListDetail() {
   const [nameDraft, setNameDraft] = useState("");
   const nameWrapRef = useRef<HTMLDivElement>(null);
   const [groupBy, setGroupBy] = useState<"category" | "tag">("category");
+  const [dragId, setDragId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+  );
+
+  const onDragStart = (e: DragStartEvent) => setDragId(String(e.active.id));
+
+  const onDragEnd = async (e: DragEndEvent) => {
+    setDragId(null);
+    if (groupBy !== "category") return;
+    const itemId = String(e.active.id);
+    const targetCat = e.over?.id as CategorySlug | undefined;
+    if (!targetCat || !CATEGORY_ORDER.includes(targetCat)) return;
+    const item = items.find((i) => i.id === itemId);
+    if (!item || item.category === targetCat) return;
+    // Move to end of items array so it lands at the bottom of the target category group.
+    setItems((c) => {
+      const rest = c.filter((i) => i.id !== itemId);
+      return [...rest, { ...item, category: targetCat }];
+    });
+    const { error } = await supabase
+      .from("shopping_list_items")
+      .update({ category: targetCat })
+      .eq("id", itemId);
+    if (error) toast.error(error.message);
+  };
+
 
   useEffect(() => {
     if (!id || !user) return;
