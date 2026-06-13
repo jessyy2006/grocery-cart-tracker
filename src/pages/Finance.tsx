@@ -308,6 +308,89 @@ export default function Finance() {
     };
   }, [trips, items, listItems, budgetCents]);
 
+  // Yearly aggregations (Jan 1 – Dec 31, current year)
+  const yearly = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const yearStart = new Date(year, 0, 1);
+    const yearEnd = new Date(year, 11, 31);
+
+    const yearTrips = trips.filter((t) => {
+      const d = new Date(t.started_at);
+      return d >= yearStart && d <= new Date(year, 11, 31, 23, 59, 59);
+    });
+    const yearTripIds = new Set(yearTrips.map((t) => t.id));
+    const yearItems = items.filter((it) => yearTripIds.has(it.trip_id));
+
+    const totalOutlayCents = yearTrips.reduce((a, t) => a + (t.total_cents ?? 0), 0);
+    const itemCount = yearItems.reduce((a, it) => a + (it.qty ?? 1), 0);
+    const tripCount = yearTrips.length;
+    const avgBasket = tripCount ? itemCount / tripCount : 0;
+
+    const monthlySeries: number[] = Array.from({ length: 12 }, () => 0);
+    for (const t of yearTrips) {
+      const m = new Date(t.started_at).getMonth();
+      monthlySeries[m] += t.total_cents ?? 0;
+    }
+
+    // Most loyal store — by total spend
+    const storeMap = new Map<string, number>();
+    for (const it of yearItems) {
+      const s = it.store_name_snapshot?.trim();
+      if (!s) continue;
+      storeMap.set(s, (storeMap.get(s) ?? 0) + it.price_cents * it.qty);
+    }
+    const mostLoyalStore =
+      [...storeMap.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+    // Staple of the year — by total qty (case-insensitive name)
+    const stapleMap = new Map<string, number>();
+    for (const it of yearItems) {
+      const key = it.name_snapshot.trim().toUpperCase();
+      if (!key) continue;
+      stapleMap.set(key, (stapleMap.get(key) ?? 0) + (it.qty ?? 1));
+    }
+    const stapleEntry = [...stapleMap.entries()].sort((a, b) => b[1] - a[1])[0];
+    const staple = stapleEntry ? { name: stapleEntry[0], qty: stapleEntry[1] } : null;
+
+    // Largest haul — highest single trip total
+    const largestTrip = [...yearTrips].sort(
+      (a, b) => (b.total_cents ?? 0) - (a.total_cents ?? 0),
+    )[0];
+    const largestHaul = largestTrip
+      ? { date: new Date(largestTrip.started_at), cents: largestTrip.total_cents ?? 0 }
+      : null;
+
+    // Quarters
+    const itemsByTrip = new Map<string, TripItem[]>();
+    for (const it of yearItems) {
+      const arr = itemsByTrip.get(it.trip_id) ?? [];
+      arr.push(it);
+      itemsByTrip.set(it.trip_id, arr);
+    }
+    const quarters = ([0, 1, 2, 3] as const).map((q) => {
+      const qTrips = yearTrips.filter(
+        (t) => Math.floor(new Date(t.started_at).getMonth() / 3) === q,
+      );
+      const totalCents = qTrips.reduce((a, t) => a + (t.total_cents ?? 0), 0);
+      const qItems = qTrips.flatMap((t) => itemsByTrip.get(t.id) ?? []);
+      const cats = new Map<string, number>();
+      for (const it of qItems) {
+        const slug = guessCategory(it.name_snapshot);
+        cats.set(slug, (cats.get(slug) ?? 0) + it.price_cents * it.qty);
+      }
+      const topSlug = [...cats.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+      const topCategoryLabel = topSlug ? getCategory(topSlug).label : null;
+      return { q, totalCents, tripCount: qTrips.length, topCategoryLabel };
+    });
+
+    return {
+      year, yearStart, yearEnd,
+      totalOutlayCents, itemCount, avgBasket, tripCount,
+      monthlySeries, mostLoyalStore, staple, largestHaul, quarters,
+    };
+  }, [trips, items]);
+
   const hasBudget = budgetCents !== null && budgetCents > 0;
   const remaining = (budgetCents ?? 0) - derived.monthSpend;
   const over = remaining < 0;
