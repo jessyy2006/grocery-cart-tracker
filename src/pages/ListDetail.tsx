@@ -410,8 +410,9 @@ export default function ListDetail() {
           </div>
 
           <button
+            ref={addBtnRef}
             type="button"
-            onClick={() => setAddOpen(true)}
+            onClick={() => setAddOpen((v) => !v)}
             className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[6px] border border-border bg-background px-3 font-mono text-[11px] uppercase tracking-[0.14em] text-foreground hover:border-foreground/60"
             aria-label="Add item"
           >
