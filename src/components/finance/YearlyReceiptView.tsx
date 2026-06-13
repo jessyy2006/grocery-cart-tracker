@@ -387,3 +387,14 @@ function Metric({ label, value, bordered }: { label: string; value: string; bord
     </div>
   );
 }
+
+function HallRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-600">
+        {label}
+      </span>
+      <span className="tabular-nums text-right font-bold">{value}</span>
+    </div>
+  );
+}
