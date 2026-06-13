@@ -204,12 +204,14 @@ and never two channels for the same error.
 
 ## 4. Guardrails
 
-Add an ESLint rule (Phase 3) banning, in `pages/**` and `components/**` (excluding
-the receipt-export files):
-- arbitrary `rounded-[*]`, `shadow-[*]`
-- raw hex `#…` in `className`
-- `text-red-*` / `border-red-*` / `ring-red-*` (use `destructive`)
-- `text-neutral-*` / `border-neutral-*` (use `muted-foreground` / `border`)
+`eslint.config.js` enforces, in `src/pages/**` and top-level `src/components/*`
+(ui/ primitives and the receipt-export files in finance/ & trip/ are excluded):
+- ❌ arbitrary `rounded-[Npx]` → use `rounded-control/card/sheet`
+- ❌ raw `text/bg/border/ring-red-*` → use the `destructive` token
+
+Known exceptions deliberately NOT yet enforced (legitimate uses remain):
+`shadow-[…]` (the ScanReceipt camera-spotlight mask) and `*-neutral-*`
+(TripDetail's on-paper receipt grays). Tighten later if those get cleaned up.
 
 This is what stops the system from re-fracturing.
 
@@ -239,9 +241,13 @@ This is what stops the system from re-fracturing.
   deliberately did NOT blanket-swap to `<Money>` (preserves hero/receipt
   hierarchy). Minor leftover: Lists title still `text-[2.25rem]` (entangled with
   its notebook-margin layout) vs canonical `text-h1`.
-- **Phase 3 — Code health.** Dedup `ReceiptView` → `useReceiptShare`,
-  `PrintedReceiptOverlay` → `ReceiptPaper`; unify motion to framer-motion; retire
-  `TapCard`; add the ESLint guardrails.
+- **Phase 3 — Code health (mostly ✅).** Done: retired dead `TapCard`; deduped
+  `PrintedReceiptOverlay` → shared `ReceiptPaper` primitives; made the CSS
+  animations reduced-motion-aware (`motion-reduce:animate-none`); added the ESLint
+  guardrails. Deferred on purpose: `ReceiptView` → `useReceiptShare` dedup — it
+  rewrites working PNG-export/gesture code that needs visual verification (can't
+  confirm the share image in a headless run); do it in a session where the app is
+  open. `TapCard` rename is moot (deleted).
 
 ---
 
@@ -258,4 +264,6 @@ This is what stops the system from re-fracturing.
 | Destructive confirms | ✅ `ConfirmDialog` is canonical |
 | Onboarding | ✅ stepper + serif typography + `OptionRow` chips + sanctioned buttons |
 | Feedback (toasts) | ✅ Sonner only; form errors use `destructive` |
-| Motion / icons | ✅ healthy (minor cleanup Phase 3) |
+| Motion / icons | ✅ framer-motion + CSS animations now reduced-motion-aware |
+| Guardrails | ✅ ESLint bans arbitrary radii + raw red in product UI |
+| Code health | ✅ TapCard removed, PrintedReceiptOverlay deduped; ReceiptView dedup deferred (needs visual check) |

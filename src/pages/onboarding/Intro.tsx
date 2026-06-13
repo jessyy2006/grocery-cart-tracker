@@ -22,7 +22,7 @@ export default function OnboardingIntro() {
       <div className="relative mt-8 flex-1">
         {/* List card — tall rectangle, bottom-right with left offset */}
         <Card
-          className="absolute left-8 right-0 bottom-0 h-[78%] overflow-hidden p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
+          className="absolute left-8 right-0 bottom-0 h-[78%] overflow-hidden p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out motion-reduce:animate-none"
           style={{ animationDelay: "100ms", animationFillMode: "backwards" }}
         >
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Today's list</p>
@@ -52,7 +52,7 @@ export default function OnboardingIntro() {
 
         {/* Budget card — top-left, overlaps list card */}
         <Card
-          className="absolute left-0 right-8 top-0 p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out"
+          className="absolute left-0 right-8 top-0 p-4 shadow-elevated animate-in slide-in-from-bottom-16 fade-in duration-700 ease-out motion-reduce:animate-none"
           style={{ animationDelay: "320ms", animationFillMode: "backwards" }}
         >
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground">

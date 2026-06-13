@@ -75,7 +75,7 @@ export function QuickAddRow({
   const boxIdle = "border-hairline";
 
   return (
-    <div className="animate-fade-rise rounded-card border border-hairline bg-surface-raised p-3 space-y-2.5">
+    <div className="animate-fade-rise motion-reduce:animate-none rounded-card border border-hairline bg-surface-raised p-3 space-y-2.5">
       {/* Row 1: item name */}
       <div className={`${boxBase} ${boxIdle} h-11 flex items-center`}>
         <input

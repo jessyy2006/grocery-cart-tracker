@@ -23,4 +23,33 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
+  // Design-system guardrails — keep product UI on the tokens (see DESIGN.md).
+  // Scoped to pages + top-level components; excludes ui/ primitives and the
+  // receipt-export files (finance/, trip/) which legitimately need literals.
+  {
+    files: ["src/pages/**/*.{ts,tsx}", "src/components/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "Literal[value=/rounded-\\[/]",
+          message:
+            "Use a radius token (rounded-control / rounded-card / rounded-sheet), not an arbitrary rounded-[Npx]. See DESIGN.md.",
+        },
+        {
+          selector: "TemplateElement[value.cooked=/rounded-\\[/]",
+          message:
+            "Use a radius token (rounded-control / rounded-card / rounded-sheet), not an arbitrary rounded-[Npx]. See DESIGN.md.",
+        },
+        {
+          selector: "Literal[value=/(text|bg|border|ring)-red-/]",
+          message: "Use the `destructive` token, not a raw red-* color. See DESIGN.md.",
+        },
+        {
+          selector: "TemplateElement[value.cooked=/(text|bg|border|ring)-red-/]",
+          message: "Use the `destructive` token, not a raw red-* color. See DESIGN.md.",
+        },
+      ],
+    },
+  },
 );
