@@ -80,6 +80,7 @@ export default function ListDetail() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const padRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLButtonElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
