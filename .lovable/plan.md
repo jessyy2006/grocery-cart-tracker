@@ -1,54 +1,71 @@
-## Restyle List Detail page
+# Plan: Expanding Add-Item Footer Pad
 
-Single file affected: `src/pages/ListDetail.tsx` (plus a small tweak to `src/components/LedgerRow.tsx` for note spacing).
+Replace the current `+ ADD` modal on `src/pages/ListDetail.tsx` with an inline pad that slides up above the bottom CTA. No backdrop, list stays scrollable.
 
-### 1. Header
+## Scope
+- File: `src/pages/ListDetail.tsx` only.
+- New small component: `AddItemPad` (same file or sibling — TBD during build).
+- No DB schema changes. `tag` stays a single string.
 
-- Remove the sticky `glass` header bar with bottom border (no divider between header and list).
-- Keep a minimal back arrow above the title (small, borderless, no background bar) — clicking returns to `/lists`.
-- Below the back arrow, a left-aligned block:
-  - **Title**: list name, large display weight (matches screenshot's `W1 List` styling — use existing `text-h1`/display font). Click the title to enter inline edit mode.
-  - **Subtitle**: `{items.length} items` in muted small text (e.g. `text-small text-muted-foreground`).
-- Right side of the title row: a `+ ADD` button (outline/ghost, small, uppercase mono to match the screenshot's chip style) that opens the existing Add-item dialog.
-- Remove the "Shopping list" eyebrow entirely.
-- Remove the top-right item-count number (subtitle now shows the count).
+## Behavior
 
-### 2. Inline rename
+1. **Trigger** — Tapping `+ ADD` in the title row toggles `addOpen`. Remove the `<Dialog>` for Add (keep Edit + Duplicate dialogs).
+2. **Animation** — Pad mounts above the footer CTA; height/opacity transition (`framer-motion` `AnimatePresence` with `height: auto` + fade, ~200ms ease-out). Slides up, list above remains visible & scrollable.
+3. **Dismiss** — (a) chevron-down handle (grey pill) at the top of the pad, (b) tap outside the pad on the list area. Tapping inside the pad never dismisses.
+4. **CTA morph** — While `addOpen`: bottom button label becomes `ADD TO LIST`, calls `addItem()`, disabled when name empty. When closed: reverts to `start grocery run` exactly as today.
 
-- Clicking the title swaps it for an `Input` of the same size, plus explicit Save (check) icon next to it. 
-- Save commits to Supabase (`shopping_lists.name`) and exits edit mode; clicking off of the title reverts their changes.
-- Delete the existing `renameOpen` Dialog and related state.
+## Pad layout (per screenshot)
 
-### 3. Add-item modal collapse affordance
+```
+┌──────────── handle ────────────┐
+│ ITEM NAME*                     │  ← eyebrow label, mono 9-10px, taupe
+│ e.g. Greek Yogurt              │  ← borderless input, italic placeholder
+├──────┬─────────────────────────┤
+│ QTY  │ NOTE (OPTIONAL)         │  ← two cells, 1px hairline borders
+│  1   │ Add details...          │     QTY ~15% width, light taupe bg
+└──────┴─────────────────────────┘
+  TAGS: <chip> <chip>          +    ← morphing tag row
+```
 
-- Add a small chevron-down "collapse" icon button in the Add-item card that already appears at the bottom of the screen when user clicks the new "add item" button.
+- Inputs use existing hairline border tokens; no shadcn Card.
+- Category: auto-detected silently from name (existing `guessCategory`). Add a tiny tappable category chip at the right edge of the QTY row showing `{emoji} {label}` — tap opens a small popover/select to override (re-use existing `Select` styled as a chip-sized trigger). Sets `autoCat=false` on override.
 
-### 4. Footer / bottom area
+## Morphing tag row
 
-- Remove the existing `QuickAddRow` row above the start-grocery-run footer (per user: replaced by the new header `+ ADD` button).
-- Keep the `start grocery run` footer button exactly where it is.
+- State: `tagEditing: boolean`, `tagDraft: string`. `tag` remains single value.
+- **Empty display**: `TAGS:` label + placeholder `Type to add tag...` (taupe, mono 9px), `+` icon far right.
+- **Active display**: `TAGS:` + one chip (1px `#143F2D` border, `#143F2D` text, mono). `+` icon at far right swaps the existing chip out when user enters input mode.
+- **Input mode**: Tap placeholder or `+` → chip hides, full-width borderless mono input expands inside the row (fixed row height to prevent layout shift), auto-focus. Enter/Space commits → sets `tag`, exits input mode. Escape or blur with empty → exits.
 
-### 5. Spacing
+## CTA wiring
 
-- Match screenshot rhythm: generous top padding under title, ~24px gap before the `group by:` row, ~24px before the first category heading, hairline divider under category heading already present.
-- In `LedgerRow`, tighten the gap between item name and the note line (`fresh, 2 leaves`) — reduce from current spacing to ~2px (e.g. `mt-0.5` instead of `mt-1`/`mt-1.5`).
+```tsx
+<Button onClick={addOpen ? addItem : startRun} disabled={addOpen && !name.trim()}>
+  {addOpen ? "Add to list" : "Start grocery run"}
+</Button>
+```
 
-### 6. Cleanup
+Existing `addItem()` duplicate-check + `performAdd()` flow stays; on success it already clears state — also call `setAddOpen(false)` (already does).
 
-- Remove unused imports (`Pencil`, `DialogDescription` if no longer used, rename state, `QuickAddRow` import).
+## Outside-tap dismissal
 
-### Technical notes
+Attach a click handler to the scrollable list container (`scrollRef`) that closes the pad if `addOpen` and the click target isn't inside the pad. Use a ref on the pad wrapper.
 
-- No schema changes. No new routes.
-- Inline edit state: reuse local state (`editingName: boolean`, `nameDraft: string`); on Save, run the same Supabase update currently in `renameOpen` flow and toast on error.
-- Header is non-sticky now; the page already scrolls inside the inner flex container, so removing the sticky bar is purely visual.
-- `+ ADD` button styling: small height (`h-8`), outline border, uppercase mono text (`font-mono text-[11px] tracking-[0.14em]`), `+` icon left — matches the screenshot's pill.
+## Things explicitly NOT changing
 
-### Out of scope
+- Drag-and-drop, grouping toggle, Edit dialog, Duplicate dialog, list header/title/back arrow, footer button styling, DB schema, snapshot/run logic.
+- Eyebrow header already removed in earlier turn.
 
-- No changes to LedgerRow behavior, QuickAdd logic (just removed from render), trips, or data model.
-- No changes to other pages or the design tokens.
+## Risks
 
-### Risks / rollback
+- `framer-motion` not yet imported here — check `package.json`; if missing, use CSS `transition-[max-height]` with a fixed `max-h-[420px]` instead (cheaper, no new dep).
+- Auto-focusing the name input on open may shift mobile viewport; mitigate with `inputMode` and `enterKeyHint="done"`.
+- Outside-tap handler must ignore taps on the `+ ADD` title button (otherwise it re-opens immediately).
 
-- Low risk; pure UI. Rollback = revert `ListDetail.tsx` + `LedgerRow.tsx`.
+## Acceptance check
+
+- Open pad → list stays visible, scrollable, no dimming.
+- Bottom button reads `Add to list`, adds item, pad collapses, button reverts to `Start grocery run`.
+- Tapping handle OR list area collapses the pad.
+- Tag row morphs between chip and full-width input without row-height jump.
+- Category auto-detects but inline chip lets user override.

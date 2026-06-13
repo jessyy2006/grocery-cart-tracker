@@ -10,10 +10,10 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  
 } from "@/components/ui/select";
 
-import { ArrowLeft, Plus, ShoppingBasket, Check, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, ShoppingBasket, Check, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
 import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
@@ -22,6 +22,7 @@ import { MarketLoader } from "@/components/MarketLoader";
 import { LedgerRow } from "@/components/LedgerRow";
 import { toast } from "sonner";
 import { snapshotListIntoTrip } from "@/lib/snapshotList";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   DndContext,
   DragEndEvent,
@@ -74,7 +75,11 @@ export default function ListDetail() {
   const nameWrapRef = useRef<HTMLDivElement>(null);
   const [groupBy, setGroupBy] = useState<"category" | "tag">("category");
   const [dragId, setDragId] = useState<string | null>(null);
+  const [tagEditing, setTagEditing] = useState(false);
+  const [tagDraft, setTagDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const padRef = useRef<HTMLDivElement>(null);
+  const addBtnRef = useRef<HTMLButtonElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
@@ -150,6 +155,27 @@ export default function ListDetail() {
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, [nameEditing, listName]);
+
+  // Close add pad on outside tap (ignore the +ADD trigger button).
+  useEffect(() => {
+    if (!addOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (padRef.current?.contains(t)) return;
+      if (addBtnRef.current?.contains(t)) return;
+      setAddOpen(false);
+      setTagEditing(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [addOpen]);
+
+  const commitTag = () => {
+    const v = tagDraft.trim();
+    if (v) setTag(v);
+    setTagDraft("");
+    setTagEditing(false);
+  };
 
   const tagSuggestions = useMemo(() => {
     const seen = new Set<string>();
@@ -384,8 +410,9 @@ export default function ListDetail() {
           </div>
 
           <button
+            ref={addBtnRef}
             type="button"
-            onClick={() => setAddOpen(true)}
+            onClick={() => setAddOpen((v) => !v)}
             className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[6px] border border-border bg-background px-3 font-mono text-[11px] uppercase tracking-[0.14em] text-foreground hover:border-foreground/60"
             aria-label="Add item"
           >
@@ -481,87 +508,187 @@ export default function ListDetail() {
         )}
       </div>
 
+      <AnimatePresence initial={false}>
+        {addOpen && (
+          <motion.div
+            ref={padRef}
+            key="add-pad"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden border-t border-hairline bg-background"
+          >
+            <div className="px-4 pt-2 pb-3">
+              {/* Drag handle / collapse */}
+              <button
+                type="button"
+                onClick={() => setAddOpen(false)}
+                aria-label="Collapse"
+                className="mx-auto mb-3 flex h-3 w-full items-center justify-center"
+              >
+                <span className="block h-1 w-10 rounded-full bg-hairline" />
+              </button>
+
+              {/* ITEM NAME */}
+              <div className="rounded-[6px] border border-hairline px-3 py-2">
+                <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Item name*
+                </div>
+                <Input
+                  placeholder="e.g. Greek Yogurt"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addItem()}
+                  autoFocus
+                  enterKeyHint="done"
+                  className="mt-0.5 h-7 border-0 bg-transparent px-0 py-0 text-[15px] italic placeholder:italic placeholder:text-muted-foreground/70 focus-visible:ring-0"
+                />
+              </div>
+
+              {/* QTY + NOTE */}
+              <div className="mt-2 flex gap-2">
+                <div className="w-[80px] shrink-0 rounded-[6px] border border-hairline bg-muted/40 px-3 py-2">
+                  <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+                    Qty
+                  </div>
+                  <Input
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    value={qtyText}
+                    onChange={(e) => setQtyText(e.target.value.replace(/[^\d]/g, ""))}
+                    onBlur={() => setQtyText((v) => String(Math.max(1, parseInt(v, 10) || 1)))}
+                    aria-label="Quantity"
+                    className="mt-0.5 h-7 border-0 bg-transparent px-0 py-0 text-[15px] focus-visible:ring-0"
+                  />
+                </div>
+                <div className="flex-1 rounded-[6px] border border-hairline px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+                      Note (optional)
+                    </span>
+                    {/* Inline category override chip */}
+                    <Select
+                      value={category}
+                      onValueChange={(v) => {
+                        setCategory(v as CategorySlug);
+                        setAutoCat(false);
+                      }}
+                    >
+                      <SelectTrigger
+                        aria-label="Category"
+                        className="h-5 w-auto gap-1 border border-hairline bg-background px-1.5 py-0 font-mono text-[9px] uppercase tracking-[0.14em] text-muted-foreground [&>svg]:h-3 [&>svg]:w-3"
+                      >
+                        <span>
+                          {getCategory(category).emoji}{" "}
+                          {getCategory(category).label.toLowerCase()}
+                        </span>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map((c) => (
+                          <SelectItem key={c.slug} value={c.slug}>
+                            {c.emoji} {c.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Input
+                    placeholder="Add details..."
+                    value={notes}
+                    maxLength={25}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="mt-0.5 h-7 border-0 bg-transparent px-0 py-0 text-[15px] italic placeholder:italic placeholder:text-muted-foreground/70 focus-visible:ring-0"
+                  />
+                </div>
+              </div>
+
+              {/* TAGS row — morphing */}
+              <div className="mt-3 flex h-6 items-center gap-2">
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Tags:
+                </span>
+                {tagEditing ? (
+                  <input
+                    autoFocus
+                    value={tagDraft}
+                    onChange={(e) => setTagDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        commitTag();
+                      } else if (e.key === "Escape") {
+                        setTagDraft("");
+                        setTagEditing(false);
+                      }
+                    }}
+                    onBlur={commitTag}
+                    placeholder="type to add tag..."
+                    className="h-6 flex-1 border-0 bg-transparent p-0 font-mono text-[11px] text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-0"
+                  />
+                ) : (
+                  <>
+                    {tag ? (
+                      <span className="inline-flex items-center gap-1 rounded-[3px] border border-[hsl(155_56%_15%)] px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-[hsl(155_56%_15%)]">
+                        {tag}
+                        <button
+                          type="button"
+                          aria-label="Remove tag"
+                          onClick={() => setTag(null)}
+                          className="opacity-70 hover:opacity-100"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setTagEditing(true)}
+                        className="flex-1 text-left font-mono text-[9px] text-muted-foreground"
+                      >
+                        Type to add tag...
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTagDraft("");
+                        setTagEditing(true);
+                      }}
+                      aria-label="Add tag"
+                      className="ml-auto text-muted-foreground hover:text-foreground"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <footer className="px-4 pt-3 pb-3">
         <Button
           variant="primaryLight"
           size="lg"
           className="w-full"
-          onClick={startRun}
+          onClick={addOpen ? addItem : startRun}
+          disabled={addOpen && !name.trim()}
         >
-          <ShoppingBasket className="mr-2 h-5 w-5" /> start grocery run
+          {addOpen ? (
+            <>
+              <Plus className="mr-2 h-5 w-5" /> add to list
+            </>
+          ) : (
+            <>
+              <ShoppingBasket className="mr-2 h-5 w-5" /> start grocery run
+            </>
+          )}
         </Button>
       </footer>
 
-
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add item</DialogTitle>
-          </DialogHeader>
-          <button
-            type="button"
-            onClick={() => setAddOpen(false)}
-            aria-label="Collapse"
-            className="absolute left-4 top-4 rounded-sm text-muted-foreground opacity-70 transition-opacity hover:opacity-100"
-          >
-            <ChevronDown className="h-4 w-4" />
-          </button>
-          <div className="space-y-3">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Add item (e.g. milk)"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addItem()}
-                autoFocus
-              />
-              <Input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={qtyText}
-                onChange={(e) => setQtyText(e.target.value.replace(/[^\d]/g, ""))}
-                onBlur={() => setQtyText((v) => String(Math.max(1, parseInt(v, 10) || 1)))}
-                className="w-16"
-                aria-label="Quantity"
-              />
-            </div>
-            <Input
-              placeholder="Notes (e.g. 500 ml) — optional"
-              value={notes}
-              maxLength={25}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-            <Select
-              value={category}
-              onValueChange={(v) => {
-                setCategory(v as CategorySlug);
-                setAutoCat(false);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c.slug} value={c.slug}>
-                    {c.emoji} {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <TagSelector value={tag} suggestions={tagSuggestions} onChange={setTag} />
-          </div>
-          <DialogFooter className="flex-row gap-2 sm:justify-stretch sm:space-x-0">
-            <Button variant="primaryLight" size="lg" className="flex-1" onClick={addItem} disabled={!name.trim()}>
-              <Plus className="mr-1 h-4 w-4" /> Add
-            </Button>
-            <Button variant="secondaryLight" size="lg" className="flex-1" onClick={() => setAddOpen(false)}>
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={dupOpen} onOpenChange={setDupOpen}>
         <DialogContent className="max-w-sm">
