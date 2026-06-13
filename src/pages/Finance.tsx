@@ -18,6 +18,7 @@ import { guessCategory, getCategory, tokens } from "@/lib/categories";
 import { Pencil, LayoutGrid, Receipt as ReceiptIcon } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import ReceiptView from "@/components/finance/ReceiptView";
+import YearlyReceiptView from "@/components/finance/YearlyReceiptView";
 import { toast } from "sonner";
 
 
@@ -61,6 +62,14 @@ export default function Finance() {
     setView(v);
     try { localStorage.setItem("finance:view", v); } catch { /* noop */ }
   };
+  const [period, setPeriod] = useState<"month" | "year">(() => {
+    if (typeof window === "undefined") return "month";
+    return (localStorage.getItem("finance:period") as "month" | "year") || "month";
+  });
+  const setPeriodPersist = (p: "month" | "year") => {
+    setPeriod(p);
+    try { localStorage.setItem("finance:period", p); } catch { /* noop */ }
+  };
   const currency = useCurrency();
 
   useEffect(() => {
@@ -71,6 +80,9 @@ export default function Finance() {
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
       sixMonthsAgo.setDate(1);
       sixMonthsAgo.setHours(0, 0, 0, 0);
+      // Extend window to start of this year so yearly receipt has full coverage.
+      const yearStart = new Date(new Date().getFullYear(), 0, 1);
+      const fetchSince = sixMonthsAgo < yearStart ? sixMonthsAgo : yearStart;
 
       const [budgetRes, tripsRes, historyRes] = await Promise.all([
         supabase.from("user_budgets").select("monthly_cents").eq("user_id", user.id).maybeSingle(),
@@ -78,13 +90,13 @@ export default function Finance() {
           .from("trips")
           .select("id, started_at, total_cents, list_id")
           .eq("status", "saved")
-          .gte("started_at", sixMonthsAgo.toISOString())
+          .gte("started_at", fetchSince.toISOString())
           .order("started_at", { ascending: false }),
         supabase
           .from("user_budget_history")
           .select("month_start, monthly_cents")
           .eq("user_id", user.id)
-          .gte("month_start", sixMonthsAgo.toISOString().slice(0, 10)),
+          .gte("month_start", fetchSince.toISOString().slice(0, 10)),
       ]);
 
       const currentBudget = budgetRes.data?.monthly_cents ?? null;
