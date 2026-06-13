@@ -18,6 +18,7 @@ import { guessCategory, getCategory, tokens } from "@/lib/categories";
 import { Pencil, LayoutGrid, Receipt as ReceiptIcon } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import ReceiptView from "@/components/finance/ReceiptView";
+import YearlyReceiptView from "@/components/finance/YearlyReceiptView";
 import { toast } from "sonner";
 
 
@@ -61,6 +62,14 @@ export default function Finance() {
     setView(v);
     try { localStorage.setItem("finance:view", v); } catch { /* noop */ }
   };
+  const [period, setPeriod] = useState<"month" | "year">(() => {
+    if (typeof window === "undefined") return "month";
+    return (localStorage.getItem("finance:period") as "month" | "year") || "month";
+  });
+  const setPeriodPersist = (p: "month" | "year") => {
+    setPeriod(p);
+    try { localStorage.setItem("finance:period", p); } catch { /* noop */ }
+  };
   const currency = useCurrency();
 
   useEffect(() => {
@@ -71,6 +80,9 @@ export default function Finance() {
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
       sixMonthsAgo.setDate(1);
       sixMonthsAgo.setHours(0, 0, 0, 0);
+      // Extend window to start of this year so yearly receipt has full coverage.
+      const yearStart = new Date(new Date().getFullYear(), 0, 1);
+      const fetchSince = sixMonthsAgo < yearStart ? sixMonthsAgo : yearStart;
 
       const [budgetRes, tripsRes, historyRes] = await Promise.all([
         supabase.from("user_budgets").select("monthly_cents").eq("user_id", user.id).maybeSingle(),
@@ -78,13 +90,13 @@ export default function Finance() {
           .from("trips")
           .select("id, started_at, total_cents, list_id")
           .eq("status", "saved")
-          .gte("started_at", sixMonthsAgo.toISOString())
+          .gte("started_at", fetchSince.toISOString())
           .order("started_at", { ascending: false }),
         supabase
           .from("user_budget_history")
           .select("month_start, monthly_cents")
           .eq("user_id", user.id)
-          .gte("month_start", sixMonthsAgo.toISOString().slice(0, 10)),
+          .gte("month_start", fetchSince.toISOString().slice(0, 10)),
       ]);
 
       const currentBudget = budgetRes.data?.monthly_cents ?? null;
@@ -296,6 +308,89 @@ export default function Finance() {
     };
   }, [trips, items, listItems, budgetCents]);
 
+  // Yearly aggregations (Jan 1 – Dec 31, current year)
+  const yearly = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const yearStart = new Date(year, 0, 1);
+    const yearEnd = new Date(year, 11, 31);
+
+    const yearTrips = trips.filter((t) => {
+      const d = new Date(t.started_at);
+      return d >= yearStart && d <= new Date(year, 11, 31, 23, 59, 59);
+    });
+    const yearTripIds = new Set(yearTrips.map((t) => t.id));
+    const yearItems = items.filter((it) => yearTripIds.has(it.trip_id));
+
+    const totalOutlayCents = yearTrips.reduce((a, t) => a + (t.total_cents ?? 0), 0);
+    const itemCount = yearItems.reduce((a, it) => a + (it.qty ?? 1), 0);
+    const tripCount = yearTrips.length;
+    const avgBasket = tripCount ? itemCount / tripCount : 0;
+
+    const monthlySeries: number[] = Array.from({ length: 12 }, () => 0);
+    for (const t of yearTrips) {
+      const m = new Date(t.started_at).getMonth();
+      monthlySeries[m] += t.total_cents ?? 0;
+    }
+
+    // Most loyal store — by total spend
+    const storeMap = new Map<string, number>();
+    for (const it of yearItems) {
+      const s = it.store_name_snapshot?.trim();
+      if (!s) continue;
+      storeMap.set(s, (storeMap.get(s) ?? 0) + it.price_cents * it.qty);
+    }
+    const mostLoyalStore =
+      [...storeMap.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+    // Staple of the year — by total qty (case-insensitive name)
+    const stapleMap = new Map<string, number>();
+    for (const it of yearItems) {
+      const key = it.name_snapshot.trim().toUpperCase();
+      if (!key) continue;
+      stapleMap.set(key, (stapleMap.get(key) ?? 0) + (it.qty ?? 1));
+    }
+    const stapleEntry = [...stapleMap.entries()].sort((a, b) => b[1] - a[1])[0];
+    const staple = stapleEntry ? { name: stapleEntry[0], qty: stapleEntry[1] } : null;
+
+    // Largest haul — highest single trip total
+    const largestTrip = [...yearTrips].sort(
+      (a, b) => (b.total_cents ?? 0) - (a.total_cents ?? 0),
+    )[0];
+    const largestHaul = largestTrip
+      ? { date: new Date(largestTrip.started_at), cents: largestTrip.total_cents ?? 0 }
+      : null;
+
+    // Quarters
+    const itemsByTrip = new Map<string, TripItem[]>();
+    for (const it of yearItems) {
+      const arr = itemsByTrip.get(it.trip_id) ?? [];
+      arr.push(it);
+      itemsByTrip.set(it.trip_id, arr);
+    }
+    const quarters = ([0, 1, 2, 3] as const).map((q) => {
+      const qTrips = yearTrips.filter(
+        (t) => Math.floor(new Date(t.started_at).getMonth() / 3) === q,
+      );
+      const totalCents = qTrips.reduce((a, t) => a + (t.total_cents ?? 0), 0);
+      const qItems = qTrips.flatMap((t) => itemsByTrip.get(t.id) ?? []);
+      const cats = new Map<string, number>();
+      for (const it of qItems) {
+        const slug = guessCategory(it.name_snapshot);
+        cats.set(slug, (cats.get(slug) ?? 0) + it.price_cents * it.qty);
+      }
+      const topSlug = [...cats.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+      const topCategoryLabel = topSlug ? getCategory(topSlug).label : null;
+      return { q, totalCents, tripCount: qTrips.length, topCategoryLabel };
+    });
+
+    return {
+      year, yearStart, yearEnd,
+      totalOutlayCents, itemCount, avgBasket, tripCount,
+      monthlySeries, mostLoyalStore, staple, largestHaul, quarters,
+    };
+  }, [trips, items]);
+
   const hasBudget = budgetCents !== null && budgetCents > 0;
   const remaining = (budgetCents ?? 0) - derived.monthSpend;
   const over = remaining < 0;
@@ -411,7 +506,7 @@ export default function Finance() {
     <div className="space-y-7 px-5 pt-3">
       <header className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-eyebrow">This month</p>
+          <p className="text-eyebrow">{period === "year" ? "This year" : "This month"}</p>
           <h1 className="mt-1.5 text-h1">Finance</h1>
         </div>
         <div className="flex items-center gap-1">
@@ -439,23 +534,59 @@ export default function Finance() {
       {loading ? (
         <MarketLoader minHeight="55vh" />
       ) : view === "receipt" ? (
-        <ReceiptView
-          budgetCents={budgetCents ?? 0}
-          monthSpend={derived.monthSpend}
-          tripCount={derived.monthTrips}
-          avgTripCents={derived.avgTrip}
-          impulseCents={derived.extrasNow.cents}
-          impulseCount={derived.extrasNow.count}
-          impulseRate={impulseRate}
-          biggestCategory={biggestCat}
-          streak={derived.streak}
-          personality={personality}
-          momDelta={derived.prevSpend > 0 ? derived.momDelta : null}
-          prevSpend={derived.prevSpend}
-          monthStart={new Date(new Date().getFullYear(), new Date().getMonth(), 1)}
-          monthEnd={new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)}
-          currency={currency}
-        />
+        <div className="space-y-5">
+          <div className="flex justify-center">
+            <ToggleGroup
+              type="single"
+              value={period}
+              onValueChange={(v) => v && setPeriodPersist(v as "month" | "year")}
+              size="sm"
+              variant="outline"
+            >
+              <ToggleGroupItem value="month" aria-label="Month view" className="px-3">
+                <span className="text-[11px] font-semibold tracking-[0.15em]">THIS MONTH</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="year" aria-label="Year view" className="px-3">
+                <span className="text-[11px] font-semibold tracking-[0.15em]">THIS YEAR</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+          {period === "month" ? (
+            <ReceiptView
+              budgetCents={budgetCents ?? 0}
+              monthSpend={derived.monthSpend}
+              tripCount={derived.monthTrips}
+              avgTripCents={derived.avgTrip}
+              impulseCents={derived.extrasNow.cents}
+              impulseCount={derived.extrasNow.count}
+              impulseRate={impulseRate}
+              biggestCategory={biggestCat}
+              streak={derived.streak}
+              personality={personality}
+              momDelta={derived.prevSpend > 0 ? derived.momDelta : null}
+              prevSpend={derived.prevSpend}
+              monthStart={new Date(new Date().getFullYear(), new Date().getMonth(), 1)}
+              monthEnd={new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)}
+              currency={currency}
+            />
+          ) : (
+            <YearlyReceiptView
+              year={yearly.year}
+              yearStart={yearly.yearStart}
+              yearEnd={yearly.yearEnd}
+              totalOutlayCents={yearly.totalOutlayCents}
+              itemCount={yearly.itemCount}
+              avgBasket={yearly.avgBasket}
+              tripCount={yearly.tripCount}
+              monthlySeries={yearly.monthlySeries}
+              mostLoyalStore={yearly.mostLoyalStore}
+              staple={yearly.staple}
+              largestHaul={yearly.largestHaul}
+              quarters={yearly.quarters}
+              currency={currency}
+            />
+          )}
+        </div>
       ) : (
         <FinanceCardView
           hasBudget={hasBudget}

@@ -1,35 +1,68 @@
-# Binder Tab Navigation + Profile Relocation
+# Yearly receipt on Finance page
 
-## 1. `src/components/BottomNav.tsx` — full rewrite
-Replace the floating pill nav with a flush, edge-to-edge binder.
+Add a yearly variant of the receipt that lives next to the existing monthly receipt and shares its paper/jagged-edge/swipe-to-tear treatment, with a couple of editorial flourishes layered in.
 
-- Container: `fixed inset-x-0 bottom-0 z-30 bg-paper` (Paper White `#FFFFFF`), height capped at **48px** including the 4px tab protrusion. Add `pb-[env(safe-area-inset-bottom)]` *outside* the 48px (safe-area is separate from the visual binder).
-- Boundary line: a `1px solid #E5DFD3` stroke that spans full width, sitting at the top of the 44px tab row. Implemented as an absolutely positioned `<div>` so the active tab can visually "break" it via `z-index`.
-- 4 equal tabs (`grid grid-cols-4`): HOME, LISTS, FINANCE, HISTORY. Remove the Profile entry from the array.
-- **Active tab**: `bg-[#143F2D] text-[#F7F5F0]`, `rounded-t-[4px]`, translated `-4px` upward (`-mt-1` + `h-[44px]`), `z-10` to cover the boundary line. Font: `font-mono font-bold text-[9px] uppercase tracking-widest`.
-- **Inactive tabs**: `bg-white text-[#7C756B]`, `border border-[#E5DFD3] border-b-0`, `rounded-t-[4px]`, `py-2`. Same monospace, regular weight. Hover/active: `hover:-translate-y-0.5 transition-transform`.
-- No shadows, no gradients, no icons. Text-only labels.
-- Keep the existing `/trip`, `/trip/new`, `/scan-receipt` early return for fullscreen pages.
+## Scope
 
-## 2. `src/components/AppLayout.tsx`
-- Change non-fullscreen `main` padding from `pb-28` to `pb-14` (56px clears the 48px binder + small gap).
+- Period switcher above the receipt: `THIS MONTH` / `THIS YEAR` (persisted to `localStorage`, like the existing view toggle). Visible only when `view === "receipt"`.
+- New `YearlyReceiptView` component built from real trip data for Jan 1 – Dec 31 of the current year.
+- Existing monthly `ReceiptView` is untouched.
 
-## 3. `src/pages/Home.tsx` — add Profile entry point
-- In the `PageHeader` area, add a top-right circular `User` icon button (matching the existing `ScanLine` button pattern from the hero card, but positioned in the page header row). Place it absolutely top-right of the header so it doesn't disrupt the `eyebrow`/`title` rhythm.
-- `onClick={() => navigate("/profile")}`, `aria-label="Profile"`.
-- Keep the hero `ScanLine` button unchanged.
+## Yearly receipt content (top → bottom)
 
-Implementation note: `PageHeader` likely doesn't accept a right-slot prop; wrap the header in a `relative` div and absolutely position the icon button at `top-3 right-5` so we don't need to modify `PageHeader.tsx`.
+1. Header: `YEARLY GROCERY SUMMARY` + `JAN 1 — DEC 31, YYYY`.
+2. Three metric columns (divided by vertical hairlines): **Total Outlay**, **Items**, **Avg Basket**.
+3. **Spending Rhythm** — smooth line chart (monotone SVG path) of 12 monthly totals, forest-green stroke `#143F2D` with soft fill, J/F/M/A/M/J/J/A/S/O/N/D axis labels.
+4. **The Hall of Fame** rows:
+   - Most Loyal Store (hidden if no `store_name_snapshot` exists for the year)
+   - Staple of the Year (most-purchased item by qty, e.g. `OAT MILK (48×)`)
+   - Largest Haul (highest-total trip, e.g. `NOV 22 — $342.10`)
+5. Dotted-divider Q1–Q4 blocks. Each shows quarter total + a short italic insight derived from the data (top category that quarter, or % vs prior quarter). Deterministic, no AI call.
+6. Italic Playfair quote near the footer (one of a small deterministic set keyed off year + spend pattern).
+7. Barcode + archive code `YYYY—ARCHIVE—FINAL`.
+8. Same jagged top/bottom edges and swipe-to-tear stub as the monthly receipt.
 
-## 4. Routing
-- Leave `/profile` route in `App.tsx` untouched (still reachable via direct URL and the new Home icon).
+## Style (hybrid)
 
-## Risks
-- Tabs row + safe-area padding on iOS may visually exceed 48px of *colored* area; the 48px constraint applies to the binder itself, with safe-area as transparent/white extension below. Confirming that interpretation.
-- Active tab "breaking" the boundary relies on z-stacking; verified by giving the tab `bg-[#143F2D]` that fully overlaps the 1px line.
-- `pb-14` may feel tight on pages with sticky footer CTAs (e.g. ListDetail uses fullscreen mode so unaffected). Will spot-check Home, Lists, Finance, History.
+- Keep paper `#fdfaf1`, JetBrains Mono body, dashed dividers, jagged SVG edges, current barcode/stub component.
+- Add forest green `#143F2D` for the chart stroke + accent rules.
+- Quote uses Playfair Display italic (load via Google Fonts in `index.html`).
+- Everything else (labels, numbers, rows) stays in the existing mono treatment so the two receipts feel like siblings.
+
+## Data
+
+Currently `Finance.tsx` only fetches trips for the last 6 months. Extend the fetch window to `max(jan 1 this year, 6 months ago)` so yearly aggregates have full-year coverage without breaking existing monthly math.
+
+Aggregations (all client-side, in a new `useMemo`):
+
+- `totalOutlay` = sum of `total_cents` for trips this year
+- `itemCount` = sum of `qty` across trip_items this year
+- `avgBasket` = itemCount / tripCount (one decimal)
+- `monthlySeries` = 12 entries (Jan…Dec), cents per month
+- `mostLoyalStore` = store with highest summed cents; hidden if none
+- `staple` = item name with highest summed qty (case-insensitive match on `name_snapshot`)
+- `largestHaul` = trip with max `total_cents` → `MMM DD — $X.XX`
+- `quarters` = 4 entries with `{ total, topCategorySlug, deltaVsPrev }`
+
+## Interaction
+
+- Switching `MONTH` / `YEAR` swaps the rendered receipt; share/tear behavior is identical (swipe across barcode → tear → share dialog with PNG export). No archive button.
+- Tear PNG export reuses the same `toPng` flow; export ref lives inside the yearly component.
+
+## Files
+
+- New: `src/components/finance/YearlyReceiptView.tsx`
+- New: `src/components/finance/receiptPrimitives.tsx` — extract shared `JaggedEdge`, `Divider`, `Row`, `Barcode`, `PAPER` from `ReceiptView.tsx` so both receipts share one implementation. Update `ReceiptView.tsx` to import from it (no visual change).
+- Edit: `src/pages/Finance.tsx` — extend trip fetch to start of current year; add `period` state + toggle UI; render `YearlyReceiptView` when `period === "year"`; compute yearly derived data.
+- Edit: `index.html` — add Playfair Display italic stylesheet link.
 
 ## Out of scope
-- No changes to BottomNav behavior on fullscreen routes.
-- No restyling of PageHeader component itself.
-- No animation library additions.
+
+- Persisting/exporting an "archive" of past years.
+- Changes to the monthly receipt's content or styling.
+- AI-generated insights for Q1–Q4 blurbs (deterministic only).
+
+## Risks
+
+- Extending the trip fetch range increases payload — bounded to one year of trips for a single user, low risk.
+- Staple/store detection is naive string match; acceptable for v1.
