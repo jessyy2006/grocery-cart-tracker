@@ -14,18 +14,13 @@ export const BottomNav = () => {
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-30 bg-white"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-30"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       {/* 48px binder area */}
       <div className="relative h-12 w-full">
-        {/* Boundary stroke — sits 4px from top of container, above the 44px tab row */}
-        <div
-          className="absolute left-0 right-0 top-1 h-px bg-[#E5DFD3]"
-          aria-hidden
-        />
         {/* Tabs grid */}
-        <div className="absolute inset-x-0 bottom-0 top-0 grid grid-cols-4 items-end px-3 gap-2">
+        <div className="pointer-events-auto absolute inset-x-0 bottom-0 top-0 grid grid-cols-4 items-end px-3 gap-2">
           {items.map(({ to, label, end }) => (
             <NavLink
               key={to}
