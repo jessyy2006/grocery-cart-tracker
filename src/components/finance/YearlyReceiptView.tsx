@@ -163,9 +163,9 @@ export default function YearlyReceiptView(props: Props) {
 
           {/* Three metric columns */}
           <div className="my-3 grid grid-cols-3 gap-2">
-            <Metric label="Total Outlay" value={formatMoney(totalOutlayCents, currency, 0)} />
+            <Metric label="Total" value={formatMoney(totalOutlayCents, currency, 0)} />
             <Metric label="Items" value={itemCount.toLocaleString()} bordered />
-            <Metric label="Avg Basket" value={avgBasket ? avgBasket.toFixed(1) : "—"} bordered />
+            <Metric label="Avg Cart" value={avgBasket ? avgBasket.toFixed(1) : "—"} bordered />
           </div>
 
           <Divider />
@@ -215,15 +215,15 @@ export default function YearlyReceiptView(props: Props) {
             <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-700">
               The Hall of Fame
             </div>
-            <div className="mt-2 space-y-1.5">
+            <div className="mt-2 space-y-2">
               {mostLoyalStore && (
-                <Row label="Most Loyal Store" value={mostLoyalStore.toUpperCase()} />
+                <HallRow label="Most Loyal Store" value={mostLoyalStore.toUpperCase()} />
               )}
-              <Row
+              <HallRow
                 label="Staple of the Year"
                 value={staple ? `${staple.name} (${staple.qty}×)` : "—"}
               />
-              <Row
+              <HallRow
                 label="Largest Haul"
                 value={
                   largestHaul
@@ -384,6 +384,17 @@ function Metric({ label, value, bordered }: { label: string; value: string; bord
         {label}
       </div>
       <div className="text-[20px] font-bold leading-tight tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function HallRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4">
+      <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-600">
+        {label}
+      </span>
+      <span className="tabular-nums text-right font-bold">{value}</span>
     </div>
   );
 }

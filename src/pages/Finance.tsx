@@ -512,8 +512,7 @@ export default function Finance() {
     <div className="space-y-7 px-5 pt-3">
       <header className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-eyebrow">This month</p>
-          <h1 className="mt-1.5 text-h1">Finance</h1>
+          <h1 className="text-h1">Finance</h1>
         </div>
         <div className="flex items-center gap-1">
           <ToggleGroup
@@ -697,7 +696,7 @@ function FinanceCardView(props: any) {
     <div className="space-y-10">
       {/* A — SUMMARY HERO */}
       <section className="space-y-3">
-        <div className={sectionAnchor}>spending budget</div>
+        <div className={sectionAnchor}>{new Date().toLocaleString(undefined, { month: "long" })}'s Budget</div>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="text-money text-[44px] leading-[1.02] tracking-tight text-foreground">
@@ -718,7 +717,7 @@ function FinanceCardView(props: any) {
           />
         </div>
         <div className={monoTiny}>
-          of {formatMoney(budgetCents!)} monthly budget threshold
+          of {formatMoney(budgetCents!)} budget
         </div>
       </section>
 
