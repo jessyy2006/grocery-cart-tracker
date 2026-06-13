@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -12,12 +10,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { LogOut, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SUPPORTED_CURRENCIES, useCurrency, setCurrency, Currency } from "@/lib/format";
 import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
 
 type Store = { id: string; name: string; address: string | null };
+
+const sectionLabel =
+  "text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground";
+const rowDivider = "border-t border-hairline";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -41,86 +43,137 @@ export default function Profile() {
   };
 
   return (
-    <div className="space-y-7 px-5 pt-3">
-      <header>
-        <p className="text-eyebrow">Your account</p>
-        <h1 className="mt-1.5 text-h1">
-          {profileLoading ? (
-            <span className="invisible">Profile</span>
-          ) : firstName ? (
-            `${firstName}`
-          ) : (
-            "Profile"
-          )}
-        </h1>
-        <p className="mt-1 text-small text-muted-foreground">{user?.email}</p>
-      </header>
+    <div className="flex h-full flex-col">
+      <div className="flex-1 overflow-y-auto px-5 pt-3 pb-6">
+        <header className="mb-8">
+          <p className={sectionLabel}>Your account</p>
+          <h1 className="mt-1 text-h1">
+            {profileLoading ? (
+              <span className="invisible">Profile</span>
+            ) : firstName ? (
+              firstName
+            ) : (
+              "Profile"
+            )}
+          </h1>
+          <p className="mt-1 text-small text-muted-foreground">{user?.email}</p>
+        </header>
 
-      <section className="space-y-3">
-        <p className="text-eyebrow">Currency</p>
-        <Card className="flex items-center justify-between p-4">
-          <div>
-            <p className="text-h3">Display currency</p>
-            <p className="text-small text-muted-foreground">Used for all prices and totals.</p>
+        {/* CURRENCY SETTINGS */}
+        <section className="mb-8">
+          <h2 className={sectionLabel}>Currency settings</h2>
+          <div className="mt-1">
+            <SettingRow
+              label="Display currency"
+              description="Used for all prices and totals."
+              control={
+                <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
+                  <SelectTrigger className="h-9 w-24 border-hairline bg-transparent">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              }
+            />
           </div>
-          <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
-            <SelectTrigger className="h-10 w-28 rounded-md bg-surface border-hairline">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SUPPORTED_CURRENCIES.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Card>
-      </section>
+        </section>
 
-      <section className="space-y-3">
-        <p className="text-eyebrow">Preferences</p>
-        <Card className="flex items-center justify-between p-4">
-          <div className="pr-3">
-            <p className="text-h3">Duplicate item alerts</p>
-            <p className="text-small text-muted-foreground">Warn me before adding duplicate items.</p>
+        {/* APP PREFERENCES */}
+        <section className="mb-8">
+          <h2 className={sectionLabel}>App preferences</h2>
+          <div className="mt-1">
+            <SettingRow
+              label="Duplicate item alerts"
+              description="Warn me before adding duplicate items."
+              control={
+                <Switch
+                  checked={dupAlerts}
+                  onCheckedChange={setDuplicateAlerts}
+                  className="h-5 w-9"
+                />
+              }
+            />
           </div>
-          <Switch checked={dupAlerts} onCheckedChange={setDuplicateAlerts} />
-        </Card>
-      </section>
+        </section>
 
-      <section className="space-y-3">
-        <p className="text-eyebrow">My stores</p>
-        {stores.length === 0 ? (
-          <Card className="p-5">
-            <p className="text-small text-muted-foreground">
-              Stores you've shopped at will appear here.
-            </p>
-          </Card>
-        ) : (
-          <ul className="space-y-2">
-            {stores.map((s) => (
-              <li key={s.id}>
-                <Card className="flex items-center justify-between p-4">
-                  <div>
-                    <p className="text-h3">{s.name}</p>
-                    {s.address && <p className="text-small text-muted-foreground">{s.address}</p>}
-                  </div>
-                  <button
-                    onClick={() => removeStore(s.id)}
-                    className="text-muted-foreground hover:text-destructive"
-                    aria-label="Remove"
+        {/* MY STORES */}
+        <section className="mb-8">
+          <h2 className={sectionLabel}>My stores</h2>
+          <div className="mt-1">
+            {stores.length === 0 ? (
+              <div className={`${rowDivider} py-3`}>
+                <p className="text-small italic text-muted-foreground">
+                  Stores you've shopped at will appear here.
+                </p>
+              </div>
+            ) : (
+              <ul>
+                {stores.map((s) => (
+                  <li
+                    key={s.id}
+                    className={`${rowDivider} flex items-center justify-between gap-3 py-3 last:border-b last:border-hairline`}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                    <div className="min-w-0">
+                      <p className="truncate font-sans text-[15px] text-foreground">{s.name}</p>
+                      {s.address && (
+                        <p className="truncate text-small italic text-muted-foreground">
+                          {s.address}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => removeStore(s.id)}
+                      className="text-muted-foreground transition-colors hover:text-destructive"
+                      aria-label={`Remove ${s.name}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      </div>
 
-      <Button variant="outline" size="lg" className="w-full" onClick={() => supabase.auth.signOut()}>
-        <LogOut className="mr-2 h-4 w-4" /> Sign out
-      </Button>
+      <div className="px-5 pt-8 pb-6">
+        <button
+          onClick={() => supabase.auth.signOut()}
+          className="w-full rounded-[6px] border border-primary bg-transparent py-3 text-xs font-bold uppercase tracking-widest text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SettingRow({
+  label,
+  description,
+  control,
+}: {
+  label: string;
+  description?: string;
+  control: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`${rowDivider} flex items-center justify-between gap-4 py-3 last:border-b last:border-hairline`}
+    >
+      <div className="min-w-0">
+        <p className="font-sans text-[15px] text-foreground">{label}</p>
+        {description && (
+          <p className="text-small italic text-muted-foreground">{description}</p>
+        )}
+      </div>
+      <div className="shrink-0">{control}</div>
     </div>
   );
 }
