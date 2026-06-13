@@ -631,3 +631,49 @@ export default function ListDetail() {
     </div>
   );
 }
+
+function DraggableRow({
+  id,
+  enabled,
+  children,
+}: {
+  id: string;
+  enabled: boolean;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, disabled: !enabled });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{ opacity: isDragging ? 0.3 : 1, touchAction: enabled ? "manipulation" : undefined }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DroppableSection({
+  id,
+  enabled,
+  children,
+}: {
+  id: string;
+  enabled: boolean;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id, disabled: !enabled });
+  return (
+    <section
+      ref={setNodeRef}
+      className={cn(
+        "rounded-[6px] transition-colors",
+        isOver && "bg-foreground/5 ring-1 ring-foreground/20",
+      )}
+    >
+      {children}
+    </section>
+  );
+}
+
