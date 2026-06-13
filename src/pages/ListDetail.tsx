@@ -417,7 +417,7 @@ export default function ListDetail() {
                       setNameDraft(listName);
                     }
                   }}
-                  className="h-auto border-0 border-b border-foreground/30 bg-transparent px-0 py-0 font-display text-h1 focus-visible:ring-0"
+                  className="h-auto rounded-none border-0 border-b border-foreground/30 bg-transparent px-0 py-0 font-display text-h1 focus-visible:ring-0"
                 />
                 <button
                   type="button"
