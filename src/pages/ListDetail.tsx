@@ -161,9 +161,18 @@ export default function ListDetail() {
   useEffect(() => {
     if (!addOpen) return;
     const onDoc = (e: MouseEvent) => {
-      const t = e.target as Node;
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
       if (padRef.current?.contains(t)) return;
       if (addBtnRef.current?.contains(t)) return;
+      if (footerRef.current?.contains(t)) return;
+      // Ignore clicks inside Radix portals (Select dropdown, dialogs, etc.)
+      if (
+        t.closest(
+          '[data-radix-popper-content-wrapper],[role="listbox"],[role="dialog"],[role="menu"]'
+        )
+      )
+        return;
       setAddOpen(false);
       setTagEditing(false);
     };
