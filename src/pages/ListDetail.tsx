@@ -80,6 +80,7 @@ export default function ListDetail() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const padRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLButtonElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
@@ -160,9 +161,18 @@ export default function ListDetail() {
   useEffect(() => {
     if (!addOpen) return;
     const onDoc = (e: MouseEvent) => {
-      const t = e.target as Node;
+      const t = e.target as HTMLElement | null;
+      if (!t) return;
       if (padRef.current?.contains(t)) return;
       if (addBtnRef.current?.contains(t)) return;
+      if (footerRef.current?.contains(t)) return;
+      // Ignore clicks inside Radix portals (Select dropdown, dialogs, etc.)
+      if (
+        t.closest(
+          '[data-radix-popper-content-wrapper],[role="listbox"],[role="dialog"],[role="menu"]'
+        )
+      )
+        return;
       setAddOpen(false);
       setTagEditing(false);
     };
@@ -669,7 +679,7 @@ export default function ListDetail() {
         )}
       </AnimatePresence>
 
-      <footer className="px-4 pt-3 pb-3">
+      <footer ref={footerRef} className="px-4 pt-3 pb-3">
         <Button
           variant="primaryLight"
           size="lg"
