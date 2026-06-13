@@ -411,7 +411,7 @@ export default function ScanReceipt() {
         </button>
 
         {/* Bottom controls */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-around px-6 pb-10 pt-6 safe-bottom">
+        <div className="absolute bottom-4 left-0 right-0 flex items-center justify-around px-6 pb-10 pt-6 safe-bottom">
           {stage === "capture" && (
             <>
               <button
