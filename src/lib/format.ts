@@ -36,8 +36,8 @@ const LOCALES: Record<Currency, string> = {
   JPY: "ja-JP",
 };
 
-export const formatMoney = (cents: number, currency: Currency = getCurrency()) =>
-  (cents / 100).toLocaleString(LOCALES[currency], { style: "currency", currency });
+export const formatMoney = (cents: number, currency: Currency = getCurrency(), fractionDigits = 2) =>
+  (cents / 100).toLocaleString(LOCALES[currency], { style: "currency", currency, minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits });
 
 export const parsePriceToCents = (input: string): number | null => {
   const cleaned = input.replace(/[^\d.,-]/g, "").replace(",", ".");
