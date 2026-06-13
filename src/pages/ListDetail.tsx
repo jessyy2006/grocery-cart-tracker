@@ -75,7 +75,11 @@ export default function ListDetail() {
   const nameWrapRef = useRef<HTMLDivElement>(null);
   const [groupBy, setGroupBy] = useState<"category" | "tag">("category");
   const [dragId, setDragId] = useState<string | null>(null);
+  const [tagEditing, setTagEditing] = useState(false);
+  const [tagDraft, setTagDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const padRef = useRef<HTMLDivElement>(null);
+  const addBtnRef = useRef<HTMLButtonElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
