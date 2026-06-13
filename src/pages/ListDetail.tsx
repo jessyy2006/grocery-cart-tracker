@@ -156,6 +156,27 @@ export default function ListDetail() {
     return () => document.removeEventListener("mousedown", onDoc);
   }, [nameEditing, listName]);
 
+  // Close add pad on outside tap (ignore the +ADD trigger button).
+  useEffect(() => {
+    if (!addOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (padRef.current?.contains(t)) return;
+      if (addBtnRef.current?.contains(t)) return;
+      setAddOpen(false);
+      setTagEditing(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [addOpen]);
+
+  const commitTag = () => {
+    const v = tagDraft.trim();
+    if (v) setTag(v);
+    setTagDraft("");
+    setTagEditing(false);
+  };
+
   const tagSuggestions = useMemo(() => {
     const seen = new Set<string>();
     const out: string[] = [];
