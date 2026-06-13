@@ -15,8 +15,14 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { guessCategory, getCategory, tokens } from "@/lib/categories";
-import { Pencil, LayoutGrid, Receipt as ReceiptIcon } from "lucide-react";
+import { Pencil, LayoutGrid, Receipt as ReceiptIcon, ChevronDown } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ReceiptView from "@/components/finance/ReceiptView";
 import YearlyReceiptView from "@/components/finance/YearlyReceiptView";
 import { toast } from "sonner";
@@ -506,7 +512,23 @@ export default function Finance() {
     <div className="space-y-7 px-5 pt-3">
       <header className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-eyebrow">{period === "year" ? "This year" : "This month"}</p>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="text-eyebrow inline-flex items-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
+              aria-label="Change period"
+            >
+              <span>{period === "year" ? "THIS YEAR" : "THIS MONTH"}</span>
+              <ChevronDown className="h-3 w-3" aria-hidden />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[10rem]">
+              <DropdownMenuItem onSelect={() => setPeriodPersist("month")}>
+                <span className="text-[11px] font-semibold tracking-[0.15em]">THIS MONTH</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setPeriodPersist("year")}>
+                <span className="text-[11px] font-semibold tracking-[0.15em]">THIS YEAR</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <h1 className="mt-1.5 text-h1">Finance</h1>
         </div>
         <div className="flex items-center gap-1">
@@ -535,22 +557,6 @@ export default function Finance() {
         <MarketLoader minHeight="55vh" />
       ) : view === "receipt" ? (
         <div className="space-y-5">
-          <div className="flex justify-center">
-            <ToggleGroup
-              type="single"
-              value={period}
-              onValueChange={(v) => v && setPeriodPersist(v as "month" | "year")}
-              size="sm"
-              variant="outline"
-            >
-              <ToggleGroupItem value="month" aria-label="Month view" className="px-3">
-                <span className="text-[11px] font-semibold tracking-[0.15em]">THIS MONTH</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem value="year" aria-label="Year view" className="px-3">
-                <span className="text-[11px] font-semibold tracking-[0.15em]">THIS YEAR</span>
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
           {period === "month" ? (
             <ReceiptView
               budgetCents={budgetCents ?? 0}
