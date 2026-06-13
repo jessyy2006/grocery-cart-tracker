@@ -22,6 +22,19 @@ import { MarketLoader } from "@/components/MarketLoader";
 import { LedgerRow } from "@/components/LedgerRow";
 import { toast } from "sonner";
 import { snapshotListIntoTrip } from "@/lib/snapshotList";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { cn } from "@/lib/utils";
 
 type Item = {
   id: string;
@@ -60,8 +73,37 @@ export default function ListDetail() {
   const [nameDraft, setNameDraft] = useState("");
   const nameWrapRef = useRef<HTMLDivElement>(null);
   const [groupBy, setGroupBy] = useState<"category" | "tag">("category");
+  const [dragId, setDragId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+  );
+
+  const onDragStart = (e: DragStartEvent) => setDragId(String(e.active.id));
+
+  const onDragEnd = async (e: DragEndEvent) => {
+    setDragId(null);
+    if (groupBy !== "category") return;
+    const itemId = String(e.active.id);
+    const targetCat = e.over?.id as CategorySlug | undefined;
+    if (!targetCat || !CATEGORY_ORDER.includes(targetCat)) return;
+    const item = items.find((i) => i.id === itemId);
+    if (!item || item.category === targetCat) return;
+    // Move to end of items array so it lands at the bottom of the target category group.
+    setItems((c) => {
+      const rest = c.filter((i) => i.id !== itemId);
+      return [...rest, { ...item, category: targetCat }];
+    });
+    const { error } = await supabase
+      .from("shopping_list_items")
+      .update({ category: targetCat })
+      .eq("id", itemId);
+    if (error) toast.error(error.message);
+  };
+
 
   useEffect(() => {
     if (!id || !user) return;
@@ -389,36 +431,50 @@ export default function ListDetail() {
               </p>
             )}
 
-            <div className="mt-6 space-y-6">
-              {(groupBy === "category" ? groupedByCategory : groupedByTag).map((group) => (
-                <section key={group.key}>
-                  <h3 className="mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                    {groupBy === "category"
-                      ? `${(group as any).emoji} ${String(group.label).toLowerCase()}`
-                      : (group as any).isTag
-                      ? String(group.label).toLowerCase()
-                      : "other"}
-                  </h3>
-                  <ul className="border-t border-[hsl(20_40%_18%/0.3)]">
-                    {group.items.map((it) => (
-                      <LedgerRow
-                        key={it.id}
-                        name={it.name}
-                        qty={it.qty}
-                        note={it.notes}
-                        tag={groupBy === "category" ? it.tag : null}
-                        onQtyChange={async (next) => {
-                          setItems((c) => c.map((i) => (i.id === it.id ? { ...i, qty: next } : i)));
-                          await supabase.from("shopping_list_items").update({ qty: next }).eq("id", it.id);
-                        }}
-                        onEdit={() => openEdit(it)}
-                        onDelete={() => remove(it.id)}
-                      />
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
+            <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+              <div className="mt-6 space-y-6">
+                {(groupBy === "category" ? groupedByCategory : groupedByTag).map((group) => {
+                  const isCategoryGroup = groupBy === "category";
+                  return (
+                    <DroppableSection key={group.key} id={group.key} enabled={isCategoryGroup}>
+                      <h3 className="mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                        {groupBy === "category"
+                          ? `${(group as any).emoji} ${String(group.label).toLowerCase()}`
+                          : (group as any).isTag
+                          ? String(group.label).toLowerCase()
+                          : "other"}
+                      </h3>
+                      <ul className="border-t border-[hsl(20_40%_18%/0.3)]">
+                        {group.items.map((it) => (
+                          <DraggableRow key={it.id} id={it.id} enabled={isCategoryGroup}>
+                            <LedgerRow
+                              name={it.name}
+                              qty={it.qty}
+                              note={it.notes}
+                              tag={groupBy === "category" ? it.tag : null}
+                              onQtyChange={async (next) => {
+                                setItems((c) => c.map((i) => (i.id === it.id ? { ...i, qty: next } : i)));
+                                await supabase.from("shopping_list_items").update({ qty: next }).eq("id", it.id);
+                              }}
+                              onEdit={() => openEdit(it)}
+                              onDelete={() => remove(it.id)}
+                            />
+                          </DraggableRow>
+                        ))}
+                      </ul>
+                    </DroppableSection>
+                  );
+                })}
+              </div>
+              <DragOverlay dropAnimation={null}>
+                {dragId ? (
+                  <div className="rounded-[6px] border border-foreground/20 bg-card px-3 py-2 text-[15px] lowercase shadow-lg">
+                    {items.find((i) => i.id === dragId)?.name}
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+
 
             <div ref={endRef} className="h-4" />
           </>
@@ -575,3 +631,49 @@ export default function ListDetail() {
     </div>
   );
 }
+
+function DraggableRow({
+  id,
+  enabled,
+  children,
+}: {
+  id: string;
+  enabled: boolean;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, disabled: !enabled });
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{ opacity: isDragging ? 0.3 : 1, touchAction: enabled ? "manipulation" : undefined }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function DroppableSection({
+  id,
+  enabled,
+  children,
+}: {
+  id: string;
+  enabled: boolean;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id, disabled: !enabled });
+  return (
+    <section
+      ref={setNodeRef}
+      className={cn(
+        "rounded-[6px] transition-colors",
+        isOver && "bg-foreground/5 ring-1 ring-foreground/20",
+      )}
+    >
+      {children}
+    </section>
+  );
+}
+
