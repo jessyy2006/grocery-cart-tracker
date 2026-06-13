@@ -222,26 +222,31 @@ This is what stops the system from re-fracturing.
   tokenized every arbitrary `rounded-[Npx]` in place (identical pixels); built
   `<EntityRow>`/`<EntityList>` and `<EmptyState>`; verified the `<Money>` API.
   No page adoption yet — that's Phase 2.
-- **Phase 2 — Rollout (flow by flow).** Pick-a-list drawer → `EntityRow` (kills the
-  flagged card/row split); headers → `PageHeader`; onboarding typography + chips;
-  money displays → `<Money>`; pickers → Drawer; `red-500` → `destructive`.
+- **Phase 2 — Rollout (in progress).** Done: pick-a-list drawer + Lists page →
+  `EntityRow`/`EntityList` (kills the flagged card/row split); onboarding typography
+  → serif scale + `OptionRow` for Goals/Behavior; `red-500` → `destructive`;
+  ActiveTrip pickers (add / check-off / off-list / substitute / store) → bottom
+  Drawers (Drawer is now the one picker pattern; `DrawerTitle` matches `DialogTitle`);
+  eyebrow unified to mono (`.text-eyebrow`); Profile sign-out + Signup buttons →
+  sanctioned variants. Remaining: money displays → `<Money>`; `<EmptyState>`
+  adoption; Lists title-size alignment.
 - **Phase 3 — Code health.** Dedup `ReceiptView` → `useReceiptShare`,
   `PrintedReceiptOverlay` → `ReceiptPaper`; unify motion to framer-motion; retire
   `TapCard`; add the ESLint guardrails.
 
 ---
 
-## 6. Status quick-reference (as of Phase 1)
+## 6. Status quick-reference (as of Phase 2, in progress)
 
 | Area | State |
 |---|---|
-| Tokens (color/type/radius/shadow) | ✅ defined; `shadow-elevated` + `control`/`card`/`sheet` radii now real |
+| Tokens (color/type/radius/shadow) | ✅ defined; `shadow-elevated` + `control`/`card`/`sheet` radii; mono eyebrow |
 | Button system | ✅ collapsed to the sanctioned set (`default`/`outline` ui-only) |
-| Entity rows | ⚠️ `<EntityRow>` built; drawer/Lists adoption is Phase 2 |
-| Empty states | ⚠️ `<EmptyState>` built; per-screen adoption is Phase 2 |
-| Money component | ⚠️ API ready; adoption outside history is Phase 2 |
-| Overlays | ⚠️ Drawer/Dialog split — Phase 2 |
+| Entity rows | ✅ adopted — pick-a-list drawer + Lists page share `EntityRow` |
+| Empty states | ⚠️ `<EmptyState>` built; per-screen adoption still pending |
+| Money component | ⚠️ API ready; adoption outside history still pending |
+| Overlays | ✅ Drawer is the one picker; ActiveTrip pickers converted; AlertDialog for destructive |
 | Destructive confirms | ✅ `ConfirmDialog` is canonical |
-| Onboarding type/stepper | ⚠️ stepper fixed; typography Phase 2 |
-| Feedback (toasts) | ✅ Sonner only |
+| Onboarding | ✅ stepper + serif typography + `OptionRow` chips + sanctioned buttons |
+| Feedback (toasts) | ✅ Sonner only; form errors use `destructive` |
 | Motion / icons | ✅ healthy (minor cleanup Phase 3) |

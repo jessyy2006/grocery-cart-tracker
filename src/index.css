@@ -174,7 +174,7 @@
   .text-h3 { @apply text-[0.9375rem] font-semibold leading-snug; letter-spacing: -0.005em; }
   .text-body { @apply text-[0.9375rem] leading-relaxed; }
   .text-small { @apply text-[0.8125rem] leading-snug; }
-  .text-eyebrow { @apply text-[0.6875rem] font-semibold uppercase tracking-[0.10em] text-muted-foreground; }
+  .text-eyebrow { @apply font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground; }
   .text-money { @apply font-mono font-medium; }
 
   .paper-texture {

@@ -6,7 +6,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -939,11 +939,11 @@ export default function ActiveTrip() {
         />
       )}
 
-      <Dialog open={!!pending} onOpenChange={(o) => { if (!o) { setPending(null); setPendingErrors({}); } }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add to cart</DialogTitle>
-          </DialogHeader>
+      <Drawer open={!!pending} onOpenChange={(o) => { if (!o) { setPending(null); setPendingErrors({}); } }}>
+        <DrawerContent className="px-5 pb-8 pt-2 max-h-[88vh]">
+          <DrawerHeader className="p-0 pb-4 text-left">
+            <DrawerTitle>Add to cart</DrawerTitle>
+          </DrawerHeader>
           {pending && (
             <div className="space-y-4">
               {pending.image_url && (
@@ -1002,14 +1002,14 @@ export default function ActiveTrip() {
               </Button>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
-      <Dialog open={!!manualCheck} onOpenChange={(o) => { if (!o) { setManualCheck(null); setManualErrors({}); } }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Check off {manualCheck?.item.name}</DialogTitle>
-          </DialogHeader>
+      <Drawer open={!!manualCheck} onOpenChange={(o) => { if (!o) { setManualCheck(null); setManualErrors({}); } }}>
+        <DrawerContent className="px-5 pb-8 pt-2 max-h-[88vh]">
+          <DrawerHeader className="p-0 pb-4 text-left">
+            <DrawerTitle>Check off {manualCheck?.item.name}</DrawerTitle>
+          </DrawerHeader>
           {manualCheck && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
@@ -1049,18 +1049,18 @@ export default function ActiveTrip() {
               </Button>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
 
-      <Dialog open={!!offList && !subPickerOpen} onOpenChange={(o) => { if (!o) setOffList(null); }}>
-        <DialogContent className="w-[min(22rem,calc(100vw-2rem))] max-w-[22rem] mx-auto p-5 text-center sm:text-center">
-          <DialogHeader className="space-y-2 text-center sm:text-center">
-            <DialogTitle className="text-center">Not on your list</DialogTitle>
-            <DialogDescription className="text-center">
+      <Drawer open={!!offList && !subPickerOpen} onOpenChange={(o) => { if (!o) setOffList(null); }}>
+        <DrawerContent className="px-5 pb-8 pt-2 text-center max-h-[88vh]">
+          <DrawerHeader className="p-0 pb-4 space-y-2 text-center">
+            <DrawerTitle className="text-center">Not on your list</DrawerTitle>
+            <DrawerDescription className="text-center">
               "{offList?.productName}" isn't on your shopping list. How should we count it?
-            </DialogDescription>
-          </DialogHeader>
+            </DrawerDescription>
+          </DrawerHeader>
           <div className="flex w-full flex-row gap-2">
             <Button
               variant="primaryLight"
@@ -1080,17 +1080,17 @@ export default function ActiveTrip() {
               Add as Extra
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
-      <Dialog open={subPickerOpen} onOpenChange={(o) => { setSubPickerOpen(o); if (!o) setSubQuery(""); }}>
-        <DialogContent className="max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Replace which item?</DialogTitle>
-            <DialogDescription>
+      <Drawer open={subPickerOpen} onOpenChange={(o) => { setSubPickerOpen(o); if (!o) setSubQuery(""); }}>
+        <DrawerContent className="px-5 pb-8 pt-2 max-h-[85vh]">
+          <DrawerHeader className="p-0 pb-4 text-left">
+            <DrawerTitle>Replace which item?</DrawerTitle>
+            <DrawerDescription>
               Pick the planned item that "{offList?.productName}" substitutes.
-            </DialogDescription>
-          </DialogHeader>
+            </DrawerDescription>
+          </DrawerHeader>
           <div className="space-y-3">
             <Input
               autoFocus
@@ -1106,7 +1106,7 @@ export default function ActiveTrip() {
                   <li key={i.id}>
                     <button
                       onClick={() => confirmAsSubstitute(i)}
-                      className="flex w-full items-center justify-between rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary"
+                      className="flex w-full items-center justify-between rounded-card border border-border bg-card p-3 text-left transition hover:border-primary"
                     >
                       <div className="min-w-0">
                         <p className="truncate font-medium">{i.name}</p>
@@ -1118,25 +1118,25 @@ export default function ActiveTrip() {
                 ))}
             </ul>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
-      <Dialog
+      <Drawer
         open={storeModalOpen}
         onOpenChange={(o) => {
           setStoreModalOpen(o);
           if (!o) setStoreQuery("");
         }}
       >
-        <DialogContent className="max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>{activeStore ? "Change store" : "Add store"}</DialogTitle>
-            <DialogDescription>
+        <DrawerContent className="px-5 pb-8 pt-2 max-h-[85vh]">
+          <DrawerHeader className="p-0 pb-4 text-left">
+            <DrawerTitle>{activeStore ? "Change store" : "Add store"}</DrawerTitle>
+            <DrawerDescription>
               {isSearching
                 ? "Top matches for your search."
                 : "Grocery stores within 5 km of you."}
-            </DialogDescription>
-          </DialogHeader>
+            </DrawerDescription>
+          </DrawerHeader>
           <div className="space-y-3">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1201,7 +1201,7 @@ export default function ActiveTrip() {
                     <li key={`${s.lat},${s.lng}:${i}`}>
                       <button
                         onClick={() => pickStore(s)}
-                        className="flex w-full items-start gap-3 rounded-xl border border-border bg-card p-3 text-left transition hover:border-primary"
+                        className="flex w-full items-start gap-3 rounded-card border border-border bg-card p-3 text-left transition hover:border-primary"
                       >
                         <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                         <div className="min-w-0">
@@ -1217,8 +1217,8 @@ export default function ActiveTrip() {
               )}
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </DrawerContent>
+      </Drawer>
 
       <PrintedReceiptOverlay
         open={receiptOpen}

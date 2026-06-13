@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SUPPORTED_CURRENCIES, useCurrency, setCurrency, Currency } from "@/lib/format";
@@ -17,8 +18,7 @@ import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
 
 type Store = { id: string; name: string; address: string | null };
 
-const sectionLabel =
-  "text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground";
+const sectionLabel = "text-eyebrow";
 const rowDivider = "border-t border-hairline";
 
 export default function Profile() {
@@ -143,12 +143,14 @@ export default function Profile() {
       </div>
 
       <div className="px-5 pt-8 pb-6">
-        <button
+        <Button
+          variant="secondaryLight"
+          size="lg"
+          className="w-full"
           onClick={() => supabase.auth.signOut()}
-          className="w-full rounded-card border border-primary bg-transparent py-3 text-xs font-bold uppercase tracking-widest text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
         >
-          Sign out
-        </button>
+          sign out
+        </Button>
       </div>
     </div>
   );
