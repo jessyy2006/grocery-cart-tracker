@@ -180,9 +180,15 @@ component (Phase 2).
 
 ### Inputs & selection controls
 - Text: `ui/input.tsx` (`h-12`, `rounded-md`, `bg-surface-sunk`). Use everywhere.
-- Selection chips (gender/age/goals/behavior): **one** chip primitive, `rounded-md`,
-  active state `border-primary bg-primary/10`. The three divergent onboarding chip
-  styles (`rounded-md` vs `rounded-2xl` ±check) must converge (Phase 2).
+- **Item-entry fields → `FieldBox` (`src/components/FieldBox.tsx`).** A bordered
+  `rounded-card` box with a mono uppercase micro-label inside, above a borderless
+  control (`fieldInputClass`). This is the canonical look for *every* item-entry
+  surface so they read identically: the list-creation add pad, **the same pad
+  reused for editing** (tap edit → pad slides up pre-filled, footer = "save
+  changes"), and the live-run **add-to-cart** / **check-off** drawers. Error state =
+  `border-destructive` on the box. No standalone titles on these — fields only.
+- Selection rows → `OptionRow` (`src/components/OptionRow.tsx`): full-width bordered
+  `rounded-card` row, `border-primary bg-primary/10` active, check/radio indicator.
 
 ### Page header — `src/components/PageHeader.tsx`
 Mandatory on every top-level page and the onboarding `Layout`: eyebrow +

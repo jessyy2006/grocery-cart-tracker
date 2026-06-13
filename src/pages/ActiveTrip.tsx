@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldBox, fieldInputClass } from "@/components/FieldBox";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import {
   AlertDialog,
@@ -941,33 +941,23 @@ export default function ActiveTrip() {
 
       <Drawer open={!!pending} onOpenChange={(o) => { if (!o) { setPending(null); setPendingErrors({}); } }}>
         <DrawerContent className="px-5 pb-8 pt-2 max-h-[88vh]">
-          <DrawerHeader className="p-0 pb-4 text-left">
-            <DrawerTitle>Add to cart</DrawerTitle>
-          </DrawerHeader>
+          <DrawerTitle className="sr-only">Add to cart</DrawerTitle>
           {pending && (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {pending.image_url && (
-                <img src={pending.image_url} alt="" className="mx-auto h-24 w-24 rounded-lg object-contain" />
+                <img src={pending.image_url} alt="" className="mx-auto mb-1 h-20 w-20 rounded-card object-contain" />
               )}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="iname">Name</Label>
-                  {pendingErrors.name && <span className="text-xs font-medium text-destructive">Incomplete</span>}
-                </div>
+              <FieldBox label="Item name*" className={cn(pendingErrors.name && "border-destructive")}>
                 <Input
                   id="iname"
                   value={pending.name}
                   onChange={(e) => { setPending({ ...pending, name: e.target.value }); if (pendingErrors.name) setPendingErrors({ ...pendingErrors, name: false }); }}
-                  placeholder="Item name"
-                  className={pendingErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                  placeholder="e.g. Greek Yogurt"
+                  className={cn(fieldInputClass, "italic placeholder:italic placeholder:text-muted-foreground/70")}
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="iprice">Price</Label>
-                    {pendingErrors.price && <span className="text-xs font-medium text-destructive">Incomplete</span>}
-                  </div>
+              </FieldBox>
+              <div className="flex gap-2">
+                <FieldBox label="Price" className={cn("flex-1", pendingErrors.price && "border-destructive")}>
                   <Input
                     id="iprice"
                     type="text"
@@ -976,29 +966,25 @@ export default function ActiveTrip() {
                     onChange={(e) => { setPending({ ...pending, price: e.target.value }); if (pendingErrors.price) setPendingErrors({ ...pendingErrors, price: false }); }}
                     placeholder="0.00"
                     autoFocus={!pending.price}
-                    className={pendingErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={fieldInputClass}
                   />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="iqty">Qty</Label>
-                    {pendingErrors.qty && <span className="text-xs font-medium text-destructive">Incomplete</span>}
-                  </div>
+                </FieldBox>
+                <FieldBox label="Qty" className={cn("w-[90px] shrink-0 bg-muted/40", pendingErrors.qty && "border-destructive")}>
                   <Input
                     id="iqty"
                     type="number"
                     min={1}
                     value={pending.qty || ""}
                     onChange={(e) => { const n = parseInt(e.target.value, 10); setPending({ ...pending, qty: isNaN(n) ? 0 : n }); if (pendingErrors.qty) setPendingErrors({ ...pendingErrors, qty: false }); }}
-                    className={pendingErrors.qty ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={fieldInputClass}
                   />
-                </div>
+                </FieldBox>
               </div>
               {pending.barcode && (
-                <p className="text-xs text-muted-foreground">Barcode: {pending.barcode}</p>
+                <p className="pt-0.5 text-xs text-muted-foreground">Barcode: {pending.barcode}</p>
               )}
-              <Button variant="primaryLight" size="lg" className="w-full" onClick={confirmAdd}>
-                <Plus className="mr-1 h-4 w-4" /> Add
+              <Button variant="primaryLight" size="lg" className="mt-2 w-full" onClick={confirmAdd}>
+                <Plus className="mr-1 h-4 w-4" /> add
               </Button>
             </div>
           )}
@@ -1007,17 +993,14 @@ export default function ActiveTrip() {
 
       <Drawer open={!!manualCheck} onOpenChange={(o) => { if (!o) { setManualCheck(null); setManualErrors({}); } }}>
         <DrawerContent className="px-5 pb-8 pt-2 max-h-[88vh]">
-          <DrawerHeader className="p-0 pb-4 text-left">
-            <DrawerTitle>Check off {manualCheck?.item.name}</DrawerTitle>
-          </DrawerHeader>
+          <DrawerTitle className="sr-only">Check off item</DrawerTitle>
           {manualCheck && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="mprice">Price</Label>
-                    {manualErrors.price && <span className="text-xs font-medium text-destructive">Incomplete</span>}
-                  </div>
+            <div className="space-y-2">
+              <FieldBox label="Item">
+                <p className="mt-0.5 text-[15px] lowercase text-foreground">{manualCheck.item.name}</p>
+              </FieldBox>
+              <div className="flex gap-2">
+                <FieldBox label="Price" className={cn("flex-1", manualErrors.price && "border-destructive")}>
                   <Input
                     id="mprice"
                     type="text"
@@ -1026,26 +1009,22 @@ export default function ActiveTrip() {
                     onChange={(e) => { setManualCheck({ ...manualCheck, price: e.target.value }); if (manualErrors.price) setManualErrors({ ...manualErrors, price: false }); }}
                     placeholder="0.00"
                     autoFocus
-                    className={manualErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={fieldInputClass}
                   />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="mqty">Qty</Label>
-                    {manualErrors.qty && <span className="text-xs font-medium text-destructive">Incomplete</span>}
-                  </div>
+                </FieldBox>
+                <FieldBox label="Qty" className={cn("w-[90px] shrink-0 bg-muted/40", manualErrors.qty && "border-destructive")}>
                   <Input
                     id="mqty"
                     type="number"
                     min={1}
                     value={manualCheck.qty}
                     onChange={(e) => { setManualCheck({ ...manualCheck, qty: e.target.value.replace(/[^\d]/g, "") }); if (manualErrors.qty) setManualErrors({ ...manualErrors, qty: false }); }}
-                    className={manualErrors.qty ? "border-destructive focus-visible:ring-destructive" : ""}
+                    className={fieldInputClass}
                   />
-                </div>
+                </FieldBox>
               </div>
-              <Button variant="primaryLight" size="lg" className="w-full" onClick={confirmManualCheck}>
-                <Check className="mr-1 h-4 w-4" /> Check off
+              <Button variant="primaryLight" size="lg" className="mt-2 w-full" onClick={confirmManualCheck}>
+                <Check className="mr-1 h-4 w-4" /> check off
               </Button>
             </div>
           )}

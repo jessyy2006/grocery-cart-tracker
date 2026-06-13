@@ -14,10 +14,9 @@ import {
 } from "@/components/ui/select";
 
 import { ArrowLeft, Plus, ShoppingBasket, Check, X } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
 import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
-import { TagSelector } from "@/components/TagSelector";
 import { MarketLoader } from "@/components/MarketLoader";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
@@ -66,10 +65,6 @@ export default function ListDetail() {
   const [notes, setNotes] = useState("");
   const [editing, setEditing] = useState<Item | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Item | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editQtyText, setEditQtyText] = useState("1");
-  const [editNotes, setEditNotes] = useState("");
-  const [editTag, setEditTag] = useState<string | null>(null);
   const [tag, setTag] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [dupOpen, setDupOpen] = useState(false);
@@ -178,6 +173,7 @@ export default function ListDetail() {
         return;
       setAddOpen(false);
       setTagEditing(false);
+      setEditing(null);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
@@ -189,18 +185,6 @@ export default function ListDetail() {
     setTagDraft("");
     setTagEditing(false);
   };
-
-  const tagSuggestions = useMemo(() => {
-    const seen = new Set<string>();
-    const out: string[] = [];
-    for (const it of items) {
-      if (it.tag && !seen.has(it.tag.toLowerCase())) {
-        seen.add(it.tag.toLowerCase());
-        out.push(it.tag);
-      }
-    }
-    return out;
-  }, [items]);
 
   const groupedByCategory = useMemo(() => {
     const map = new Map<CategorySlug, Item[]>();
@@ -260,6 +244,32 @@ export default function ListDetail() {
     if (error) toast.error(error.message);
   };
 
+  // Reset every pad field and close it (used after a successful add/save).
+  const closePad = () => {
+    setName("");
+    setQtyText("1");
+    setNotes("");
+    setTag(null);
+    setCategory("other");
+    setAutoCat(true);
+    setTagEditing(false);
+    setEditing(null);
+    setAddOpen(false);
+  };
+
+  // Open the pad in a clean "add" state.
+  const openAdd = () => {
+    setEditing(null);
+    setName("");
+    setQtyText("1");
+    setNotes("");
+    setTag(null);
+    setCategory("other");
+    setAutoCat(true);
+    setTagEditing(false);
+    setAddOpen(true);
+  };
+
   const performAdd = async () => {
     if (!id || !name.trim()) return;
     const slug = autoCat ? guessCategory(name) : category;
@@ -275,12 +285,7 @@ export default function ListDetail() {
     const { data, error } = await supabase.from("shopping_list_items").insert(insert).select("*").single();
     if (error) return toast.error(error.message);
     setItems((c) => [...c, data as Item]);
-    setName("");
-    setQtyText("1");
-    setNotes("");
-    setTag(null);
-    setAutoCat(true);
-    setAddOpen(false);
+    closePad();
     requestAnimationFrame(() => {
       endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     });
@@ -299,29 +304,41 @@ export default function ListDetail() {
     await performAdd();
   };
 
+  // Editing reuses the same inline add pad, pre-filled (see DESIGN.md).
   const openEdit = (it: Item) => {
     setEditing(it);
-    setEditName(it.name);
-    setEditQtyText(String(it.qty));
-    setEditNotes(it.notes ?? "");
-    setEditTag(it.tag ?? null);
+    setName(it.name);
+    setQtyText(String(it.qty));
+    setNotes(it.notes ?? "");
+    setTag(it.tag ?? null);
+    setCategory((CATEGORY_ORDER.includes(it.category as CategorySlug) ? it.category : "other") as CategorySlug);
+    setAutoCat(false);
+    setTagEditing(false);
+    setAddOpen(true);
+    requestAnimationFrame(() => {
+      padRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   };
 
   const saveEdit = async () => {
     if (!editing) return;
-    const newName = editName.trim();
+    const newName = name.trim();
     if (!newName) return toast.error("Name can't be empty");
-    const newQty = Math.max(1, parseInt(editQtyText, 10) || 1);
-    const newNotes = editNotes.trim() ? editNotes.trim().slice(0, 25) : null;
-    const newTag = editTag;
+    const newQty = Math.max(1, parseInt(qtyText, 10) || 1);
+    const newNotes = notes.trim() ? notes.trim().slice(0, 25) : null;
+    const slug = autoCat ? guessCategory(newName) : category;
+    const target = editing.id;
     setItems((c) =>
-      c.map((i) => (i.id === editing.id ? { ...i, name: newName, qty: newQty, notes: newNotes, tag: newTag } : i))
+      c.map((i) =>
+        i.id === target ? { ...i, name: newName, qty: newQty, notes: newNotes, tag, category: slug } : i,
+      ),
     );
-    await supabase
+    const { error } = await supabase
       .from("shopping_list_items")
-      .update({ name: newName, qty: newQty, notes: newNotes, tag: newTag })
-      .eq("id", editing.id);
-    setEditing(null);
+      .update({ name: newName, qty: newQty, notes: newNotes, tag, category: slug })
+      .eq("id", target);
+    if (error) toast.error(error.message);
+    closePad();
   };
 
   const toggle = async (it: Item) => {
@@ -430,7 +447,7 @@ export default function ListDetail() {
           <button
             ref={addBtnRef}
             type="button"
-            onClick={() => setAddOpen((v) => !v)}
+            onClick={() => (addOpen ? closePad() : openAdd())}
             className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-card border border-border bg-background px-3 font-mono text-[11px] uppercase tracking-[0.14em] text-foreground hover:border-foreground/60"
             aria-label="Add item"
           >
@@ -539,7 +556,7 @@ export default function ListDetail() {
               {/* Drag handle / collapse */}
               <button
                 type="button"
-                onClick={() => setAddOpen(false)}
+                onClick={closePad}
                 aria-label="Collapse"
                 className="mx-auto mb-3 flex h-3 w-full items-center justify-center"
               >
@@ -555,7 +572,7 @@ export default function ListDetail() {
                   placeholder="e.g. Greek Yogurt"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addItem()}
+                  onKeyDown={(e) => e.key === "Enter" && (editing ? saveEdit() : addItem())}
                   autoFocus
                   enterKeyHint="done"
                   className="mt-0.5 h-7 border-0 bg-transparent px-0 py-0 text-[15px] italic placeholder:italic placeholder:text-muted-foreground/70 focus-visible:ring-0"
@@ -690,13 +707,19 @@ export default function ListDetail() {
           variant="primaryLight"
           size="lg"
           className="w-full"
-          onClick={addOpen ? addItem : startRun}
+          onClick={addOpen ? (editing ? saveEdit : addItem) : startRun}
           disabled={addOpen && !name.trim()}
         >
           {addOpen ? (
-            <>
-              <Plus className="mr-2 h-5 w-5" /> add to list
-            </>
+            editing ? (
+              <>
+                <Check className="mr-2 h-5 w-5" /> save changes
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-5 w-5" /> add to list
+              </>
+            )
           ) : (
             <>
               <ShoppingBasket className="mr-2 h-5 w-5" /> start grocery run
@@ -754,40 +777,6 @@ export default function ListDetail() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit item</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Name" />
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={editQtyText}
-                onChange={(e) => setEditQtyText(e.target.value.replace(/[^\d]/g, ""))}
-                className="w-20"
-                aria-label="Quantity"
-              />
-              <Input
-                value={editNotes}
-                maxLength={25}
-                onChange={(e) => setEditNotes(e.target.value)}
-                placeholder="Notes (e.g. 500 ml)"
-              />
-            </div>
-            <TagSelector value={editTag} suggestions={tagSuggestions} onChange={setEditTag} />
-          </div>
-          <DialogFooter className="flex-row gap-2 sm:justify-stretch sm:space-x-0">
-            <Button variant="primaryLight" size="lg" className="flex-1" onClick={saveEdit}>Save</Button>
-            <Button variant="secondaryLight" size="lg" className="flex-1" onClick={() => setEditing(null)}>
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
