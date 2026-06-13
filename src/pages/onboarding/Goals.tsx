@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Check } from "lucide-react";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { OptionRow } from "@/components/OptionRow";
 import OnboardingLayout from "./Layout";
 
 const GOALS = [
@@ -29,29 +29,16 @@ export default function OnboardingGoals() {
       onPrimary={() => navigate("/onboarding/budget")}
     >
       <ul className="space-y-2">
-        {GOALS.map((g) => {
-          const active = draft.goals.includes(g.v);
-          return (
-            <li key={g.v}>
-              <button
-                type="button"
-                onClick={() => toggle(g.v)}
-                className={`flex w-full items-center justify-between rounded-2xl border p-4 text-left transition ${
-                  active ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
-                }`}
-              >
-                <span className="font-medium">{g.l}</span>
-                <span
-                  className={`flex h-6 w-6 items-center justify-center rounded-full border ${
-                    active ? "border-primary bg-primary text-primary-foreground" : "border-border"
-                  }`}
-                >
-                  {active && <Check className="h-4 w-4" />}
-                </span>
-              </button>
-            </li>
-          );
-        })}
+        {GOALS.map((g) => (
+          <li key={g.v}>
+            <OptionRow
+              label={g.l}
+              active={draft.goals.includes(g.v)}
+              onClick={() => toggle(g.v)}
+              indicator="check"
+            />
+          </li>
+        ))}
       </ul>
     </OnboardingLayout>
   );

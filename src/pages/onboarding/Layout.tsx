@@ -63,8 +63,8 @@ export default function OnboardingLayout({
 
       {(title || subtitle) && (
         <header className="mt-6">
-          {title && <h1 className="text-3xl font-bold tracking-tight">{title}</h1>}
-          {subtitle && <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>}
+          {title && <h1 className="text-h1">{title}</h1>}
+          {subtitle && <p className="mt-2 text-small text-muted-foreground">{subtitle}</p>}
         </header>
       )}
 

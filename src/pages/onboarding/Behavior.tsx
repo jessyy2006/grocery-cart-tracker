@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { OptionRow } from "@/components/OptionRow";
 import OnboardingLayout from "./Layout";
 
 const OPTIONS = [
@@ -21,22 +22,16 @@ export default function OnboardingBehavior() {
       onPrimary={() => navigate("/onboarding/first-list")}
     >
       <ul className="space-y-2">
-        {OPTIONS.map((o) => {
-          const active = draft.shoppingBehavior === o.v;
-          return (
-            <li key={o.v}>
-              <button
-                type="button"
-                onClick={() => update({ shoppingBehavior: o.v })}
-                className={`w-full rounded-2xl border p-4 text-left font-medium transition ${
-                  active ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
-                }`}
-              >
-                {o.l}
-              </button>
-            </li>
-          );
-        })}
+        {OPTIONS.map((o) => (
+          <li key={o.v}>
+            <OptionRow
+              label={o.l}
+              active={draft.shoppingBehavior === o.v}
+              onClick={() => update({ shoppingBehavior: o.v })}
+              indicator="radio"
+            />
+          </li>
+        ))}
       </ul>
     </OnboardingLayout>
   );

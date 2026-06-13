@@ -98,15 +98,15 @@ export default function OnboardingSignup() {
   const isSignin = tab === "signin";
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center px-6 py-12">
+    <div className="flex min-h-full flex-col items-center justify-center px-5 py-12 safe-top safe-bottom">
       <div className="mb-8 flex flex-col items-center text-center">
         <div className="mb-4 h-16 w-16 overflow-hidden rounded-2xl shadow-elevated">
           <img src="/icon-1024.png" alt="CartWise" className="h-full w-full object-cover" />
         </div>
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-h1">
           {isSignin ? "Welcome back" : "Create your account"}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-small text-muted-foreground">
           {isSignin ? "Sign in to continue." : "Takes less than a minute."}
         </p>
       </div>
@@ -137,7 +137,7 @@ export default function OnboardingSignup() {
               </div>
               <Button
                 type="submit"
-                variant="secondaryLight"
+                variant="primaryLight"
                 size="lg"
                 className="w-full"
                 disabled={busy}
@@ -181,7 +181,8 @@ export default function OnboardingSignup() {
         </div>
 
         <Button
-          variant={isSignin ? "default" : "default"}
+          variant="secondaryLight"
+          size="lg"
           className="w-full"
           onClick={google}
           disabled={busy}

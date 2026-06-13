@@ -11,10 +11,10 @@ export default function OnboardingIntro() {
   const next = () => navigate(user ? "/onboarding/profile" : "/onboarding/signup");
 
   return (
-    <div className="relative flex min-h-full flex-col overflow-hidden bg-background px-5 pb-6 pt-12 safe-bottom">
+    <div className="relative flex min-h-full flex-col overflow-hidden bg-background px-5 pb-6 pt-12 safe-top safe-bottom">
       <div className="text-center">
-        <h1 className="text-5xl font-bold tracking-tight">Cartwise</h1>
-        <p className="mt-3 text-base text-muted-foreground">
+        <h1 className="text-display">Cartwise</h1>
+        <p className="mt-3 text-body text-muted-foreground">
           Plan your groceries. Stop overspending.
         </p>
       </div>
