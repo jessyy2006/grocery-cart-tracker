@@ -622,7 +622,7 @@ function FinanceCardView(props: any) {
 
         <div className="flex gap-2">
           {/* Y axis */}
-          <div className="flex h-40 w-10 flex-col justify-between py-0.5 text-right text-[10px] tabular-nums text-muted-foreground">
+          <div className="flex h-40 w-10 -translate-x-5 flex-col justify-between py-0.5 text-left text-[10px] tabular-nums text-muted-foreground">
             {yTicks.map((t) => (
               <div key={t} className="leading-none">{formatMoney(t, undefined, 0)}</div>
             ))}
