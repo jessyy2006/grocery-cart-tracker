@@ -15,6 +15,7 @@ import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
 import { PageHeader } from "@/components/PageHeader";
 import { Money } from "@/components/Money";
 import { EntityList, EntityRow } from "@/components/EntityRow";
+import { EmptyState } from "@/components/EmptyState";
 import { MarketLoader } from "@/components/MarketLoader";
 import { TripTapeRow } from "@/components/trip/TripTapeRow";
 
@@ -228,10 +229,12 @@ export default function Home() {
               )}
             </div>
             {recent.length === 0 ? (
-              <div className="py-8 text-center">
-                <Sparkles className="mx-auto h-5 w-5 text-accent-honey" strokeWidth={1.75} />
-                <p className="mt-2 text-small text-muted-foreground">Your saved trips will live here.</p>
-              </div>
+              <EmptyState
+                icon={Sparkles}
+                title="no trips yet"
+                description="Your saved trips will live here."
+                className="py-8"
+              />
             ) : (
               <ul className="divide-y divide-dashed divide-foreground/10">
                 {recent.map((t) => (

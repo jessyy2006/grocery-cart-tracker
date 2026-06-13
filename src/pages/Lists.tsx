@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { MarketLoader } from "@/components/MarketLoader";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EntityList, EntityRow } from "@/components/EntityRow";
+import { EmptyState } from "@/components/EmptyState";
 import { formatDistanceToNow } from "date-fns";
 
 type ShoppingList = {
@@ -100,12 +101,10 @@ export default function Lists() {
         {!ready ? (
           <MarketLoader minHeight="55vh" />
         ) : lists.length === 0 ? (
-          <div className="py-16 text-left">
-            <p className="font-display text-[1.5rem] lowercase tracking-tight">no lists yet</p>
-            <p className="mt-2 font-mono text-[12px] lowercase text-muted-foreground max-w-[28ch]">
-              tap "+ new list" to plan your next market run.
-            </p>
-          </div>
+          <EmptyState
+            title="no lists yet"
+            description='Tap "+ new list" to plan your next market run.'
+          />
         ) : (
           <EntityList>
             {lists.map((l) => {

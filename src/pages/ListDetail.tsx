@@ -20,6 +20,7 @@ import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
 import { TagSelector } from "@/components/TagSelector";
 import { MarketLoader } from "@/components/MarketLoader";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { EmptyState } from "@/components/EmptyState";
 import { LedgerRow } from "@/components/LedgerRow";
 import { toast } from "sonner";
 import { snapshotListIntoTrip } from "@/lib/snapshotList";
@@ -470,9 +471,7 @@ export default function ListDetail() {
             )}
 
             {items.length === 0 && (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                No items yet — tap “+ Add” to add your first one.
-              </p>
+              <EmptyState title="no items yet" description='Tap "+ Add" to add your first one.' />
             )}
 
             <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
