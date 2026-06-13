@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MarketLoader } from "@/components/MarketLoader";
@@ -22,8 +20,7 @@ export default function Lists() {
   const navigate = useNavigate();
   const [lists, setLists] = useState<ShoppingList[]>([]);
   const [ready, setReady] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
+  const [creating, setCreating] = useState(false);
 
   const load = async () => {
     const { data } = await supabase
@@ -38,15 +35,16 @@ export default function Lists() {
   useEffect(() => { if (user) load(); }, [user]);
 
   const create = async () => {
-    if (!user || !name.trim()) return;
+    if (!user || creating) return;
+    setCreating(true);
+    const defaultName = `List ${lists.length + 1}`;
     const { data, error } = await supabase
       .from("shopping_lists")
-      .insert({ user_id: user.id, name: name.trim() })
+      .insert({ user_id: user.id, name: defaultName })
       .select("id")
       .single();
+    setCreating(false);
     if (error) return toast.error(error.message);
-    setOpen(false);
-    setName("");
     navigate(`/lists/${data!.id}`);
   };
 
@@ -74,14 +72,13 @@ export default function Lists() {
         <Button
           variant="primaryLight"
           size="compact"
-          onClick={() => setOpen(true)}
+          onClick={create}
+          disabled={creating}
           className="mb-2 whitespace-nowrap"
         >
           + new list
         </Button>
       </header>
-
-
 
       {/* Notebook margin rule */}
       <div
@@ -138,26 +135,6 @@ export default function Lists() {
           </ul>
         )}
       </div>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="rounded-xl border-hairline">
-          <DialogHeader>
-            <DialogTitle className="text-h1">New shopping list</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="e.g. Weekly groceries"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoFocus
-              onKeyDown={(e) => e.key === "Enter" && create()}
-            />
-            <Button variant="primaryLight" size="lg" className="w-full" onClick={create} disabled={!name.trim()}>
-              Create list
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
