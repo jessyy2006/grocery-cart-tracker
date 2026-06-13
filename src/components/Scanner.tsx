@@ -62,24 +62,24 @@ export const Scanner = ({
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4">
         <div className="h-40 w-72 rounded-2xl border-2 border-primary-foreground/80 shadow-elevated" />
         <p className="text-center text-sm text-primary-foreground">Center a barcode in the frame</p>
+        {onManualEntry && (
+          <div className="pointer-events-auto">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={onManualEntry}
+              className="shadow-elevated"
+            >
+              <Keyboard className="mr-1 h-4 w-4" /> Enter manually
+            </Button>
+          </div>
+        )}
       </div>
       <div className="absolute left-0 right-0 top-0 flex justify-between p-4 safe-top">
         <Button size="icon" variant="secondary" onClick={onClose}>
           <X className="h-5 w-5" />
         </Button>
       </div>
-      {onManualEntry && (
-        <div className="absolute bottom-0 left-0 right-0 flex justify-center p-6 safe-bottom">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={onManualEntry}
-            className="shadow-elevated"
-          >
-            <Keyboard className="mr-1 h-4 w-4" /> Enter manually
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
