@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { ShoppingCart, ListChecks, ArrowRight, ChevronLeft, Sparkles, ScanLine } from "lucide-react";
+import { ShoppingCart, ListChecks, ArrowRight, ChevronLeft, Sparkles, ScanLine, User } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
@@ -150,6 +150,15 @@ export default function Home() {
               : greeting()
         }
         title={`${today} market run?`}
+        action={
+          <button
+            onClick={() => navigate("/profile")}
+            aria-label="Profile"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
+          >
+            <User className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+        }
       />
       <FeatureIntroDialog open={introOpen} onClose={() => setIntroOpen(false)} />
 

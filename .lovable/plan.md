@@ -1,71 +1,35 @@
-# Plan: Expanding Add-Item Footer Pad
+# Binder Tab Navigation + Profile Relocation
 
-Replace the current `+ ADD` modal on `src/pages/ListDetail.tsx` with an inline pad that slides up above the bottom CTA. No backdrop, list stays scrollable.
+## 1. `src/components/BottomNav.tsx` — full rewrite
+Replace the floating pill nav with a flush, edge-to-edge binder.
 
-## Scope
-- File: `src/pages/ListDetail.tsx` only.
-- New small component: `AddItemPad` (same file or sibling — TBD during build).
-- No DB schema changes. `tag` stays a single string.
+- Container: `fixed inset-x-0 bottom-0 z-30 bg-paper` (Paper White `#FFFFFF`), height capped at **48px** including the 4px tab protrusion. Add `pb-[env(safe-area-inset-bottom)]` *outside* the 48px (safe-area is separate from the visual binder).
+- Boundary line: a `1px solid #E5DFD3` stroke that spans full width, sitting at the top of the 44px tab row. Implemented as an absolutely positioned `<div>` so the active tab can visually "break" it via `z-index`.
+- 4 equal tabs (`grid grid-cols-4`): HOME, LISTS, FINANCE, HISTORY. Remove the Profile entry from the array.
+- **Active tab**: `bg-[#143F2D] text-[#F7F5F0]`, `rounded-t-[4px]`, translated `-4px` upward (`-mt-1` + `h-[44px]`), `z-10` to cover the boundary line. Font: `font-mono font-bold text-[9px] uppercase tracking-widest`.
+- **Inactive tabs**: `bg-white text-[#7C756B]`, `border border-[#E5DFD3] border-b-0`, `rounded-t-[4px]`, `py-2`. Same monospace, regular weight. Hover/active: `hover:-translate-y-0.5 transition-transform`.
+- No shadows, no gradients, no icons. Text-only labels.
+- Keep the existing `/trip`, `/trip/new`, `/scan-receipt` early return for fullscreen pages.
 
-## Behavior
+## 2. `src/components/AppLayout.tsx`
+- Change non-fullscreen `main` padding from `pb-28` to `pb-14` (56px clears the 48px binder + small gap).
 
-1. **Trigger** — Tapping `+ ADD` in the title row toggles `addOpen`. Remove the `<Dialog>` for Add (keep Edit + Duplicate dialogs).
-2. **Animation** — Pad mounts above the footer CTA; height/opacity transition (`framer-motion` `AnimatePresence` with `height: auto` + fade, ~200ms ease-out). Slides up, list above remains visible & scrollable.
-3. **Dismiss** — (a) chevron-down handle (grey pill) at the top of the pad, (b) tap outside the pad on the list area. Tapping inside the pad never dismisses.
-4. **CTA morph** — While `addOpen`: bottom button label becomes `ADD TO LIST`, calls `addItem()`, disabled when name empty. When closed: reverts to `start grocery run` exactly as today.
+## 3. `src/pages/Home.tsx` — add Profile entry point
+- In the `PageHeader` area, add a top-right circular `User` icon button (matching the existing `ScanLine` button pattern from the hero card, but positioned in the page header row). Place it absolutely top-right of the header so it doesn't disrupt the `eyebrow`/`title` rhythm.
+- `onClick={() => navigate("/profile")}`, `aria-label="Profile"`.
+- Keep the hero `ScanLine` button unchanged.
 
-## Pad layout (per screenshot)
+Implementation note: `PageHeader` likely doesn't accept a right-slot prop; wrap the header in a `relative` div and absolutely position the icon button at `top-3 right-5` so we don't need to modify `PageHeader.tsx`.
 
-```
-┌──────────── handle ────────────┐
-│ ITEM NAME*                     │  ← eyebrow label, mono 9-10px, taupe
-│ e.g. Greek Yogurt              │  ← borderless input, italic placeholder
-├──────┬─────────────────────────┤
-│ QTY  │ NOTE (OPTIONAL)         │  ← two cells, 1px hairline borders
-│  1   │ Add details...          │     QTY ~15% width, light taupe bg
-└──────┴─────────────────────────┘
-  TAGS: <chip> <chip>          +    ← morphing tag row
-```
-
-- Inputs use existing hairline border tokens; no shadcn Card.
-- Category: auto-detected silently from name (existing `guessCategory`). Add a tiny tappable category chip at the right edge of the QTY row showing `{emoji} {label}` — tap opens a small popover/select to override (re-use existing `Select` styled as a chip-sized trigger). Sets `autoCat=false` on override.
-
-## Morphing tag row
-
-- State: `tagEditing: boolean`, `tagDraft: string`. `tag` remains single value.
-- **Empty display**: `TAGS:` label + placeholder `Type to add tag...` (taupe, mono 9px), `+` icon far right.
-- **Active display**: `TAGS:` + one chip (1px `#143F2D` border, `#143F2D` text, mono). `+` icon at far right swaps the existing chip out when user enters input mode.
-- **Input mode**: Tap placeholder or `+` → chip hides, full-width borderless mono input expands inside the row (fixed row height to prevent layout shift), auto-focus. Enter/Space commits → sets `tag`, exits input mode. Escape or blur with empty → exits.
-
-## CTA wiring
-
-```tsx
-<Button onClick={addOpen ? addItem : startRun} disabled={addOpen && !name.trim()}>
-  {addOpen ? "Add to list" : "Start grocery run"}
-</Button>
-```
-
-Existing `addItem()` duplicate-check + `performAdd()` flow stays; on success it already clears state — also call `setAddOpen(false)` (already does).
-
-## Outside-tap dismissal
-
-Attach a click handler to the scrollable list container (`scrollRef`) that closes the pad if `addOpen` and the click target isn't inside the pad. Use a ref on the pad wrapper.
-
-## Things explicitly NOT changing
-
-- Drag-and-drop, grouping toggle, Edit dialog, Duplicate dialog, list header/title/back arrow, footer button styling, DB schema, snapshot/run logic.
-- Eyebrow header already removed in earlier turn.
+## 4. Routing
+- Leave `/profile` route in `App.tsx` untouched (still reachable via direct URL and the new Home icon).
 
 ## Risks
+- Tabs row + safe-area padding on iOS may visually exceed 48px of *colored* area; the 48px constraint applies to the binder itself, with safe-area as transparent/white extension below. Confirming that interpretation.
+- Active tab "breaking" the boundary relies on z-stacking; verified by giving the tab `bg-[#143F2D]` that fully overlaps the 1px line.
+- `pb-14` may feel tight on pages with sticky footer CTAs (e.g. ListDetail uses fullscreen mode so unaffected). Will spot-check Home, Lists, Finance, History.
 
-- `framer-motion` not yet imported here — check `package.json`; if missing, use CSS `transition-[max-height]` with a fixed `max-h-[420px]` instead (cheaper, no new dep).
-- Auto-focusing the name input on open may shift mobile viewport; mitigate with `inputMode` and `enterKeyHint="done"`.
-- Outside-tap handler must ignore taps on the `+ ADD` title button (otherwise it re-opens immediately).
-
-## Acceptance check
-
-- Open pad → list stays visible, scrollable, no dimming.
-- Bottom button reads `Add to list`, adds item, pad collapses, button reverts to `Start grocery run`.
-- Tapping handle OR list area collapses the pad.
-- Tag row morphs between chip and full-width input without row-height jump.
-- Category auto-detects but inline chip lets user override.
+## Out of scope
+- No changes to BottomNav behavior on fullscreen routes.
+- No restyling of PageHeader component itself.
+- No animation library additions.
