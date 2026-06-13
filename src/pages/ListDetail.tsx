@@ -679,7 +679,7 @@ export default function ListDetail() {
         )}
       </AnimatePresence>
 
-      <footer className="px-4 pt-3 pb-3">
+      <footer ref={footerRef} className="px-4 pt-3 pb-3">
         <Button
           variant="primaryLight"
           size="lg"
