@@ -10,7 +10,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  
 } from "@/components/ui/select";
 
 import { ArrowLeft, Plus, ShoppingBasket, Check, X } from "lucide-react";
