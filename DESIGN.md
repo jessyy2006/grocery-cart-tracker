@@ -137,10 +137,16 @@ Flat, borderless **ruled rows**, never cards:
 > entity must look identical whether you're managing it or picking it.
 
 ### Money — `src/components/Money.tsx`
-**Every** currency value renders via `<Money cents={…} />`. It owns
-`.text-money` (mono + tabular). Never call `formatMoney()` + `.text-money`
-inline. Currency is resolved centrally; don't thread a `currency` prop unless
-rendering a share-export receipt.
+Use `<Money cents={…} />` for standard inline currency. It owns `.text-money`
+(mono + tabular). Currency is resolved centrally; don't thread a `currency` prop
+unless rendering a share-export receipt.
+
+**Deliberately NOT a blanket replacement.** Money with intentional hierarchy —
+the live cart total, receipt ink — keeps its own size/weight rather than being
+forced through `<Money>`; flattening it would lose meaningful emphasis. The
+consistency guarantee is the **shared formatter (`formatMoney`) + mono tabular
+figures**, which every path already uses. So: reach for `<Money>` for ordinary
+inline values; leave hero/receipt money styled in place.
 
 ### Overlays — pick the right one, every time
 | Need | Use | Why |
@@ -228,8 +234,11 @@ This is what stops the system from re-fracturing.
   ActiveTrip pickers (add / check-off / off-list / substitute / store) → bottom
   Drawers (Drawer is now the one picker pattern; `DrawerTitle` matches `DialogTitle`);
   eyebrow unified to mono (`.text-eyebrow`); Profile sign-out + Signup buttons →
-  sanctioned variants. Remaining: money displays → `<Money>`; `<EmptyState>`
-  adoption; Lists title-size alignment.
+  sanctioned variants; `<EmptyState>` adopted across Home/Lists/ListDetail/History/
+  Finance. Money: kept the shared formatter + mono tabular as the guarantee and
+  deliberately did NOT blanket-swap to `<Money>` (preserves hero/receipt
+  hierarchy). Minor leftover: Lists title still `text-[2.25rem]` (entangled with
+  its notebook-margin layout) vs canonical `text-h1`.
 - **Phase 3 — Code health.** Dedup `ReceiptView` → `useReceiptShare`,
   `PrintedReceiptOverlay` → `ReceiptPaper`; unify motion to framer-motion; retire
   `TapCard`; add the ESLint guardrails.
@@ -243,8 +252,8 @@ This is what stops the system from re-fracturing.
 | Tokens (color/type/radius/shadow) | ✅ defined; `shadow-elevated` + `control`/`card`/`sheet` radii; mono eyebrow |
 | Button system | ✅ collapsed to the sanctioned set (`default`/`outline` ui-only) |
 | Entity rows | ✅ adopted — pick-a-list drawer + Lists page share `EntityRow` |
-| Empty states | ⚠️ `<EmptyState>` built; per-screen adoption still pending |
-| Money component | ⚠️ API ready; adoption outside history still pending |
+| Empty states | ✅ `<EmptyState>` adopted (Home/Lists/ListDetail/History/Finance) |
+| Money component | ✅ shared formatter + mono tabular everywhere; `<Money>` for inline, hero/receipt money intentionally styled in place |
 | Overlays | ✅ Drawer is the one picker; ActiveTrip pickers converted; AlertDialog for destructive |
 | Destructive confirms | ✅ `ConfirmDialog` is canonical |
 | Onboarding | ✅ stepper + serif typography + `OptionRow` chips + sanctioned buttons |

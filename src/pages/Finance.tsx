@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { EmptyState } from "@/components/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -661,13 +662,15 @@ function FinanceCardView(props: any) {
   const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(currentMonthKey ?? null);
   if (!hasBudget) {
     return (
-      <div className="space-y-3">
-        <div className="text-lg font-semibold">Set your monthly budget</div>
-        <div className="text-sm text-muted-foreground">
-          Track how much you have left to spend on groceries.
-        </div>
-        <Button variant="primaryLight" size="lg" onClick={openEditBudget}>Set budget</Button>
-      </div>
+      <EmptyState
+        title="set your monthly budget"
+        description="Track how much you have left to spend on groceries."
+        action={
+          <Button variant="primaryLight" size="lg" onClick={openEditBudget}>
+            set budget
+          </Button>
+        }
+      />
     );
   }
 
@@ -854,15 +857,16 @@ function FinanceCardView(props: any) {
       )}
 
       {!hasAnyTrips && (
-        <div className="border-t border-[hsl(40_26%_86%)] pt-6 text-center">
-          <div className="text-sm font-medium">No trips yet</div>
-          <div className="mt-1 text-sm text-muted-foreground">
-            Start tracking trips to see your spending insights.
-          </div>
-          <Button variant="primaryLight" size="lg" asChild className="mt-3">
-            <Link to="/">Start a trip</Link>
-          </Button>
-        </div>
+        <EmptyState
+          className="border-t border-hairline"
+          title="no trips yet"
+          description="Start tracking trips to see your spending insights."
+          action={
+            <Button variant="primaryLight" size="lg" asChild>
+              <Link to="/">start a trip</Link>
+            </Button>
+          }
+        />
       )}
     </div>
   );

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/EmptyState";
 import { ScanLine } from "lucide-react";
 import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
@@ -139,11 +139,10 @@ export default function History() {
       {!ready ? (
         <MarketLoader minHeight="55vh" />
       ) : filtered.length === 0 ? (
-        <Card className="p-8 text-center">
-          <p className="text-small text-muted-foreground">
-            {rows.length === 0 ? "No saved trips yet." : "No trips for this month."}
-          </p>
-        </Card>
+        <EmptyState
+          title={rows.length === 0 ? "no saved trips yet" : "no trips this month"}
+          description={rows.length === 0 ? "Your completed trips will live here." : undefined}
+        />
       ) : (
         <div className="space-y-8">
           {grouped.map(([k, items]) => (
