@@ -506,7 +506,7 @@ export default function Finance() {
     <div className="space-y-7 px-5 pt-3">
       <header className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-eyebrow">This month</p>
+          <p className="text-eyebrow">{period === "year" ? "This year" : "This month"}</p>
           <h1 className="mt-1.5 text-h1">Finance</h1>
         </div>
         <div className="flex items-center gap-1">
@@ -534,23 +534,59 @@ export default function Finance() {
       {loading ? (
         <MarketLoader minHeight="55vh" />
       ) : view === "receipt" ? (
-        <ReceiptView
-          budgetCents={budgetCents ?? 0}
-          monthSpend={derived.monthSpend}
-          tripCount={derived.monthTrips}
-          avgTripCents={derived.avgTrip}
-          impulseCents={derived.extrasNow.cents}
-          impulseCount={derived.extrasNow.count}
-          impulseRate={impulseRate}
-          biggestCategory={biggestCat}
-          streak={derived.streak}
-          personality={personality}
-          momDelta={derived.prevSpend > 0 ? derived.momDelta : null}
-          prevSpend={derived.prevSpend}
-          monthStart={new Date(new Date().getFullYear(), new Date().getMonth(), 1)}
-          monthEnd={new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)}
-          currency={currency}
-        />
+        <div className="space-y-5">
+          <div className="flex justify-center">
+            <ToggleGroup
+              type="single"
+              value={period}
+              onValueChange={(v) => v && setPeriodPersist(v as "month" | "year")}
+              size="sm"
+              variant="outline"
+            >
+              <ToggleGroupItem value="month" aria-label="Month view" className="px-3">
+                <span className="text-[11px] font-semibold tracking-[0.15em]">THIS MONTH</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="year" aria-label="Year view" className="px-3">
+                <span className="text-[11px] font-semibold tracking-[0.15em]">THIS YEAR</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+          {period === "month" ? (
+            <ReceiptView
+              budgetCents={budgetCents ?? 0}
+              monthSpend={derived.monthSpend}
+              tripCount={derived.monthTrips}
+              avgTripCents={derived.avgTrip}
+              impulseCents={derived.extrasNow.cents}
+              impulseCount={derived.extrasNow.count}
+              impulseRate={impulseRate}
+              biggestCategory={biggestCat}
+              streak={derived.streak}
+              personality={personality}
+              momDelta={derived.prevSpend > 0 ? derived.momDelta : null}
+              prevSpend={derived.prevSpend}
+              monthStart={new Date(new Date().getFullYear(), new Date().getMonth(), 1)}
+              monthEnd={new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)}
+              currency={currency}
+            />
+          ) : (
+            <YearlyReceiptView
+              year={yearly.year}
+              yearStart={yearly.yearStart}
+              yearEnd={yearly.yearEnd}
+              totalOutlayCents={yearly.totalOutlayCents}
+              itemCount={yearly.itemCount}
+              avgBasket={yearly.avgBasket}
+              tripCount={yearly.tripCount}
+              monthlySeries={yearly.monthlySeries}
+              mostLoyalStore={yearly.mostLoyalStore}
+              staple={yearly.staple}
+              largestHaul={yearly.largestHaul}
+              quarters={yearly.quarters}
+              currency={currency}
+            />
+          )}
+        </div>
       ) : (
         <FinanceCardView
           hasBudget={hasBudget}
