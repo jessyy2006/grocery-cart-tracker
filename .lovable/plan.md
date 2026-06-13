@@ -1,72 +1,54 @@
-# Unify primary button styling
+## Restyle List Detail page
 
-## Goal
+Single file affected: `src/pages/ListDetail.tsx` (plus a small tweak to `src/components/LedgerRow.tsx` for note spacing).
 
-Collapse the app's many ad-hoc primary buttons into exactly **two** canonical styles, matching the reference screenshots, and apply them consistently.
+### 1. Header
 
-## The two canonical styles
+- Remove the sticky `glass` header bar with bottom border (no divider between header and list).
+- Keep a minimal back arrow above the title (small, borderless, no background bar) — clicking returns to `/lists`.
+- Below the back arrow, a left-aligned block:
+  - **Title**: list name, large display weight (matches screenshot's `W1 List` styling — use existing `text-h1`/display font). Click the title to enter inline edit mode.
+  - **Subtitle**: `{items.length} items` in muted small text (e.g. `text-small text-muted-foreground`).
+- Right side of the title row: a `+ ADD` button (outline/ghost, small, uppercase mono to match the screenshot's chip style) that opens the existing Add-item dialog.
+- Remove the "Shopping list" eyebrow entirely.
+- Remove the top-right item-count number (subtitle now shows the count).
 
-**primary-light** (reference: `+ new list` on Lists)
+### 2. Inline rename
 
-- Solid `bg-forest` / `text-forest-foreground`
-- `font-mono`, lowercase, `tracking-tight`, **not** bold (mono regular)
-- `rounded-[4px]`
-- Hover: `opacity-90`
-- Sizes: `lg` = `h-12 px-5 text-[14px]` (full-width CTAs), `sm` = `h-10 px-4 text-[12px]` (inline header buttons)
+- Clicking the title swaps it for an `Input` of the same size, plus explicit Save (check) icon next to it. 
+- Save commits to Supabase (`shopping_lists.name`) and exits edit mode; clicking off of the title reverts their changes.
+- Delete the existing `renameOpen` Dialog and related state.
 
-**primary-dark** (reference: `scan barcode` on ActiveTrip footer)
+### 3. Add-item modal collapse affordance
 
-- Transparent background with `border border-forest-foreground`, `text-forest-foreground`
-- `font-mono`, lowercase, `tracking-wide`, `rounded-[4px]`
-- Hover: `bg-forest-foreground/5`
-- Sizes: same `lg` / `sm` scale
-- Used only on dark `forest` surfaces
+- Add a small chevron-down "collapse" icon button in the Add-item card that already appears at the bottom of the screen when user clicks the new "add item" button.
 
-## Implementation
+### 4. Footer / bottom area
 
-### 1. Add variants to `src/components/ui/button.tsx`
+- Remove the existing `QuickAddRow` row above the start-grocery-run footer (per user: replaced by the new header `+ ADD` button).
+- Keep the `start grocery run` footer button exactly where it is.
 
-Add `primaryLight` and `primaryDark` to `buttonVariants` cva, plus `compact` size token (h-10, px-4, text-[12px]). Keep existing variants for non-primary uses (ghost, outline, destructive, secondary). The old `hero` and `default` variants are no longer used for primary CTAs but stay available to avoid breakage in any third-party flows; we replace all current call sites.
+### 5. Spacing
 
-### 2. Replace call sites. make sure that each button's RELATIVE SIZE is still the same so there is no container overflow etc. 
+- Match screenshot rhythm: generous top padding under title, ~24px gap before the `group by:` row, ~24px before the first category heading, hairline divider under category heading already present.
+- In `LedgerRow`, tighten the gap between item name and the note line (`fresh, 2 leaves`) — reduce from current spacing to ~2px (e.g. `mt-0.5` instead of `mt-1`/`mt-1.5`).
 
+### 6. Cleanup
 
-| File                                                                      | Current                                 | New                                                                                        |
-| ------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `src/pages/Lists.tsx` L77-81                                              | bare `<button>` `+ new list`            | `<Button variant="primaryLight" size="compact">` (reference — visual identical)            |
-| `src/pages/ActiveTrip.tsx` L886-893                                       | bare `<button>` scan barcode            | `<Button variant="primaryDark" size="lg">` (reference — visual identical)                  |
-| `src/pages/Home.tsx` L185-190                                             | bare `<button>` `[ start a live trip ]` | `<Button variant="primaryLight" size="lg">` label → `start a live trip` (brackets dropped) |
-| `src/pages/ListDetail.tsx` L384-390                                       | `<Button>` start grocery run            | `variant="primaryLight" size="lg"` (drop custom className)                                 |
-| `src/pages/ListDetail.tsx` L448 (Add item modal confirm)                  | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
-| `src/pages/ListDetail.tsx` L516 (Edit item Save)                          | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
-| `src/pages/Lists.tsx` L153 (Create list modal)                            | `variant="hero"`                        | `variant="primaryLight" size="lg"`                                                         |
-| `src/pages/ActiveTrip.tsx` L978 (Add as substitute confirm)               | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
-| `src/pages/ActiveTrip.tsx` L1025 (manual check confirm)                   | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
-| `src/pages/ActiveTrip.tsx` L737 (Exit trip AlertDialogAction)             | custom transparent                      | `variant="primaryLight" size="lg"`                                                         |
-| `src/pages/ScanReceipt.tsx` L439 (Parse) and L617 (Save)                  | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
-| `src/pages/Finance.tsx` L495 (Save budget), L530 (Set budget), L723 (CTA) | default `<Button>`                      | `variant="primaryLight" size="lg"`                                                         |
-| `src/pages/onboarding/Layout.tsx` L74 (Continue)                          | default `<Button size="lg">`            | `variant="primaryLight" size="lg"` (cascades to all onboarding steps)                      |
-| `src/pages/onboarding/Signup.tsx` L171 (Sign up submit)                   | default                                 | `variant="primaryLight" size="lg"`                                                         |
-| `src/pages/onboarding/Intro.tsx` L71                                      | default                                 | `variant="primaryLight" size="lg"`                                                         |
-| `src/pages/onboarding/FirstList.tsx` L260, L347 (modal confirms)          | default                                 | `variant="primaryLight" size="lg"`                                                         |
-| `src/components/FeatureIntroDialog.tsx` L40 (Got it)                      | default                                 | `variant="primaryLight" size="lg"`                                                         |
+- Remove unused imports (`Pencil`, `DialogDescription` if no longer used, rename state, `QuickAddRow` import).
 
+### Technical notes
 
-### 3. Out of scope (intentionally NOT changed)
+- No schema changes. No new routes.
+- Inline edit state: reuse local state (`editingName: boolean`, `nameDraft: string`); on Save, run the same Supabase update currently in `renameOpen` flow and toast on error.
+- Header is non-sticky now; the page already scrolls inside the inner flex container, so removing the sticky bar is purely visual.
+- `+ ADD` button styling: small height (`h-8`), outline border, uppercase mono text (`font-mono text-[11px] tracking-[0.14em]`), `+` icon left — matches the screenshot's pill.
 
-- Destructive confirms (Delete, AlertDialog destructive actions) — stay `variant="destructive"`.
-- Cancel / secondary / ghost buttons in modals — unchanged.
-- Sign out (`Profile.tsx` outline) — unchanged.
-- Icon-only buttons (edit budget pencil, scanner close, FAB, bottom nav) — unchanged.
-- The Onboarding progress bar's primary color tokens — unchanged.
+### Out of scope
 
-## Risks
+- No changes to LedgerRow behavior, QuickAdd logic (just removed from render), trips, or data model.
+- No changes to other pages or the design tokens.
 
-- Onboarding Continue button restyle cascades to all 7 steps — verify visually after build.
-- AlertDialogAction in the Exit modal uses a different primitive; passing `className={buttonVariants(...)}` keeps it visually correct since it's not a `<Button>` component.
-- Any future contributor must use these two variants only; we'll add a one-line comment in `button.tsx` documenting that `primaryLight` / `primaryDark` are the only canonical primaries.
+### Risks / rollback
 
-## Verification
-
-- Build succeeds.
-- Visually spot-check: Lists, Home, ListDetail, ActiveTrip (footer + all modals), Finance budget modal, ScanReceipt, every onboarding step, FeatureIntroDialog.
+- Low risk; pure UI. Rollback = revert `ListDetail.tsx` + `LedgerRow.tsx`.

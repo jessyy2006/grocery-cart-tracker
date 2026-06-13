@@ -13,15 +13,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { ArrowLeft, Plus, ShoppingBasket, Pencil } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { ArrowLeft, Plus, ShoppingBasket, Check, ChevronDown } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
 import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
-import { TagPill } from "@/components/TagPill";
 import { TagSelector } from "@/components/TagSelector";
 import { MarketLoader } from "@/components/MarketLoader";
 import { LedgerRow } from "@/components/LedgerRow";
-import { QuickAddRow } from "@/components/QuickAddRow";
 import { toast } from "sonner";
 import { snapshotListIntoTrip } from "@/lib/snapshotList";
 
@@ -58,8 +56,9 @@ export default function ListDetail() {
   const [tag, setTag] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [dupOpen, setDupOpen] = useState(false);
-  const [renameOpen, setRenameOpen] = useState(false);
-  const [renameValue, setRenameValue] = useState("");
+  const [nameEditing, setNameEditing] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const nameWrapRef = useRef<HTMLDivElement>(null);
   const [groupBy, setGroupBy] = useState<"category" | "tag">("category");
   const scrollRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -96,6 +95,19 @@ export default function ListDetail() {
   useEffect(() => {
     if (autoCat && name.trim()) setCategory(guessCategory(name));
   }, [name, autoCat]);
+
+  // Cancel inline rename on outside click (revert draft).
+  useEffect(() => {
+    if (!nameEditing) return;
+    const onDoc = (e: MouseEvent) => {
+      if (nameWrapRef.current && !nameWrapRef.current.contains(e.target as Node)) {
+        setNameEditing(false);
+        setNameDraft(listName);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [nameEditing, listName]);
 
   const tagSuggestions = useMemo(() => {
     const seen = new Set<string>();
@@ -149,7 +161,23 @@ export default function ListDetail() {
   }, [items]);
 
   const total = items.length;
-  const done = items.filter((i) => i.checked_at).length;
+
+  const saveListName = async () => {
+    const next = nameDraft.trim();
+    if (!next || !id) {
+      setNameEditing(false);
+      setNameDraft(listName);
+      return;
+    }
+    if (next === listName) {
+      setNameEditing(false);
+      return;
+    }
+    setListName(next);
+    setNameEditing(false);
+    const { error } = await supabase.from("shopping_lists").update({ name: next }).eq("id", id);
+    if (error) toast.error(error.message);
+  };
 
   const performAdd = async () => {
     if (!id || !name.trim()) return;
@@ -233,7 +261,6 @@ export default function ListDetail() {
   const startRun = async () => {
     if (!user || !id) return;
     if (items.length === 0) return toast.error("Add some items first");
-    // Reuse existing active trip if present, otherwise create a new one linked to this list
     const { data: active } = await supabase
       .from("trips")
       .select("id")
@@ -258,38 +285,80 @@ export default function ListDetail() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="glass sticky top-0 z-10 flex items-center justify-between border-b border-hairline px-5 py-3 safe-top">
-        <button onClick={() => navigate("/lists")} className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-surface-sunk" aria-label="Back">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 pt-3 safe-top">
+        {/* Back arrow */}
+        <button
+          onClick={() => navigate("/lists")}
+          className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+          aria-label="Back"
+        >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <button
-          type="button"
-          onClick={() => {
-            setRenameValue(listName);
-            setRenameOpen(true);
-          }}
-          className="flex flex-col items-center text-center"
-          aria-label="Rename list"
-        >
-          <p className="text-eyebrow">Shopping list</p>
-          <span className="mt-0.5 inline-flex items-center gap-1.5 text-h2 font-display">
-            {listName}
-            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-          </span>
-        </button>
-        <span className="text-money text-small text-muted-foreground w-10 text-right">
-          {total}
-        </span>
-      </header>
 
+        {/* Title row */}
+        <div className="mt-3 flex items-start justify-between gap-3">
+          <div ref={nameWrapRef} className="min-w-0 flex-1">
+            {nameEditing ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={nameDraft}
+                  autoFocus
+                  maxLength={60}
+                  onChange={(e) => setNameDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void saveListName();
+                    } else if (e.key === "Escape") {
+                      setNameEditing(false);
+                      setNameDraft(listName);
+                    }
+                  }}
+                  className="h-auto border-0 border-b border-foreground/30 bg-transparent px-0 py-0 font-display text-h1 focus-visible:ring-0"
+                />
+                <button
+                  type="button"
+                  onClick={saveListName}
+                  aria-label="Save name"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                >
+                  <Check className="h-5 w-5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setNameDraft(listName);
+                  setNameEditing(true);
+                }}
+                className="block min-w-0 max-w-full truncate text-left font-display text-h1"
+                aria-label="Rename list"
+              >
+                {listName}
+              </button>
+            )}
+            <p className="mt-1 text-small text-muted-foreground">{total} items</p>
+          </div>
 
-      <div ref={scrollRef} className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+          <button
+            type="button"
+            onClick={() => setAddOpen(true)}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[6px] border border-border bg-background px-3 font-mono text-[11px] uppercase tracking-[0.14em] text-foreground hover:border-foreground/60"
+            aria-label="Add item"
+          >
+            <Plus className="h-3.5 w-3.5" /> Add
+          </button>
+        </div>
+
         {!ready ? (
-          <MarketLoader minHeight="50vh" />
+          <div className="mt-8">
+            <MarketLoader minHeight="40vh" />
+          </div>
         ) : (
           <>
             {items.length > 0 && (
-              <div className="flex items-center gap-2 text-[12px] lowercase">
+              <div className="mt-6 flex items-center gap-2 text-[12px] lowercase">
                 <span className="text-muted-foreground">group by:</span>
                 <button
                   onClick={() => setGroupBy("category")}
@@ -316,72 +385,46 @@ export default function ListDetail() {
 
             {items.length === 0 && (
               <p className="py-10 text-center text-sm text-muted-foreground">
-                No items yet — add your first one below.
+                No items yet — tap “+ Add” to add your first one.
               </p>
             )}
 
+            <div className="mt-6 space-y-6">
+              {(groupBy === "category" ? groupedByCategory : groupedByTag).map((group) => (
+                <section key={group.key}>
+                  <h3 className="mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                    {groupBy === "category"
+                      ? `${(group as any).emoji} ${String(group.label).toLowerCase()}`
+                      : (group as any).isTag
+                      ? String(group.label).toLowerCase()
+                      : "other"}
+                  </h3>
+                  <ul className="border-t border-[hsl(20_40%_18%/0.3)]">
+                    {group.items.map((it) => (
+                      <LedgerRow
+                        key={it.id}
+                        name={it.name}
+                        qty={it.qty}
+                        note={it.notes}
+                        tag={groupBy === "category" ? it.tag : null}
+                        onQtyChange={async (next) => {
+                          setItems((c) => c.map((i) => (i.id === it.id ? { ...i, qty: next } : i)));
+                          await supabase.from("shopping_list_items").update({ qty: next }).eq("id", it.id);
+                        }}
+                        onEdit={() => openEdit(it)}
+                        onDelete={() => remove(it.id)}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
 
-            {(groupBy === "category" ? groupedByCategory : groupedByTag).map((group) => (
-              <section key={group.key}>
-                <h3 className="mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                  {groupBy === "category"
-                    ? `${(group as any).emoji} ${String(group.label).toLowerCase()}`
-                    : (group as any).isTag
-                    ? String(group.label).toLowerCase()
-                    : "other"}
-                </h3>
-                <ul className="border-t border-[hsl(20_40%_18%/0.3)]">
-                  {group.items.map((it) => (
-                    <LedgerRow
-                      key={it.id}
-                      name={it.name}
-                      qty={it.qty}
-                      note={it.notes}
-                      tag={groupBy === "category" ? it.tag : null}
-                      onQtyChange={async (next) => {
-                        setItems((c) => c.map((i) => (i.id === it.id ? { ...i, qty: next } : i)));
-                        await supabase.from("shopping_list_items").update({ qty: next }).eq("id", it.id);
-                      }}
-                      onEdit={() => openEdit(it)}
-                      onDelete={() => remove(it.id)}
-                    />
-                  ))}
-                </ul>
-              </section>
-            ))}
-
-            <div ref={endRef} />
+            <div ref={endRef} className="h-4" />
           </>
         )}
       </div>
 
-      <div className="border-t border-hairline bg-background px-4 pt-3">
-        <QuickAddRow
-          tagSuggestions={tagSuggestions}
-          onSubmit={async ({ name: n, qty, note, tag: t }) => {
-            if (!id) return;
-            const slug = guessCategory(n);
-            const insert = {
-              list_id: id,
-              name: n,
-              qty,
-              category: slug,
-              notes: note ? note.slice(0, 25) : null,
-              tag: t,
-            };
-            const { data, error } = await supabase
-              .from("shopping_list_items")
-              .insert(insert)
-              .select("*")
-              .single();
-            if (error) {
-              toast.error(error.message);
-              return;
-            }
-            setItems((c) => [...c, data as Item]);
-          }}
-        />
-      </div>
       <footer className="px-4 pt-3 pb-3">
         <Button
           variant="primaryLight"
@@ -399,6 +442,14 @@ export default function ListDetail() {
           <DialogHeader>
             <DialogTitle>Add item</DialogTitle>
           </DialogHeader>
+          <button
+            type="button"
+            onClick={() => setAddOpen(false)}
+            aria-label="Collapse"
+            className="absolute left-4 top-4 rounded-sm text-muted-foreground opacity-70 transition-opacity hover:opacity-100"
+          >
+            <ChevronDown className="h-4 w-4" />
+          </button>
           <div className="space-y-3">
             <div className="flex gap-2">
               <Input
@@ -460,10 +511,10 @@ export default function ListDetail() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-center">Duplicate item</DialogTitle>
-            <DialogDescription className="text-center">
-              Heads up — this item is already on your list. Add it anyway?
-            </DialogDescription>
           </DialogHeader>
+          <p className="text-center text-body text-muted-foreground">
+            Heads up — this item is already on your list. Add it anyway?
+          </p>
           <div className="flex flex-col gap-2">
             <Button
               size="lg"
@@ -516,61 +567,6 @@ export default function ListDetail() {
           <DialogFooter className="flex-row gap-2 sm:justify-stretch sm:space-x-0">
             <Button variant="primaryLight" size="lg" className="flex-1" onClick={saveEdit}>Save</Button>
             <Button variant="secondaryLight" size="lg" className="flex-1" onClick={() => setEditing(null)}>
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Rename list</DialogTitle>
-          </DialogHeader>
-          <Input
-            value={renameValue}
-            autoFocus
-            maxLength={60}
-            onChange={(e) => setRenameValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void (async () => {
-                  const next = renameValue.trim();
-                  if (!next || !id || next === listName) return setRenameOpen(false);
-                  setListName(next);
-                  setRenameOpen(false);
-                  const { error } = await supabase
-                    .from("shopping_lists")
-                    .update({ name: next })
-                    .eq("id", id);
-                  if (error) toast.error(error.message);
-                })();
-              }
-            }}
-          />
-          <DialogFooter className="flex-row gap-2 sm:justify-stretch sm:space-x-0">
-            <Button
-              variant="primaryLight"
-              size="lg"
-              className="flex-1"
-              onClick={async () => {
-                const next = renameValue.trim();
-                if (!next || !id) return;
-                if (next === listName) return setRenameOpen(false);
-                setListName(next);
-                setRenameOpen(false);
-                const { error } = await supabase
-                  .from("shopping_lists")
-                  .update({ name: next })
-                  .eq("id", id);
-                if (error) toast.error(error.message);
-              }}
-              disabled={!renameValue.trim()}
-            >
-              Save
-            </Button>
-            <Button variant="secondaryLight" size="lg" className="flex-1" onClick={() => setRenameOpen(false)}>
               Cancel
             </Button>
           </DialogFooter>
