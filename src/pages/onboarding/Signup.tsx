@@ -137,8 +137,9 @@ export default function OnboardingSignup() {
               </div>
               <Button
                 type="submit"
-                variant="outline"
-                className="w-full border-2 border-primary text-primary hover:bg-primary/5 hover:text-primary"
+                variant="secondaryLight"
+                size="lg"
+                className="w-full"
                 disabled={busy}
               >
                 Create account

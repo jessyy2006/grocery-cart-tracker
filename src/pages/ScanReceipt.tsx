@@ -433,7 +433,7 @@ export default function ScanReceipt() {
           )}
           {stage === "preview" && (
             <>
-              <Button variant="secondary" size="lg" onClick={retake} className="flex-1 mr-2">
+              <Button variant="secondaryLight" size="lg" onClick={retake} className="flex-1 mr-2">
                 <RefreshCw className="h-4 w-4" /> Retake
               </Button>
               <Button variant="primaryLight" size="lg" onClick={parse} className="flex-1 ml-2">
@@ -611,7 +611,7 @@ export default function ScanReceipt() {
             </div>
 
             <div className="mt-6 flex gap-3">
-              <Button variant="secondary" className="flex-1" onClick={close} disabled={saving}>
+              <Button variant="secondaryLight" className="flex-1" onClick={close} disabled={saving}>
                 Cancel
               </Button>
               <Button variant="primaryLight" size="lg" className="flex-1" onClick={save} disabled={saving}>

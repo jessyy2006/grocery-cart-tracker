@@ -145,7 +145,7 @@ export default function Profile() {
       <div className="px-5 pt-8 pb-6">
         <button
           onClick={() => supabase.auth.signOut()}
-          className="w-full rounded-[6px] border border-primary bg-transparent py-3 text-xs font-bold uppercase tracking-widest text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+          className="w-full rounded-card border border-primary bg-transparent py-3 text-xs font-bold uppercase tracking-widest text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
         >
           Sign out
         </button>

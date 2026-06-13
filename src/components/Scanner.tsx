@@ -66,7 +66,7 @@ export const Scanner = ({
           <div className="pointer-events-auto">
             <Button
               size="sm"
-              variant="secondary"
+              variant="primaryDark"
               onClick={onManualEntry}
               className="shadow-elevated"
             >
@@ -76,7 +76,7 @@ export const Scanner = ({
         )}
       </div>
       <div className="absolute left-0 right-0 top-0 flex justify-between p-4 safe-top">
-        <Button size="icon" variant="secondary" onClick={onClose}>
+        <Button size="icon" variant="primaryDark" onClick={onClose}>
           <X className="h-5 w-5" />
         </Button>
       </div>

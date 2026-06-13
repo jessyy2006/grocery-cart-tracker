@@ -85,6 +85,9 @@ export default {
         },
       },
       borderRadius: {
+        control: "var(--radius-control)",
+        card: "var(--radius-card)",
+        sheet: "var(--radius-sheet)",
         sm: "var(--radius-sm)",
         md: "calc(var(--radius) - 4px)",
         lg: "var(--radius)",
@@ -94,6 +97,7 @@ export default {
       boxShadow: {
         soft: "var(--shadow-soft)",
         raised: "var(--shadow-raised)",
+        elevated: "var(--shadow-elevated)",
         glow: "var(--shadow-glow)",
       },
       keyframes: {

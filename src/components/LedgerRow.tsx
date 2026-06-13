@@ -59,7 +59,7 @@ export function LedgerRow({
             onClick={onToggle}
             aria-label={checked ? "Uncheck item" : "Check item"}
             className={cn(
-              "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] border transition-colors",
+              "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-control border transition-colors",
               checked
                 ? "border-forest bg-forest text-forest-foreground"
                 : "border-foreground/40 bg-transparent hover:border-foreground",
@@ -199,7 +199,7 @@ function QtyMultiplier({ qty, onChange }: { qty: number; onChange?: (n: number) 
         type="button"
         aria-label="Decrease"
         onClick={() => onChange(Math.max(1, qty - 1))}
-        className="flex h-6 w-6 items-center justify-center rounded-[3px] border border-foreground/30 hover:border-foreground"
+        className="flex h-6 w-6 items-center justify-center rounded-control border border-foreground/30 hover:border-foreground"
       >
         <Minus className="h-3 w-3" />
       </button>
@@ -208,7 +208,7 @@ function QtyMultiplier({ qty, onChange }: { qty: number; onChange?: (n: number) 
         type="button"
         aria-label="Increase"
         onClick={() => onChange(qty + 1)}
-        className="flex h-6 w-6 items-center justify-center rounded-[3px] border border-foreground/30 hover:border-foreground"
+        className="flex h-6 w-6 items-center justify-center rounded-control border border-foreground/30 hover:border-foreground"
       >
         <Plus className="h-3 w-3" />
       </button>

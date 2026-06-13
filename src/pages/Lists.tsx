@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MarketLoader } from "@/components/MarketLoader";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { formatDistanceToNow } from "date-fns";
 
 type ShoppingList = {
@@ -49,8 +50,13 @@ export default function Lists() {
   };
 
   const remove = async (id: string) => {
+    const prev = lists;
     setLists((c) => c.filter((l) => l.id !== id));
-    await supabase.from("shopping_lists").delete().eq("id", id);
+    const { error } = await supabase.from("shopping_lists").delete().eq("id", id);
+    if (error) {
+      setLists(prev);
+      toast.error("Couldn't delete the list");
+    }
   };
 
   // Margin rule positioned ~48px from page left edge. Page has px-5 (20px),
@@ -122,13 +128,20 @@ export default function Lists() {
                       <span className="font-mono text-[12px]"> · updated {updated}</span>
                     </p>
                   </button>
-                  <button
-                    onClick={() => remove(l.id)}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label="Delete list"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <ConfirmDialog
+                    title="Delete this list?"
+                    description={`"${l.name.toLowerCase()}" and everything in it will be removed. This can't be undone.`}
+                    confirmLabel="Delete list"
+                    onConfirm={() => remove(l.id)}
+                    trigger={
+                      <button
+                        className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label="Delete list"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    }
+                  />
                 </li>
               );
             })}

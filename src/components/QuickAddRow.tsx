@@ -62,7 +62,7 @@ export function QuickAddRow({
       <button
         type="button"
         onClick={expand}
-        className="block w-full rounded-[6px] border border-dashed border-[hsl(20_40%_18%/0.55)] bg-surface-raised py-3.5 text-center font-mono text-[13px] lowercase tracking-tight text-foreground transition-colors hover:bg-surface"
+        className="block w-full rounded-card border border-dashed border-[hsl(20_40%_18%/0.55)] bg-surface-raised py-3.5 text-center font-mono text-[13px] lowercase tracking-tight text-foreground transition-colors hover:bg-surface"
       >
         [ + add a new item ]
       </button>
@@ -71,11 +71,11 @@ export function QuickAddRow({
 
   // Shared box styling: solid paper backdrop, hairline border, forest focus ring.
   const boxBase =
-    "rounded-[6px] border bg-surface px-3 transition-colors focus-within:border-forest focus-within:border-[1.5px]";
+    "rounded-card border bg-surface px-3 transition-colors focus-within:border-forest focus-within:border-[1.5px]";
   const boxIdle = "border-hairline";
 
   return (
-    <div className="animate-fade-rise rounded-[6px] border border-hairline bg-surface-raised p-3 space-y-2.5">
+    <div className="animate-fade-rise rounded-card border border-hairline bg-surface-raised p-3 space-y-2.5">
       {/* Row 1: item name */}
       <div className={`${boxBase} ${boxIdle} h-11 flex items-center`}>
         <input
@@ -171,7 +171,7 @@ export function QuickAddRow({
         type="button"
         onClick={() => void commit()}
         disabled={!name.trim()}
-        className="block w-full h-11 rounded-[6px] bg-forest text-forest-foreground px-4 font-mono text-[13px] lowercase tracking-tight hover:opacity-90 transition-opacity disabled:opacity-40"
+        className="block w-full h-11 rounded-card bg-forest text-forest-foreground px-4 font-mono text-[13px] lowercase tracking-tight hover:opacity-90 transition-opacity disabled:opacity-40"
       >
         add item
       </button>

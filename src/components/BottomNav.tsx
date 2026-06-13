@@ -30,10 +30,10 @@ export const BottomNav = () => {
               className={({ isActive }) =>
                 cn(
                   "relative flex items-center justify-center font-mono uppercase tracking-widest text-[9px] py-2 transition-transform",
-                  "rounded-t-[4px]",
+                  "rounded-t-control",
                   isActive
-                    ? "z-10 h-11 -mb-0 bg-[#143F2D] text-[#F7F5F0] font-bold"
-                    : "h-10 bg-white text-[#7C756B] border border-b-0 border-[#E5DFD3] hover:-translate-y-0.5",
+                    ? "z-10 h-11 -mb-0 bg-primary text-primary-foreground font-bold"
+                    : "h-10 bg-surface-raised text-muted-foreground border border-b-0 border-hairline hover:-translate-y-0.5",
                 )
               }
             >

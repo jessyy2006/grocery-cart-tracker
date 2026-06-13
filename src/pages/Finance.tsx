@@ -807,7 +807,7 @@ function FinanceCardView(props: any) {
                     />
                   ) : null}
                   <div
-                    className={`w-full rounded-t-[4px] transition-all ${
+                    className={`w-full rounded-t-control transition-all ${
                       isCurrent
                         ? "bg-primary"
                         : isPast

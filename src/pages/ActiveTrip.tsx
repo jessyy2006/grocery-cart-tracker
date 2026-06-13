@@ -880,7 +880,7 @@ export default function ActiveTrip() {
         className="shrink-0 px-3 pt-2"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
       >
-        <div className="rounded-[6px] bg-forest text-forest-foreground px-5 pt-4 pb-4 shadow-soft">
+        <div className="rounded-card bg-forest text-forest-foreground px-5 pt-4 pb-4 shadow-soft">
           <div className="flex items-center justify-between gap-3">
             <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-forest-foreground/70">
               cart total

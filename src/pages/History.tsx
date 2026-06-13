@@ -113,10 +113,10 @@ export default function History() {
           <div className="flex items-center gap-2">
             {monthOptions.length > 0 && (
               <Select value={month} onValueChange={setMonth}>
-                <SelectTrigger className="h-9 w-[140px] rounded-[6px] bg-surface border-hairline text-small">
+                <SelectTrigger className="h-9 w-[140px] rounded-card bg-surface border-hairline text-small">
                   <SelectValue placeholder="All months" />
                 </SelectTrigger>
-                <SelectContent className="rounded-[6px]">
+                <SelectContent className="rounded-card">
                   <SelectItem value={ALL}>All months</SelectItem>
                   {monthOptions.map((k) => (
                     <SelectItem key={k} value={k}>{monthLabel(k)}</SelectItem>
@@ -127,7 +127,7 @@ export default function History() {
             <button
               onClick={() => navigate("/scan-receipt")}
               aria-label="Scan past receipt"
-              className="flex h-9 w-9 items-center justify-center rounded-[4px] border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-control border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
             >
               <ScanLine className="h-4 w-4" strokeWidth={1.75} />
             </button>

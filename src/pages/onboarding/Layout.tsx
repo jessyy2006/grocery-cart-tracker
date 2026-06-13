@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const TOTAL_STEPS = 7;
+// Stepped onboarding screens are Profile(1) → Goals(2) → Budget(3) →
+// Behavior(4) → FirstList(5). Intro and Signup sit before the wizard.
+const TOTAL_STEPS = 5;
 
 type Props = {
   step: number;
@@ -39,7 +41,7 @@ export default function OnboardingLayout({
               key={i}
               className={cn(
                 "h-1.5 flex-1 rounded-full transition-colors",
-                i <= step ? "bg-primary" : "bg-border"
+                i < step ? "bg-primary" : "bg-border"
               )}
             />
           ))}

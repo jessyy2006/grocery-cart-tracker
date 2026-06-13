@@ -19,6 +19,7 @@ import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } 
 import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
 import { TagSelector } from "@/components/TagSelector";
 import { MarketLoader } from "@/components/MarketLoader";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { LedgerRow } from "@/components/LedgerRow";
 import { toast } from "sonner";
 import { snapshotListIntoTrip } from "@/lib/snapshotList";
@@ -63,6 +64,7 @@ export default function ListDetail() {
   const [runActive, setRunActive] = useState(false);
   const [notes, setNotes] = useState("");
   const [editing, setEditing] = useState<Item | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Item | null>(null);
   const [editName, setEditName] = useState("");
   const [editQtyText, setEditQtyText] = useState("1");
   const [editNotes, setEditNotes] = useState("");
@@ -332,8 +334,13 @@ export default function ListDetail() {
   };
 
   const remove = async (itId: string) => {
+    const prev = items;
     setItems((c) => c.filter((i) => i.id !== itId));
-    await supabase.from("shopping_list_items").delete().eq("id", itId);
+    const { error } = await supabase.from("shopping_list_items").delete().eq("id", itId);
+    if (error) {
+      setItems(prev);
+      toast.error("Couldn't remove the item");
+    }
   };
 
   const startRun = async () => {
@@ -423,7 +430,7 @@ export default function ListDetail() {
             ref={addBtnRef}
             type="button"
             onClick={() => setAddOpen((v) => !v)}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[6px] border border-border bg-background px-3 font-mono text-[11px] uppercase tracking-[0.14em] text-foreground hover:border-foreground/60"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-card border border-border bg-background px-3 font-mono text-[11px] uppercase tracking-[0.14em] text-foreground hover:border-foreground/60"
             aria-label="Add item"
           >
             <Plus className="h-3.5 w-3.5" /> Add
@@ -494,7 +501,7 @@ export default function ListDetail() {
                                 await supabase.from("shopping_list_items").update({ qty: next }).eq("id", it.id);
                               }}
                               onEdit={() => openEdit(it)}
-                              onDelete={() => remove(it.id)}
+                              onDelete={() => setPendingDelete(it)}
                             />
                           </DraggableRow>
                         ))}
@@ -505,7 +512,7 @@ export default function ListDetail() {
               </div>
               <DragOverlay dropAnimation={null}>
                 {dragId ? (
-                  <div className="rounded-[6px] border border-foreground/20 bg-card px-3 py-2 text-[15px] lowercase shadow-lg">
+                  <div className="rounded-card border border-foreground/20 bg-card px-3 py-2 text-[15px] lowercase shadow-lg">
                     {items.find((i) => i.id === dragId)?.name}
                   </div>
                 ) : null}
@@ -541,7 +548,7 @@ export default function ListDetail() {
               </button>
 
               {/* ITEM NAME */}
-              <div className="rounded-[6px] border border-hairline px-3 py-2">
+              <div className="rounded-card border border-hairline px-3 py-2">
                 <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
                   Item name*
                 </div>
@@ -558,7 +565,7 @@ export default function ListDetail() {
 
               {/* QTY + NOTE */}
               <div className="mt-2 flex gap-2">
-                <div className="w-[80px] shrink-0 rounded-[6px] border border-hairline bg-muted/40 px-3 py-2">
+                <div className="w-[80px] shrink-0 rounded-card border border-hairline bg-muted/40 px-3 py-2">
                   <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
                     Qty
                   </div>
@@ -573,7 +580,7 @@ export default function ListDetail() {
                     className="mt-0.5 h-7 border-0 bg-transparent px-0 py-0 text-[15px] focus-visible:ring-0"
                   />
                 </div>
-                <div className="flex-1 rounded-[6px] border border-hairline px-3 py-2">
+                <div className="flex-1 rounded-card border border-hairline px-3 py-2">
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
                       Note (optional)
@@ -640,7 +647,7 @@ export default function ListDetail() {
                 ) : (
                   <>
                     {tag ? (
-                      <span className="inline-flex items-center gap-1 rounded-[3px] border border-[hsl(155_56%_15%)] px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-[hsl(155_56%_15%)]">
+                      <span className="inline-flex items-center gap-1 rounded-control border border-[hsl(155_56%_15%)] px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-[hsl(155_56%_15%)]">
                         {tag}
                         <button
                           type="button"
@@ -700,6 +707,22 @@ export default function ListDetail() {
       </footer>
 
 
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => !o && setPendingDelete(null)}
+        title="Remove this item?"
+        description={
+          pendingDelete
+            ? `"${pendingDelete.name.toLowerCase()}" will be removed from this list.`
+            : undefined
+        }
+        confirmLabel="Remove"
+        onConfirm={() => {
+          if (pendingDelete) void remove(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+      />
+
       <Dialog open={dupOpen} onOpenChange={setDupOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -711,21 +734,22 @@ export default function ListDetail() {
           <div className="flex flex-col gap-2">
             <Button
               size="lg"
-              variant="destructive"
-              className="w-full rounded-xl"
+              variant="primaryLight"
+              className="w-full"
               onClick={() => {
                 setDupOpen(false);
                 void performAdd();
               }}
             >
-              Yes, add it
+              add it anyway
             </Button>
             <Button
               size="lg"
-              className="w-full rounded-xl bg-success text-success-foreground hover:bg-success/90"
+              variant="secondaryLight"
+              className="w-full"
               onClick={() => setDupOpen(false)}
             >
-              No
+              cancel
             </Button>
           </div>
         </DialogContent>
@@ -805,7 +829,7 @@ function DroppableSection({
     <section
       ref={setNodeRef}
       className={cn(
-        "rounded-[6px] transition-colors",
+        "rounded-card transition-colors",
         isOver && "bg-foreground/5 ring-1 ring-foreground/20",
       )}
     >

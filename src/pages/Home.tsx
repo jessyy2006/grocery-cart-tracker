@@ -170,11 +170,11 @@ export default function Home() {
           {(() => {
             const pct = monthlyBudget && monthlyBudget > 0 ? Math.round((monthSpend / monthlyBudget) * 100) : null;
             return (
-              <section className="relative overflow-hidden rounded-[6px] bg-surface-raised shadow-soft">
+              <section className="relative overflow-hidden rounded-card bg-surface-raised shadow-soft">
                 <button
                   onClick={() => navigate("/scan-receipt")}
                   aria-label="Scan past receipt"
-                  className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-[4px] border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
+                  className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-control border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
                 >
                   <ScanLine className="h-4 w-4" strokeWidth={1.75} />
                 </button>
@@ -246,7 +246,7 @@ export default function Home() {
 
       {/* Unified start-trip bottom sheet (2 internal steps) */}
       <Drawer open={sheetOpen} onOpenChange={setSheetOpen}>
-        <DrawerContent className="bg-surface-raised border-hairline rounded-t-[28px] max-h-[85vh]">
+        <DrawerContent className="bg-surface-raised border-hairline rounded-t-sheet max-h-[85vh]">
           <div className="px-5 pb-8 pt-2">
             {step === "choose" ? (
               <>
@@ -256,7 +256,7 @@ export default function Home() {
                   <button
                     disabled={creating || lists.length === 0}
                     onClick={() => setStep("list")}
-                    className="group flex items-center gap-4 rounded-[6px] border border-hairline bg-card p-5 text-left shadow-soft hover:border-primary hover:shadow-glow transition-all disabled:opacity-50"
+                    className="group flex items-center gap-4 rounded-card border border-hairline bg-card p-5 text-left shadow-soft hover:border-primary hover:shadow-glow transition-all disabled:opacity-50"
                   >
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent/60 text-primary">
                       <ListChecks className="h-5 w-5" strokeWidth={2} />
@@ -273,7 +273,7 @@ export default function Home() {
                   <button
                     disabled={creating}
                     onClick={() => startTripWith(null)}
-                    className="group flex items-center gap-4 rounded-[6px] border border-hairline bg-card p-5 text-left shadow-soft hover:border-primary hover:shadow-glow transition-all disabled:opacity-50"
+                    className="group flex items-center gap-4 rounded-card border border-hairline bg-card p-5 text-left shadow-soft hover:border-primary hover:shadow-glow transition-all disabled:opacity-50"
                   >
                     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-butter/60 text-foreground">
                       <Sparkles className="h-5 w-5" strokeWidth={2} />
