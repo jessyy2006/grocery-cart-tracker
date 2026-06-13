@@ -299,9 +299,6 @@ export default function YearlyReceiptView(props: Props) {
                     </div>
                   </div>
                   <p className="mt-1 text-[12px] italic text-neutral-700">{insight}</p>
-                  {q.q < 3 && (
-                    <div className="mt-3 border-t border-dotted border-neutral-500/50" />
-                  )}
                 </div>
               );
             })}
