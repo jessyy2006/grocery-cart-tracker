@@ -1,68 +1,50 @@
-# Yearly receipt on Finance page
+## Problem
 
-Add a yearly variant of the receipt that lives next to the existing monthly receipt and shares its paper/jagged-edge/swipe-to-tear treatment, with a couple of editorial flourishes layered in.
+In `src/pages/Finance.tsx` (lines 762–768), the 6-month chart's y-axis column uses `-translate-x-5` (−20px) to push the `$0 / $50 / $100` labels outside the page's `px-5` padding. That makes the labels hug the screen edge and simultaneously shoves the bars/gridlines into the right portion of the screen.
 
-## Scope
+```text
+[page px-5] [-20px y-axis] [gap-2] [bars px-1 ............]
+   ^ labels escape padding         ^ bars start ~30px in from left
+```
 
-- Period switcher above the receipt: `THIS MONTH` / `THIS YEAR` (persisted to `localStorage`, like the existing view toggle). Visible only when `view === "receipt"`.
-- New `YearlyReceiptView` component built from real trip data for Jan 1 – Dec 31 of the current year.
-- Existing monthly `ReceiptView` is untouched.
+## Fix
 
-## Yearly receipt content (top → bottom)
+Two small changes inside the chart row (and the matching label row below it):
 
-1. Header: `YEARLY GROCERY SUMMARY` + `JAN 1 — DEC 31, YYYY`.
-2. Three metric columns (divided by vertical hairlines): **Total Outlay**, **Items**, **Avg Basket**.
-3. **Spending Rhythm** — smooth line chart (monotone SVG path) of 12 monthly totals, forest-green stroke `#143F2D` with soft fill, J/F/M/A/M/J/J/A/S/O/N/D axis labels.
-4. **The Hall of Fame** rows:
-   - Most Loyal Store (hidden if no `store_name_snapshot` exists for the year)
-   - Staple of the Year (most-purchased item by qty, e.g. `OAT MILK (48×)`)
-   - Largest Haul (highest-total trip, e.g. `NOV 22 — $342.10`)
-5. Dotted-divider Q1–Q4 blocks. Each shows quarter total + a short italic insight derived from the data (top category that quarter, or % vs prior quarter). Deterministic, no AI call.
-6. Italic Playfair quote near the footer (one of a small deterministic set keyed off year + spend pattern).
-7. Barcode + archive code `YYYY—ARCHIVE—FINAL`.
-8. Same jagged top/bottom edges and swipe-to-tear stub as the monthly receipt.
+1. Remove `-translate-x-5` from the y-axis column so labels sit inside the page's `px-5` margin like every other section.
+2. Tighten the y-axis column width (`w-10` → `w-8`) and drop the row's `gap-2` so the bars container expands to the full remaining width, with gridlines spanning edge-to-edge between page margins.
+3. Mirror the same width/gap change on the month-label row directly below (lines 824–827) so the month names stay aligned under their bars.
 
-## Style (hybrid)
+### Minimal diff
 
-- Keep paper `#fdfaf1`, JetBrains Mono body, dashed dividers, jagged SVG edges, current barcode/stub component.
-- Add forest green `#143F2D` for the chart stroke + accent rules.
-- Quote uses Playfair Display italic (load via Google Fonts in `index.html`).
-- Everything else (labels, numbers, rows) stays in the existing mono treatment so the two receipts feel like siblings.
+```tsx
+// Chart row
+- <div className="flex gap-2">
+-   <div className="flex h-40 w-10 -translate-x-5 flex-col justify-between py-0.5 ...">
++ <div className="flex">
++   <div className="flex h-40 w-8 flex-col justify-between py-0.5 ...">
+      {yTicks.map(...)}
+    </div>
+-   <div className="relative flex h-40 flex-1 items-stretch gap-3 px-1">
++   <div className="relative flex h-40 flex-1 items-stretch gap-3">
+      ...
+    </div>
+  </div>
 
-## Data
+// Month-label row
+- <div className="-mt-3 flex gap-2">
+-   <div className="w-10" />
+-   <div className="flex flex-1 gap-3 border-t ... px-1 pt-1.5">
++ <div className="-mt-3 flex">
++   <div className="w-8" />
++   <div className="flex flex-1 gap-3 border-t ... pt-1.5">
+```
 
-Currently `Finance.tsx` only fetches trips for the last 6 months. Extend the fetch window to `max(jan 1 this year, 6 months ago)` so yearly aggregates have full-year coverage without breaking existing monthly math.
+## Risk / verification
 
-Aggregations (all client-side, in a new `useMemo`):
+- Visual-only change, no data or layout outside the chart section.
+- Verify on 390px viewport that: labels sit at the same x as the section heading, gridlines stretch edge-to-edge, and month names remain centered under their bars.
 
-- `totalOutlay` = sum of `total_cents` for trips this year
-- `itemCount` = sum of `qty` across trip_items this year
-- `avgBasket` = itemCount / tripCount (one decimal)
-- `monthlySeries` = 12 entries (Jan…Dec), cents per month
-- `mostLoyalStore` = store with highest summed cents; hidden if none
-- `staple` = item name with highest summed qty (case-insensitive match on `name_snapshot`)
-- `largestHaul` = trip with max `total_cents` → `MMM DD — $X.XX`
-- `quarters` = 4 entries with `{ total, topCategorySlug, deltaVsPrev }`
+## Open question
 
-## Interaction
-
-- Switching `MONTH` / `YEAR` swaps the rendered receipt; share/tear behavior is identical (swipe across barcode → tear → share dialog with PNG export). No archive button.
-- Tear PNG export reuses the same `toPng` flow; export ref lives inside the yearly component.
-
-## Files
-
-- New: `src/components/finance/YearlyReceiptView.tsx`
-- New: `src/components/finance/receiptPrimitives.tsx` — extract shared `JaggedEdge`, `Divider`, `Row`, `Barcode`, `PAPER` from `ReceiptView.tsx` so both receipts share one implementation. Update `ReceiptView.tsx` to import from it (no visual change).
-- Edit: `src/pages/Finance.tsx` — extend trip fetch to start of current year; add `period` state + toggle UI; render `YearlyReceiptView` when `period === "year"`; compute yearly derived data.
-- Edit: `index.html` — add Playfair Display italic stylesheet link.
-
-## Out of scope
-
-- Persisting/exporting an "archive" of past years.
-- Changes to the monthly receipt's content or styling.
-- AI-generated insights for Q1–Q4 blurbs (deterministic only).
-
-## Risks
-
-- Extending the trip fetch range increases payload — bounded to one year of trips for a single user, low risk.
-- Staple/store detection is naive string match; acceptable for v1.
+None — the screenshot annotation is unambiguous. Proceeding on approval.

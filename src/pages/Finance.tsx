@@ -759,15 +759,15 @@ function FinanceCardView(props: any) {
       <section className="space-y-3">
         <div className={sectionAnchor}>6-month overview</div>
 
-        <div className="flex gap-2">
+        <div className="flex">
           {/* Y axis */}
-          <div className="flex h-40 w-10 -translate-x-5 flex-col justify-between py-0.5 text-left text-[10px] tabular-nums text-muted-foreground">
+          <div className="flex h-40 w-8 flex-col justify-between py-0.5 text-left text-[10px] tabular-nums text-muted-foreground">
             {yTicks.map((t) => (
               <div key={t} className="leading-none">{formatMoney(t, undefined, 0)}</div>
             ))}
           </div>
           {/* Bars + gridlines */}
-          <div className="relative flex h-40 flex-1 items-stretch gap-3 px-1">
+          <div className="relative flex h-40 flex-1 items-stretch gap-3">
             {yTicks.slice(0, -1).map((t, i) => (
               <div
                 key={i}
