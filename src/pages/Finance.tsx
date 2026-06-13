@@ -512,23 +512,7 @@ export default function Finance() {
     <div className="space-y-7 px-5 pt-3">
       <header className="flex items-end justify-between gap-3">
         <div>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="text-eyebrow inline-flex items-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
-              aria-label="Change period"
-            >
-              <span>{period === "year" ? "THIS YEAR" : "THIS MONTH"}</span>
-              <ChevronDown className="h-3 w-3" aria-hidden />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-[10rem]">
-              <DropdownMenuItem onSelect={() => setPeriodPersist("month")}>
-                <span className="text-[11px] font-semibold tracking-[0.15em]">THIS MONTH</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setPeriodPersist("year")}>
-                <span className="text-[11px] font-semibold tracking-[0.15em]">THIS YEAR</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <p className="text-eyebrow">This month</p>
           <h1 className="mt-1.5 text-h1">Finance</h1>
         </div>
         <div className="flex items-center gap-1">
@@ -557,6 +541,25 @@ export default function Finance() {
         <MarketLoader minHeight="55vh" />
       ) : view === "receipt" ? (
         <div className="space-y-5">
+          <div className="flex">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                className="inline-flex items-center gap-1 rounded-sm text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                aria-label="Change period"
+              >
+                <span>{period === "year" ? "THIS YEAR" : "THIS MONTH"}</span>
+                <ChevronDown className="h-3 w-3" aria-hidden />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[10rem]">
+                <DropdownMenuItem onSelect={() => setPeriodPersist("month")}>
+                  <span className="text-[11px] font-semibold tracking-[0.15em]">THIS MONTH</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setPeriodPersist("year")}>
+                  <span className="text-[11px] font-semibold tracking-[0.15em]">THIS YEAR</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           {period === "month" ? (
             <ReceiptView
               budgetCents={budgetCents ?? 0}
