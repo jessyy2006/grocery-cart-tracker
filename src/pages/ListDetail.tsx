@@ -431,36 +431,50 @@ export default function ListDetail() {
               </p>
             )}
 
-            <div className="mt-6 space-y-6">
-              {(groupBy === "category" ? groupedByCategory : groupedByTag).map((group) => (
-                <section key={group.key}>
-                  <h3 className="mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                    {groupBy === "category"
-                      ? `${(group as any).emoji} ${String(group.label).toLowerCase()}`
-                      : (group as any).isTag
-                      ? String(group.label).toLowerCase()
-                      : "other"}
-                  </h3>
-                  <ul className="border-t border-[hsl(20_40%_18%/0.3)]">
-                    {group.items.map((it) => (
-                      <LedgerRow
-                        key={it.id}
-                        name={it.name}
-                        qty={it.qty}
-                        note={it.notes}
-                        tag={groupBy === "category" ? it.tag : null}
-                        onQtyChange={async (next) => {
-                          setItems((c) => c.map((i) => (i.id === it.id ? { ...i, qty: next } : i)));
-                          await supabase.from("shopping_list_items").update({ qty: next }).eq("id", it.id);
-                        }}
-                        onEdit={() => openEdit(it)}
-                        onDelete={() => remove(it.id)}
-                      />
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </div>
+            <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+              <div className="mt-6 space-y-6">
+                {(groupBy === "category" ? groupedByCategory : groupedByTag).map((group) => {
+                  const isCategoryGroup = groupBy === "category";
+                  return (
+                    <DroppableSection key={group.key} id={group.key} enabled={isCategoryGroup}>
+                      <h3 className="mb-1 px-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                        {groupBy === "category"
+                          ? `${(group as any).emoji} ${String(group.label).toLowerCase()}`
+                          : (group as any).isTag
+                          ? String(group.label).toLowerCase()
+                          : "other"}
+                      </h3>
+                      <ul className="border-t border-[hsl(20_40%_18%/0.3)]">
+                        {group.items.map((it) => (
+                          <DraggableRow key={it.id} id={it.id} enabled={isCategoryGroup}>
+                            <LedgerRow
+                              name={it.name}
+                              qty={it.qty}
+                              note={it.notes}
+                              tag={groupBy === "category" ? it.tag : null}
+                              onQtyChange={async (next) => {
+                                setItems((c) => c.map((i) => (i.id === it.id ? { ...i, qty: next } : i)));
+                                await supabase.from("shopping_list_items").update({ qty: next }).eq("id", it.id);
+                              }}
+                              onEdit={() => openEdit(it)}
+                              onDelete={() => remove(it.id)}
+                            />
+                          </DraggableRow>
+                        ))}
+                      </ul>
+                    </DroppableSection>
+                  );
+                })}
+              </div>
+              <DragOverlay dropAnimation={null}>
+                {dragId ? (
+                  <div className="rounded-[6px] border border-foreground/20 bg-card px-3 py-2 text-[15px] lowercase shadow-lg">
+                    {items.find((i) => i.id === dragId)?.name}
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+
 
             <div ref={endRef} className="h-4" />
           </>
