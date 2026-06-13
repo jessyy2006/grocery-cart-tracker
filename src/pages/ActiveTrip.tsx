@@ -952,21 +952,21 @@ export default function ActiveTrip() {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="iname">Name</Label>
-                  {pendingErrors.name && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                  {pendingErrors.name && <span className="text-xs font-medium text-destructive">Incomplete</span>}
                 </div>
                 <Input
                   id="iname"
                   value={pending.name}
                   onChange={(e) => { setPending({ ...pending, name: e.target.value }); if (pendingErrors.name) setPendingErrors({ ...pendingErrors, name: false }); }}
                   placeholder="Item name"
-                  className={pendingErrors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
+                  className={pendingErrors.name ? "border-destructive focus-visible:ring-destructive" : ""}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="iprice">Price</Label>
-                    {pendingErrors.price && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                    {pendingErrors.price && <span className="text-xs font-medium text-destructive">Incomplete</span>}
                   </div>
                   <Input
                     id="iprice"
@@ -976,13 +976,13 @@ export default function ActiveTrip() {
                     onChange={(e) => { setPending({ ...pending, price: e.target.value }); if (pendingErrors.price) setPendingErrors({ ...pendingErrors, price: false }); }}
                     placeholder="0.00"
                     autoFocus={!pending.price}
-                    className={pendingErrors.price ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    className={pendingErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="iqty">Qty</Label>
-                    {pendingErrors.qty && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                    {pendingErrors.qty && <span className="text-xs font-medium text-destructive">Incomplete</span>}
                   </div>
                   <Input
                     id="iqty"
@@ -990,7 +990,7 @@ export default function ActiveTrip() {
                     min={1}
                     value={pending.qty || ""}
                     onChange={(e) => { const n = parseInt(e.target.value, 10); setPending({ ...pending, qty: isNaN(n) ? 0 : n }); if (pendingErrors.qty) setPendingErrors({ ...pendingErrors, qty: false }); }}
-                    className={pendingErrors.qty ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    className={pendingErrors.qty ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
                 </div>
               </div>
@@ -1016,7 +1016,7 @@ export default function ActiveTrip() {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="mprice">Price</Label>
-                    {manualErrors.price && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                    {manualErrors.price && <span className="text-xs font-medium text-destructive">Incomplete</span>}
                   </div>
                   <Input
                     id="mprice"
@@ -1026,13 +1026,13 @@ export default function ActiveTrip() {
                     onChange={(e) => { setManualCheck({ ...manualCheck, price: e.target.value }); if (manualErrors.price) setManualErrors({ ...manualErrors, price: false }); }}
                     placeholder="0.00"
                     autoFocus
-                    className={manualErrors.price ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    className={manualErrors.price ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="mqty">Qty</Label>
-                    {manualErrors.qty && <span className="text-xs font-medium text-red-500">Incomplete</span>}
+                    {manualErrors.qty && <span className="text-xs font-medium text-destructive">Incomplete</span>}
                   </div>
                   <Input
                     id="mqty"
@@ -1040,7 +1040,7 @@ export default function ActiveTrip() {
                     min={1}
                     value={manualCheck.qty}
                     onChange={(e) => { setManualCheck({ ...manualCheck, qty: e.target.value.replace(/[^\d]/g, "") }); if (manualErrors.qty) setManualErrors({ ...manualErrors, qty: false }); }}
-                    className={manualErrors.qty ? "border-red-500 focus-visible:ring-red-500" : ""}
+                    className={manualErrors.qty ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
                 </div>
               </div>

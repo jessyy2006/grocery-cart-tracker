@@ -7,6 +7,7 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MarketLoader } from "@/components/MarketLoader";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { EntityList, EntityRow } from "@/components/EntityRow";
 import { formatDistanceToNow } from "date-fns";
 
 type ShoppingList = {
@@ -108,44 +109,43 @@ export default function Lists() {
             </p>
           </div>
         ) : (
-          <ul className="divide-y divide-foreground/10">
+          <EntityList>
             {lists.map((l) => {
               const total = l.shopping_list_items?.length ?? 0;
               const updated = formatDistanceToNow(new Date(l.updated_at), { addSuffix: true });
               return (
-                <li key={l.id} className="group relative">
-                  <button
-                    onClick={() => navigate(`/lists/${l.id}`)}
-                    className="flex w-full flex-col items-start gap-1 py-6 pr-10 text-left transition-opacity hover:opacity-70"
-                  >
-                    <p className="text-[15px] lowercase text-foreground truncate max-w-full">
-                      {l.name.toLowerCase()}
-                    </p>
-                    <p className="lowercase text-muted-foreground truncate max-w-full">
+                <EntityRow
+                  key={l.id}
+                  name={l.name}
+                  meta={
+                    <>
                       <span className="font-display italic text-[13px]">
                         {total} item{total === 1 ? "" : "s"}
                       </span>
                       <span className="font-mono text-[12px]"> · updated {updated}</span>
-                    </p>
-                  </button>
-                  <ConfirmDialog
-                    title="Delete this list?"
-                    description={`"${l.name.toLowerCase()}" and everything in it will be removed. This can't be undone.`}
-                    confirmLabel="Delete list"
-                    onConfirm={() => remove(l.id)}
-                    trigger={
-                      <button
-                        className="absolute right-0 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label="Delete list"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    }
-                  />
-                </li>
+                    </>
+                  }
+                  onClick={() => navigate(`/lists/${l.id}`)}
+                  action={
+                    <ConfirmDialog
+                      title="Delete this list?"
+                      description={`"${l.name.toLowerCase()}" and everything in it will be removed. This can't be undone.`}
+                      confirmLabel="Delete list"
+                      onConfirm={() => remove(l.id)}
+                      trigger={
+                        <button
+                          className="p-2 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          aria-label="Delete list"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      }
+                    />
+                  }
+                />
               );
             })}
-          </ul>
+          </EntityList>
         )}
       </div>
     </div>

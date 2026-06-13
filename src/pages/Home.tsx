@@ -14,11 +14,12 @@ import FeatureIntroDialog from "@/components/FeatureIntroDialog";
 import { FEATURE_INTRO_KEY } from "@/hooks/useOnboarding";
 import { PageHeader } from "@/components/PageHeader";
 import { Money } from "@/components/Money";
+import { EntityList, EntityRow } from "@/components/EntityRow";
 import { MarketLoader } from "@/components/MarketLoader";
 import { TripTapeRow } from "@/components/trip/TripTapeRow";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
-type ShortList = { id: string; name: string };
+type ShortList = { id: string; name: string; itemCount: number };
 
 function greeting() {
   const h = new Date().getHours();
@@ -108,10 +109,16 @@ export default function Home() {
   const openSheet = async () => {
     const { data } = await supabase
       .from("shopping_lists")
-      .select("id, name")
+      .select("id, name, shopping_list_items(id)")
       .eq("hidden", false)
       .order("updated_at", { ascending: false });
-    setLists(data ?? []);
+    setLists(
+      (data ?? []).map((l: any) => ({
+        id: l.id,
+        name: l.name,
+        itemCount: l.shopping_list_items?.length ?? 0,
+      })),
+    );
     setStep("choose");
     setSheetOpen(true);
   };
@@ -297,22 +304,19 @@ export default function Home() {
                   </button>
                   <h2 className="text-h1">Pick a list</h2>
                 </div>
-                <ScrollArea className="mt-4 max-h-[55vh] pr-1">
-                  <ul className="space-y-2.5">
+                <ScrollArea className="mt-2 max-h-[55vh] pr-1">
+                  <EntityList>
                     {lists.map((l) => (
-                      <li key={l.id}>
-                        <button
-                          disabled={creating}
-                          onClick={() => startTripWith(l.id)}
-                          className="flex w-full items-center gap-3 rounded-lg border border-hairline bg-card p-4 text-left transition hover:border-primary hover:shadow-soft disabled:opacity-50"
-                        >
-                          <ListChecks className="h-5 w-5 text-primary" strokeWidth={2} />
-                          <span className="text-h3 flex-1">{l.name}</span>
-                          <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                        </button>
-                      </li>
+                      <EntityRow
+                        key={l.id}
+                        name={l.name}
+                        meta={`${l.itemCount} item${l.itemCount === 1 ? "" : "s"}`}
+                        trailing={<ArrowRight className="h-4 w-4 text-muted-foreground" />}
+                        onClick={() => startTripWith(l.id)}
+                        disabled={creating}
+                      />
                     ))}
-                  </ul>
+                  </EntityList>
                 </ScrollArea>
               </>
             )}

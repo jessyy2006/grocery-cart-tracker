@@ -26,6 +26,7 @@ type EntityRowProps = {
   /** Action rendered outside the tap target (e.g. a ConfirmDialog delete trigger). */
   action?: ReactNode;
   onClick?: () => void;
+  disabled?: boolean;
   className?: string;
 };
 
@@ -35,14 +36,16 @@ export function EntityRow({
   trailing,
   action,
   onClick,
+  disabled,
   className,
 }: EntityRowProps) {
   return (
     <li className="group relative">
       <button
         onClick={onClick}
+        disabled={disabled}
         className={cn(
-          "flex w-full items-center gap-3 py-4 text-left transition-opacity hover:opacity-70",
+          "flex w-full items-center gap-3 py-5 text-left transition-opacity hover:opacity-70 disabled:opacity-50",
           action ? "pr-10" : "pr-1",
           className,
         )}
