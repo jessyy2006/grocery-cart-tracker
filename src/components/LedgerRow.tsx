@@ -89,7 +89,7 @@ export function LedgerRow({
           </p>
 
           {hasSecondLine && (
-            <p className="leading-tight">
+            <p className="-mt-0.5 leading-tight">
               {multiplierLine ? (
                 <span className="font-display italic text-[11px] text-muted-foreground/70">
                   {multiplierLine}
