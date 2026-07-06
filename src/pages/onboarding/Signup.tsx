@@ -47,6 +47,31 @@ export default function OnboardingSignup() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // When user returns from the OAuth tab/popup (cancelled or otherwise),
+  // window focus / visibility fires reliably on iOS/Android even when
+  // popup.closed polling is blocked by COOP. Unlock the Google button
+  // if we're still unauthenticated.
+  useEffect(() => {
+    const unlockIfIdle = () => {
+      if (googleBusyRef.current && !user) {
+        googleBusyRef.current = false;
+        setGoogleBusy(false);
+      }
+    };
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        // Small delay so a successful redirect's session hydration can win.
+        setTimeout(unlockIfIdle, 500);
+      }
+    };
+    window.addEventListener("focus", onVis);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("focus", onVis);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [user]);
+
   const submitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
