@@ -109,29 +109,28 @@ export default function OnboardingSignup() {
   };
 
   const google = async () => {
-    setBusy(true);
-    let navigatingAway = false;
+    googleBusyRef.current = true;
+    setGoogleBusy(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/onboarding/signup",
       });
       if (result.error) {
         toast.error(result.error.message ?? "Google sign-in failed");
+        googleBusyRef.current = false;
+        setGoogleBusy(false);
         return;
       }
       if (result.redirected) {
-        // Browser is navigating away — keep busy so the button stays locked
-        // during the redirect. If the redirect never actually happens (blocked,
-        // popup closed, etc.), re-enable after a short grace period.
-        navigatingAway = true;
-        setTimeout(() => setBusy(false), 4000);
+        // Browser is navigating away. The focus/visibility listener will
+        // unlock the button if the user comes back without authenticating.
         return;
       }
       // Tokens received; routePostAuth fires via the useEffect once `user` updates.
     } catch (err: any) {
       toast.error(err?.message ?? "Google sign-in failed");
-    } finally {
-      if (!navigatingAway) setBusy(false);
+      googleBusyRef.current = false;
+      setGoogleBusy(false);
     }
   };
 
