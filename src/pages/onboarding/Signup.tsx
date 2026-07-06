@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -20,6 +20,8 @@ export default function OnboardingSignup() {
   const [signinEmail, setSigninEmail] = useState("");
   const [signinPassword, setSigninPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const googleBusyRef = useRef(false);
 
   // Route the user once authenticated: existing onboarders skip the flow.
   const routePostAuth = async (userId: string) => {
@@ -43,6 +45,31 @@ export default function OnboardingSignup() {
   useEffect(() => {
     if (user) routePostAuth(user.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // When user returns from the OAuth tab/popup (cancelled or otherwise),
+  // window focus / visibility fires reliably on iOS/Android even when
+  // popup.closed polling is blocked by COOP. Unlock the Google button
+  // if we're still unauthenticated.
+  useEffect(() => {
+    const unlockIfIdle = () => {
+      if (googleBusyRef.current && !user) {
+        googleBusyRef.current = false;
+        setGoogleBusy(false);
+      }
+    };
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        // Small delay so a successful redirect's session hydration can win.
+        setTimeout(unlockIfIdle, 500);
+      }
+    };
+    window.addEventListener("focus", onVis);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("focus", onVis);
+      document.removeEventListener("visibilitychange", onVis);
+    };
   }, [user]);
 
   const submitCreate = async (e: React.FormEvent) => {
@@ -82,29 +109,28 @@ export default function OnboardingSignup() {
   };
 
   const google = async () => {
-    setBusy(true);
-    let navigatingAway = false;
+    googleBusyRef.current = true;
+    setGoogleBusy(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin + "/onboarding/signup",
       });
       if (result.error) {
         toast.error(result.error.message ?? "Google sign-in failed");
+        googleBusyRef.current = false;
+        setGoogleBusy(false);
         return;
       }
       if (result.redirected) {
-        // Browser is navigating away — keep busy so the button stays locked
-        // during the redirect. If the redirect never actually happens (blocked,
-        // popup closed, etc.), re-enable after a short grace period.
-        navigatingAway = true;
-        setTimeout(() => setBusy(false), 4000);
+        // Browser is navigating away. The focus/visibility listener will
+        // unlock the button if the user comes back without authenticating.
         return;
       }
       // Tokens received; routePostAuth fires via the useEffect once `user` updates.
     } catch (err: any) {
       toast.error(err?.message ?? "Google sign-in failed");
-    } finally {
-      if (!navigatingAway) setBusy(false);
+      googleBusyRef.current = false;
+      setGoogleBusy(false);
     }
   };
 
@@ -198,7 +224,7 @@ export default function OnboardingSignup() {
           size="lg"
           className="w-full"
           onClick={google}
-          disabled={busy}
+          disabled={googleBusy}
         >
           {isSignin ? "Sign in with Google" : "Sign up with Google"}
         </Button>
