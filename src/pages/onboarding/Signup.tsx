@@ -224,7 +224,7 @@ export default function OnboardingSignup() {
           size="lg"
           className="w-full"
           onClick={google}
-          disabled={busy}
+          disabled={googleBusy}
         >
           {isSignin ? "Sign in with Google" : "Sign up with Google"}
         </Button>
