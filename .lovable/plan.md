@@ -1,28 +1,21 @@
-## 2 mobile fixes
+## Fix stuck Google sign-in button after cancelled popup
 
-### 1. Footer buttons cut off at bottom of screen
+### Root cause
+On mobile the Lovable auth SDK opens Google in a new tab/popup. When the user closes it, one of two things happens and both leave `busy` stuck at `true`:
 
-The list-detail footer uses `pb-3` with no safe-area padding, so on notched phones the button's rounded bottom sits under the home indicator. The ActiveTrip footer already uses `paddingBottom: calc(env(safe-area-inset-bottom) + 0.75rem)`, which is what your screenshot references.
+1. **Popup close undetected** — Cross-Origin-Opener-Policy blocks `popup.closed` polling on mobile Safari, so the SDK promise never resolves or rejects. Our `try/catch/finally` never runs → `busy` stays `true` forever.
+2. **Full-page redirect path** — SDK returns `{ redirected: true }`. Current code sets a 4s timeout, but if the user cancels and returns faster, the button is still locked, and the timeout is arbitrary.
 
-Fix: apply the same padding to the `<footer>` in `ListDetail.tsx` (line 705) so the "add to list" / "start grocery run" button bottom margin matches the trip page's "cart total / scan barcode" tray.
+Both cases affect *only* the Google button visually, but because `busy` is shared with the email/password submit buttons, all three end up disabled — matching the screenshot.
 
-File: `src/pages/ListDetail.tsx`.
+### Fix (Signup.tsx only)
 
-### 2. Lock pinch-zoom on mobile
+1. **Reset `busy` on window focus / visibility change** while a Google sign-in is in flight. When the OAuth tab closes (or the user returns to the app), `visibilitychange` (visible) and `focus` fire reliably on iOS/Android even when `popup.closed` doesn't. If `user` is still null at that point, unlock the buttons.
+2. **Drop the shared `busy` coupling for Google** — use a dedicated `googleBusy` state so a stuck Google flow can never lock the email/password buttons. Email/password keep their own `busy`.
+3. **Keep the existing try/catch/finally** as the happy-path unlock, and remove the fragile 4s timeout in favor of the focus listener.
 
-Update the viewport meta in `index.html` to disable user scaling:
+### Files
+- `src/pages/onboarding/Signup.tsx`
 
-```text
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
-```
-
-This also covers the keyboard-resize behavior from fix #1.
-
-File: `index.html`.
-
-## Risk / notes
-
-- `user-scalable=no` is an accessibility trade-off (users can't pinch to zoom text). You've asked for a locked app feel, which is standard for installed PWAs — flagging it so you're aware.
-- `interactive-widget=resizes-content` is ignored on older iOS; the `preventScroll` focus is the belt-and-suspenders fix for those.
-- No business logic touched; all changes are presentation/viewport only.
+### Risk
+Presentation-only change, scoped to the signup screen. No auth logic or backend changes.
