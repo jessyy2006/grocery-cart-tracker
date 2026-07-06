@@ -20,6 +20,8 @@ export default function OnboardingSignup() {
   const [signinEmail, setSigninEmail] = useState("");
   const [signinPassword, setSigninPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const googleBusyRef = useRef(false);
 
   // Route the user once authenticated: existing onboarders skip the flow.
   const routePostAuth = async (userId: string) => {
