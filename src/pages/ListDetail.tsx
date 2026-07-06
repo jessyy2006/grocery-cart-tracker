@@ -702,7 +702,11 @@ export default function ListDetail() {
         )}
       </AnimatePresence>
 
-      <footer ref={footerRef} className="px-4 pt-3 pb-3">
+      <footer
+        ref={footerRef}
+        className="px-4 pt-3"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)" }}
+      >
         <Button
           variant="primaryLight"
           size="lg"
