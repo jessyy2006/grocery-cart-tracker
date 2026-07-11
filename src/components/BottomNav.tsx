@@ -13,10 +13,7 @@ export const BottomNav = () => {
   if (pathname === "/trip" || pathname === "/trip/new" || pathname === "/scan-receipt") return null;
 
   return (
-    <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-30"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-    >
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30">
       {/* 48px binder area */}
       <div className="relative h-12 w-full">
         {/* Tabs grid */}
