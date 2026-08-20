@@ -360,12 +360,15 @@ export default function Finance() {
     const stapleEntry = [...stapleMap.entries()].sort((a, b) => b[1] - a[1])[0];
     const staple = stapleEntry ? { name: stapleEntry[0], qty: stapleEntry[1] } : null;
 
-    // Largest haul — highest single trip total
-    const largestTrip = [...yearTrips].sort(
-      (a, b) => (b.total_cents ?? 0) - (a.total_cents ?? 0),
-    )[0];
-    const largestHaul = largestTrip
-      ? { date: new Date(largestTrip.started_at), cents: largestTrip.total_cents ?? 0 }
+    // Fav category — most items bought (by qty) across the year
+    const favCatMap = new Map<string, number>();
+    for (const it of yearItems) {
+      const slug = guessCategory(it.name_snapshot);
+      favCatMap.set(slug, (favCatMap.get(slug) ?? 0) + (it.qty ?? 1));
+    }
+    const favSlug = [...favCatMap.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    const favCategory = favSlug
+      ? { emoji: getCategory(favSlug).emoji, label: getCategory(favSlug).label }
       : null;
 
     // Quarters
@@ -394,7 +397,7 @@ export default function Finance() {
     return {
       year, yearStart, yearEnd,
       totalOutlayCents, itemCount, avgBasket, tripCount,
-      monthlySeries, mostLoyalStore, staple, largestHaul, quarters,
+      monthlySeries, mostLoyalStore, staple, favCategory, quarters,
     };
   }, [trips, items]);
 
@@ -590,7 +593,7 @@ export default function Finance() {
               monthlySeries={yearly.monthlySeries}
               mostLoyalStore={yearly.mostLoyalStore}
               staple={yearly.staple}
-              largestHaul={yearly.largestHaul}
+              favCategory={yearly.favCategory}
               quarters={yearly.quarters}
               currency={currency}
             />
