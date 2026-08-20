@@ -670,6 +670,7 @@ function FinanceCardView(props: any) {
   if (!hasBudget) {
     return (
       <EmptyState
+        icon={Wallet}
         title="set your monthly budget"
         description="Track how much you have left to spend on groceries."
         action={
