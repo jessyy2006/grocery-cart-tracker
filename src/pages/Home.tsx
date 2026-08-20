@@ -185,7 +185,7 @@ export default function Home() {
                     <Money cents={monthSpend} size="display" />
                   </div>
                   <p className="mt-3 text-small lowercase text-muted-foreground">
-                    {monthSpend === 0 ? "no spending yet — start your first trip." : "tracked across your saved trips."}
+                    {monthSpend === 0 ? "no spending yet. start your first trip or scan an old receipt." : "tracked across your saved trips."}
                   </p>
                   {pct !== null && monthSpend > 0 && (
                     <p className="mt-1 font-mono text-[12px] lowercase text-muted-foreground">
