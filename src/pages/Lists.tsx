@@ -106,24 +106,24 @@ export default function Lists() {
           />
         ) : (
 
-          <EntityList>
+          <ul className="divide-y divide-dashed divide-foreground/10">
             {lists.map((l) => {
               const total = l.shopping_list_items?.length ?? 0;
-              const updated = formatDistanceToNow(new Date(l.updated_at), { addSuffix: true });
+              const sub = `${formatListTimestamp(l.updated_at)} · ${total} item${total === 1 ? "" : "s"}`;
               return (
-                <EntityRow
-                  key={l.id}
-                  name={l.name}
-                  meta={
-                    <>
-                      <span className="font-display italic text-[13px]">
-                        {total} item{total === 1 ? "" : "s"}
-                      </span>
-                      <span className="font-mono text-[12px]"> · updated {updated}</span>
-                    </>
-                  }
-                  onClick={() => navigate(`/lists/${l.id}`)}
-                  action={
+                <li key={l.id} className="group relative">
+                  <button
+                    onClick={() => navigate(`/lists/${l.id}`)}
+                    className="flex w-full items-center justify-between gap-4 py-5 pr-10 text-left transition-opacity hover:opacity-70"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] font-normal lowercase text-foreground">
+                        {l.name.toLowerCase()}
+                      </p>
+                      <p className="mt-0.5 text-[13px] lowercase text-muted-foreground">{sub}</p>
+                    </div>
+                  </button>
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2">
                     <ConfirmDialog
                       title="Delete this list?"
                       description={`"${l.name.toLowerCase()}" and everything in it will be removed. This can't be undone.`}
@@ -138,11 +138,11 @@ export default function Lists() {
                         </button>
                       }
                     />
-                  }
-                />
+                  </div>
+                </li>
               );
             })}
-          </EntityList>
+          </ul>
         )}
         </div>
       </PageLoadGate>
