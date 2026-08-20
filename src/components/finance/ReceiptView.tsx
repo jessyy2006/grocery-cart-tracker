@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Share2 } from "lucide-react";
-import { pickQuote, monthArchiveCode } from "./receiptQuotes";
+import { monthArchiveCode } from "./receiptQuotes";
 
 
 type Props = {
@@ -165,7 +165,6 @@ export default function ReceiptView(props: Props) {
   const over = budgetCents > 0 && remaining < 0;
 
   const barcodeSeed = `${monthStart.getFullYear()}-${monthStart.getMonth()}-${monthSpend}-${tripCount}`;
-  const quote = pickQuote(barcodeSeed);
   const archiveCode = monthArchiveCode(monthStart);
 
 
@@ -453,15 +452,6 @@ export default function ReceiptView(props: Props) {
             />
           )}
           <Divider />
-          <div className="mt-3 mb-0 px-2 text-center">
-            <p
-              className="text-[15px] leading-snug text-neutral-800"
-              style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic" }}
-            >
-              “{quote}”
-            </p>
-          </div>
-
         </div>
 
         {/* Perforation line — same dotted weight as the dividers above */}
