@@ -10,7 +10,7 @@ import { TripTapeRow } from "@/components/trip/TripTapeRow";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/PageHeader";
 
-import { MarketLoader } from "@/components/MarketLoader";
+import { PageLoadGate } from "@/components/PageLoadGate";
 
 type Row = {
   id: string;
