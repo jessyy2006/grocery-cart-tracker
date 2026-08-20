@@ -8,6 +8,8 @@ type EmptyStateProps = {
   description?: string;
   /** Optional CTA (e.g. a <Button>). */
   action?: ReactNode;
+  /** `page` = full blank screen, `section` = tighter, inside a populated page. */
+  size?: "page" | "section";
   className?: string;
 };
 
@@ -20,12 +22,14 @@ export function EmptyState({
   title,
   description,
   action,
+  size = "page",
   className,
 }: EmptyStateProps) {
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center py-16 text-center",
+        "flex flex-col items-center justify-center text-center",
+        size === "page" ? "py-16" : "py-8",
         className,
       )}
     >
