@@ -312,11 +312,22 @@ export default function ActiveTrip() {
             : i
         )
       );
-      await supabase
-        .from("trip_planned_items")
-        .update({ checked_at, barcode: code ?? undefined, name: newName, price_cents: newPrice })
-        .eq("id", matchId);
+      await Promise.all([
+        supabase
+          .from("trip_planned_items")
+          .update({ checked_at, barcode: code ?? undefined, name: newName, price_cents: newPrice })
+          .eq("id", matchId),
+        // Link the trip_item back to the planned row so saveTrip doesn't double-insert.
+        supabase
+          .from("trip_items")
+          .update({ substitutes_list_item_id: matchId })
+          .eq("id", tripItem.id),
+      ]);
+      setItems((c) =>
+        c.map((i) => (i.id === tripItem.id ? { ...i, substitutes_list_item_id: matchId } : i)),
+      );
       toast.success(`Checked off: ${productName}`);
+
     } else if (listHidden && tripId) {
       // Free-shop mode: silently add as a planned (pre-checked) snapshot item,
       // categorized so it groups nicely. No extras prompt.
