@@ -4,36 +4,33 @@
 
 Both receipts pull one random line from a single shared pool (`src/components/finance/receiptQuotes.ts`), selected deterministically from the period so the same receipt always shows the same quote. Proposed lines — direct, motivational, grocery-grounded:
 
-1. "Every cart you fill is a choice you made on purpose."
-2. "Discipline is just a list you actually followed."
-3. "You don't need a perfect month. You need the next good trip."
-4. "Cheap habits compound. So do good ones."
-5. "You bought what you needed. That's the whole skill."
-6. "Plan the cart, keep the cash."
-7. "Small savings, stacked weekly, become real money."
-8. "Nothing wasted, nothing wandered. Keep going."
-9. "The budget didn't beat you this month."
-10. "Show up, stick to the list, repeat."
+1. "Cheap habits compound. You're building a good one."
+2. "You bought what you needed. Keep it up!"
+3. "Plan your cart, keep your cash."
+4. "Show up, stick to the list, repeat."
+5. "Shopping smartly feels real good."
 
 Tell me if you want any swapped out — otherwise these ship as-is.
 
 ## Monthly receipt (`ReceiptView.tsx`)
 
 - Replace the `* {personality} *` line with a random quote, styled exactly like the yearly quote: centered, Playfair Display italic, 15px, wrapped in curly quotes.
-- Remove the "Generated <date>" line.
+- Remove the "Generated &nbsp;" line.
 - Add a footer code line under the barcode: `2026—AUG—FINAL` (year + short month of the receipt period), same mono 10px, wide tracking, centered.
 
 ## Yearly receipt (`YearlyReceiptView.tsx`)
 
 Copy changes:
+
 - "Spending Rhythm" → "Spending Behavior"
 - "Staple of the Year" → "Your Go-To", and drop the `(2×)` quantity — name only.
 - "Largest Haul" → "Fav Category", showing the emoji + label of the category with the highest item count for the year (e.g. `🥬 Fruits & Veggies`).
 - Footer code becomes `2026—YEAR—FINAL`.
-- Remove the "Generated <date>" line.
+- Remove the "Generated &nbsp;" line.
 - Quote pulls from the shared pool (styling unchanged).
 
 Layout / typography:
+
 - Add ~4px of space below the date line so the three-stat row has breathing room above it.
 - Date line matches the monthly format and casing: `January 1 – December 31, 2026` instead of `JAN 1 — DEC 31, 2026`.
 - Section headers ("Spending Behavior", "The Hall of Fame") and the small labels ("Most Loyal Store", "Total", "Items", "Avg Cart") adopt the monthly receipt's label style — 13px mono, uppercase, `tracking-wider`, same ink color as monthly rows — instead of the current 9–11px bold micro-caps.
