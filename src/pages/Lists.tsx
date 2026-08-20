@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { ClipboardList, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
