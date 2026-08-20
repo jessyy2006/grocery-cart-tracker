@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { guessCategory, getCategory, tokens } from "@/lib/categories";
-import { Pencil, LayoutGrid, Receipt as ReceiptIcon, ChevronDown } from "lucide-react";
+import { Pencil, LayoutGrid, Receipt as ReceiptIcon, ChevronDown, Wallet, ScrollText } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   DropdownMenu,
@@ -563,7 +563,17 @@ export default function Finance() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          {period === "month" ? (
+          {(period === "month" ? derived.monthTrips : yearly.tripCount) === 0 ? (
+            <EmptyState
+              icon={ScrollText}
+              title="nothing to print yet"
+              description={
+                period === "month"
+                  ? "No trips recorded this month."
+                  : "No trips recorded this year."
+              }
+            />
+          ) : period === "month" ? (
             <ReceiptView
               budgetCents={budgetCents ?? 0}
               monthSpend={derived.monthSpend}
@@ -670,6 +680,7 @@ function FinanceCardView(props: any) {
   if (!hasBudget) {
     return (
       <EmptyState
+        icon={Wallet}
         title="set your monthly budget"
         description="Track how much you have left to spend on groceries."
         action={
@@ -865,9 +876,10 @@ function FinanceCardView(props: any) {
 
       {!hasAnyTrips && (
         <EmptyState
+          icon={ReceiptIcon}
           className="border-t border-hairline"
           title="no trips yet"
-          description="Start tracking trips to see your spending insights."
+          description="Save a grocery run to see your spending."
           action={
             <Button variant="primaryLight" size="lg" asChild>
               <Link to="/">start a trip</Link>

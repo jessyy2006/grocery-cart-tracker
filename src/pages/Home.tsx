@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent } from "@/components/ui/drawer";
-import { ShoppingCart, ListChecks, ArrowRight, ChevronLeft, Sparkles, ScanLine, User } from "lucide-react";
+import { ShoppingCart, ListChecks, ArrowRight, ChevronLeft, Sparkles, ScanLine, User, Receipt } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
@@ -223,10 +223,10 @@ export default function Home() {
             </div>
             {recent.length === 0 ? (
               <EmptyState
-                icon={Sparkles}
+                icon={Receipt}
+                size="section"
                 title="no trips yet"
-                description="Your saved trips will live here."
-                className="py-8"
+                description="Your saved trips will show up here."
               />
             ) : (
               <ul className="divide-y divide-dashed divide-foreground/10">

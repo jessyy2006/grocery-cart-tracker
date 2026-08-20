@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { EmptyState } from "@/components/EmptyState";
-import { ScanLine } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Clock, ScanLine } from "lucide-react";
 import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 import { TripTapeRow } from "@/components/trip/TripTapeRow";
@@ -139,8 +140,20 @@ export default function History() {
 
       {filtered.length === 0 ? (
         <EmptyState
+          icon={Clock}
           title={rows.length === 0 ? "no saved trips yet" : "no trips this month"}
-          description={rows.length === 0 ? "Your completed trips will live here." : undefined}
+          description={
+            rows.length === 0
+              ? "Finish a grocery run and it lands here."
+              : "Pick another month to see past runs."
+          }
+          action={
+            rows.length === 0 ? (
+              <Button variant="primaryLight" size="lg" asChild>
+                <Link to="/">start a trip</Link>
+              </Button>
+            ) : undefined
+          }
         />
       ) : (
 

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { ClipboardList, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -100,8 +100,14 @@ export default function Lists() {
         <div style={{ paddingLeft: `${MARGIN_LEFT + 16}px` }}>
           {lists.length === 0 ? (
           <EmptyState
+            icon={ClipboardList}
             title="no lists yet"
-            description='Tap "+ new list" to plan your next market run.'
+            description="Create a list to plan your next grocery run."
+            action={
+              <Button variant="primaryLight" size="lg" onClick={create} disabled={creating}>
+                + new list
+              </Button>
+            }
           />
         ) : (
 

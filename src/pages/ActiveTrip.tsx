@@ -19,7 +19,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Scanner } from "@/components/Scanner";
-import { ScanLine, Plus, MapPin, Check, X, Search, Loader2, Camera } from "lucide-react";
+import { ScanLine, Plus, MapPin, Check, X, Search, Loader2, Camera, ShoppingCart } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { formatMoney, parsePriceToCents, useCurrency, getCurrency } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
 import { findListMatch, getCategory, guessCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
@@ -817,11 +818,15 @@ export default function ActiveTrip() {
         ) : (
           <>
             {listItems.length === 0 && extras.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                {listHidden
-                  ? "Scan or add items as you shop — we'll sort them by category."
-                  : "No shopping list linked to this trip."}
-              </p>
+              <EmptyState
+                icon={ShoppingCart}
+                title="nothing in the cart"
+                description={
+                  listHidden
+                    ? "Scan or add items as you shop — we'll sort them by category."
+                    : "No shopping list is linked to this trip."
+                }
+              />
             ) : (
               <div className="space-y-6">
                 {listItems.length > 0 && (

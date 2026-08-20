@@ -199,7 +199,30 @@ use the serif display scale, not `text-3xl font-bold`.
 ### Empty / loading states
 - Loading: `<MarketLoader>` everywhere (retire bare `Loader2`).
 - Empty: one `<EmptyState>` primitive — `src/components/EmptyState.tsx` (centered,
-  optional icon + CTA, lowercase). The four legacy variants converge onto it in Phase 2.
+  lucide icon + lowercase title + one plain sentence + optional single CTA).
+  `size="page"` (default) for a blank screen, `size="section"` for an empty block
+  inside a populated page.
+- Copy voice: plain and practical. Title lowercase, description one sentence,
+  CTA only when the action can be taken from that screen.
+- Icon per concept, used consistently: trips `Receipt` · history `Clock` ·
+  lists `ClipboardList` · list items `ListPlus` · money/budget `Wallet` ·
+  cart `ShoppingCart` · receipt period `ScrollText`.
+
+| Screen | Icon | Title |
+|---|---|---|
+| Lists — none | `ClipboardList` | no lists yet (CTA: + new list) |
+| List detail — no items | `ListPlus` | no items yet |
+| Home — recent trips | `Receipt` | no trips yet (`size="section"`) |
+| History — none ever | `Clock` | no saved trips yet (CTA: start a trip) |
+| History — none this month | `Clock` | no trips this month |
+| Finance — no budget | `Wallet` | set your monthly budget (CTA: set budget) |
+| Finance — no trips | `Receipt` | no trips yet (CTA: start a trip) |
+| Finance — receipt period empty | `ScrollText` | nothing to print yet |
+| Active trip — empty cart | `ShoppingCart` | nothing in the cart |
+
+Trip detail renders its empty case as receipt ink (paper-export exception), not
+`<EmptyState>`. Small in-drawer strings (store picker, scan-receipt, profile
+stores, onboarding) stay as inline text by design.
 
 ### Feedback
 **Sonner only.** The Radix `useToast`/`<Toaster>` system is removed. Errors use

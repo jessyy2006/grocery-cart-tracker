@@ -246,6 +246,11 @@ export default function TripDetail() {
               <Divider />
 
               {/* Items */}
+              {items.length === 0 && (
+                <p className="py-3 text-center text-[12px] text-neutral-500">
+                  no items on this trip
+                </p>
+              )}
               <ul className="space-y-2">
                 {items.map((it) => {
                   const lineTotal = it.price_cents * it.qty;
