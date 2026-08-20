@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Share2 } from "lucide-react";
 import { JaggedEdge, PAPER, Divider, Row } from "@/components/trip/ReceiptPaper";
 import { useReceiptShare } from "./useReceiptShare";
+import { pickQuote, yearArchiveCode } from "./receiptQuotes";
 
 const FOREST = "#143F2D";
 
@@ -33,7 +34,7 @@ type Props = {
   monthlySeries: number[]; // length 12, cents
   mostLoyalStore: string | null;
   staple: { name: string; qty: number } | null;
-  largestHaul: { date: Date; cents: number } | null;
+  favCategory: { emoji: string; label: string } | null;
   quarters: YearlyQuarter[];
   currency: Currency;
 };
@@ -46,9 +47,6 @@ const QUARTER_META: { label: string; default: string }[] = [
   { label: "Q3 [SUMMER]", default: "Hydration and grilling. Seasonal peak in beverage outlay." },
   { label: "Q4 [FALL]",   default: "Holiday batches and roots. Bulk baking supplies dominate." },
 ];
-
-const formatMmmDay = (d: Date) =>
-  `${d.toLocaleString(undefined, { month: "short" }).toUpperCase()} ${d.getDate()}`;
 
 // Catmull-Rom-ish smooth cubic path through points.
 // Monotone cubic Hermite interpolation (Fritsch–Carlson).
@@ -142,28 +140,21 @@ const Barcode = ({ seed }: { seed: string }) => {
   );
 };
 
-const QUOTES = [
-  "Your grocery footprint moved closer to your goals this year.",
-  "Steadier baskets, sharper choices — the year reads like a quiet ledger.",
-  "Small decisions, repeated weekly, shaped a meaningful year of spending.",
-  "Your trips tell a story of routine, restraint, and the occasional indulgence.",
-];
-
 export default function YearlyReceiptView(props: Props) {
   const {
     year, yearStart, yearEnd,
     totalOutlayCents, itemCount, avgBasket, tripCount,
-    monthlySeries, mostLoyalStore, staple, largestHaul,
+    monthlySeries, mostLoyalStore, staple, favCategory,
     quarters, currency,
   } = props;
 
   const exportRef = useRef<HTMLDivElement>(null);
   const share = useReceiptShare(exportRef, "yearly-grocery-receipt.png");
 
-  const fmtRange = `JAN 1 — DEC 31, ${year}`;
+  const fmtRange = `January 1 – December 31, ${year}`;
   const barcodeSeed = `${year}-${totalOutlayCents}-${tripCount}`;
-  const archiveCode = `${year}—ARCHIVE—FINAL`;
-  const quote = QUOTES[(year + Math.round(totalOutlayCents / 100)) % QUOTES.length];
+  const archiveCode = yearArchiveCode(year);
+  const quote = pickQuote(barcodeSeed);
 
   // Chart geometry
   const chartW = 320;
@@ -200,7 +191,7 @@ export default function YearlyReceiptView(props: Props) {
             <div className="text-base font-bold uppercase tracking-widest">
               Yearly Grocery Summary
             </div>
-            <div className="mt-1 text-xs text-neutral-600">{fmtRange}</div>
+            <div className="mt-1 mb-1 text-xs text-neutral-600">{fmtRange}</div>
           </div>
 
           <Divider />
@@ -214,10 +205,10 @@ export default function YearlyReceiptView(props: Props) {
 
           <Divider />
 
-          {/* Spending Rhythm */}
+          {/* Spending Behavior */}
           <div className="mt-4">
-            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-700">
-              Spending Rhythm
+            <div className="font-bold uppercase tracking-wider text-neutral-900">
+              Spending Behavior
             </div>
             <svg
               viewBox={`0 0 ${chartW} ${chartH}`}
@@ -256,7 +247,7 @@ export default function YearlyReceiptView(props: Props) {
 
           {/* Hall of Fame */}
           <div className="mt-4">
-            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-700">
+            <div className="font-bold uppercase tracking-wider text-neutral-900">
               The Hall of Fame
             </div>
             <div className="mt-2 space-y-2">
@@ -264,16 +255,12 @@ export default function YearlyReceiptView(props: Props) {
                 <HallRow label="Most Loyal Store" value={mostLoyalStore.toUpperCase()} />
               )}
               <HallRow
-                label="Staple of the Year"
-                value={staple ? `${staple.name} (${staple.qty}×)` : "—"}
+                label="Your Go-To"
+                value={staple ? staple.name : "—"}
               />
               <HallRow
-                label="Largest Haul"
-                value={
-                  largestHaul
-                    ? `${formatMmmDay(largestHaul.date)} — ${formatMoney(largestHaul.cents, currency)}`
-                    : "—"
-                }
+                label="Fav Category"
+                value={favCategory ? `${favCategory.emoji} ${favCategory.label}` : "—"}
               />
             </div>
           </div>
@@ -316,14 +303,6 @@ export default function YearlyReceiptView(props: Props) {
             </p>
           </div>
 
-          <div className="mt-3 text-center text-[10px] uppercase tracking-widest text-neutral-500">
-            Generated{" "}
-            {new Date().toLocaleDateString(undefined, {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </div>
         </div>
 
         {/* Perforation */}
@@ -421,9 +400,7 @@ export default function YearlyReceiptView(props: Props) {
 function Metric({ label, value, bordered }: { label: string; value: string; bordered?: boolean }) {
   return (
     <div className={`flex flex-col gap-1 px-2 ${bordered ? "border-l border-neutral-400/50" : ""}`}>
-      <div className="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-600">
-        {label}
-      </div>
+      <div className="uppercase tracking-wider text-neutral-900">{label}</div>
       <div className="text-[20px] font-bold leading-tight tabular-nums">{value}</div>
     </div>
   );
@@ -432,9 +409,7 @@ function Metric({ label, value, bordered }: { label: string; value: string; bord
 function HallRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
-      <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-600">
-        {label}
-      </span>
+      <span className="uppercase tracking-wider text-neutral-900">{label}</span>
       <span className="tabular-nums text-right font-bold">{value}</span>
     </div>
   );
