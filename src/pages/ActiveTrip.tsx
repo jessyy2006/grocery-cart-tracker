@@ -515,6 +515,34 @@ export default function ActiveTrip() {
       return;
     }
     const endedAt = new Date();
+
+    // Persist manually checked-off planned items as trip_items so trips.total_cents
+    // (DB trigger) and every downstream read (history, receipts, finance) see them.
+    const backedPlannedIds = new Set(
+      items.map((i) => i.substitutes_list_item_id).filter(Boolean) as string[],
+    );
+    const unbacked = listItems.filter(
+      (i) => i.checked_at && i.price_cents != null && !backedPlannedIds.has(i.id),
+    );
+    if (unbacked.length > 0) {
+      const { error: insErr } = await supabase.from("trip_items").insert(
+        unbacked.map((i) => ({
+          trip_id: tripId,
+          store_id: activeStore?.id ?? null,
+          store_name_snapshot: activeStore?.name ?? null,
+          barcode: i.barcode ?? null,
+          name_snapshot: i.name,
+          price_cents: i.price_cents as number,
+          qty: i.qty || 1,
+          substitutes_list_item_id: i.id,
+        })),
+      );
+      if (insErr) {
+        toast.error(insErr.message);
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from("trips")
       .update({ status: "saved", ended_at: endedAt.toISOString() })
@@ -523,6 +551,7 @@ export default function ActiveTrip() {
       toast.error(error.message);
       return;
     }
+
     sessionStorage.removeItem(`trip:${tripId}:store`);
 
     // Build receipt payload
