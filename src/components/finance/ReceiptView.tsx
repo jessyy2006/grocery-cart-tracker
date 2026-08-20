@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Share2 } from "lucide-react";
+import { pickQuote, monthArchiveCode } from "./receiptQuotes";
+
 
 type Props = {
   budgetCents: number;
@@ -161,13 +163,11 @@ export default function ReceiptView(props: Props) {
 
   const remaining = budgetCents - monthSpend;
   const over = budgetCents > 0 && remaining < 0;
-  const generated = new Date().toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 
   const barcodeSeed = `${monthStart.getFullYear()}-${monthStart.getMonth()}-${monthSpend}-${tripCount}`;
+  const quote = pickQuote(barcodeSeed);
+  const archiveCode = monthArchiveCode(monthStart);
+
 
   const generatePng = async (): Promise<{ dataUrl: string; blob: Blob; file: File } | null> => {
     if (!exportRef.current) return null;
