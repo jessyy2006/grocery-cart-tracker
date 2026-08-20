@@ -488,7 +488,11 @@ export default function ListDetail() {
             )}
 
             {items.length === 0 && (
-              <EmptyState title="no items yet" description='Tap "+ Add" to add your first one.' />
+              <EmptyState
+                icon={ListPlus}
+                title="no items yet"
+                description='Tap "+ add" to add your first one.'
+              />
             )}
 
             <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
