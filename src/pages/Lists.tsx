@@ -144,7 +144,9 @@ export default function Lists() {
             })}
           </EntityList>
         )}
-      </div>
+        </div>
+      </PageLoadGate>
+
     </div>
   );
 }
