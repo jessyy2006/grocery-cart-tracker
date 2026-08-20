@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Share2 } from "lucide-react";
 import { JaggedEdge, PAPER, Divider, Row } from "@/components/trip/ReceiptPaper";
 import { useReceiptShare } from "./useReceiptShare";
-import { pickQuote, yearArchiveCode } from "./receiptQuotes";
+import { yearArchiveCode } from "./receiptQuotes";
 
 const FOREST = "#143F2D";
 
@@ -154,7 +154,6 @@ export default function YearlyReceiptView(props: Props) {
   const fmtRange = `January 1 – December 31, ${year}`;
   const barcodeSeed = `${year}-${totalOutlayCents}-${tripCount}`;
   const archiveCode = yearArchiveCode(year);
-  const quote = pickQuote(barcodeSeed);
 
   // Chart geometry
   const chartW = 320;
@@ -292,17 +291,6 @@ export default function YearlyReceiptView(props: Props) {
           </div>
 
           <Divider />
-
-          {/* Quote */}
-          <div className="mt-3 mb-0 px-2 text-center">
-            <p
-              className="text-[15px] leading-snug text-neutral-800"
-              style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic" }}
-            >
-              “{quote}”
-            </p>
-          </div>
-
         </div>
 
         {/* Perforation */}
