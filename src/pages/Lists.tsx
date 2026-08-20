@@ -7,9 +7,8 @@ import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { EntityList, EntityRow } from "@/components/EntityRow";
 import { EmptyState } from "@/components/EmptyState";
-import { formatDistanceToNow } from "date-fns";
+import { formatListTimestamp } from "@/lib/format";
 
 type ShoppingList = {
   id: string;
