@@ -312,11 +312,22 @@ export default function ActiveTrip() {
             : i
         )
       );
-      await supabase
-        .from("trip_planned_items")
-        .update({ checked_at, barcode: code ?? undefined, name: newName, price_cents: newPrice })
-        .eq("id", matchId);
+      await Promise.all([
+        supabase
+          .from("trip_planned_items")
+          .update({ checked_at, barcode: code ?? undefined, name: newName, price_cents: newPrice })
+          .eq("id", matchId),
+        // Link the trip_item back to the planned row so saveTrip doesn't double-insert.
+        supabase
+          .from("trip_items")
+          .update({ substitutes_list_item_id: matchId })
+          .eq("id", tripItem.id),
+      ]);
+      setItems((c) =>
+        c.map((i) => (i.id === tripItem.id ? { ...i, substitutes_list_item_id: matchId } : i)),
+      );
       toast.success(`Checked off: ${productName}`);
+
     } else if (listHidden && tripId) {
       // Free-shop mode: silently add as a planned (pre-checked) snapshot item,
       // categorized so it groups nicely. No extras prompt.
@@ -341,8 +352,18 @@ export default function ActiveTrip() {
       }
       setListItems((c) => [...c, row as ListItem]);
       // Keep the trip_item: it backs trips.total_cents (via DB trigger) and
-      // surfaces in receipts. UI cart total reads listItems, so no double count.
+      // surfaces in receipts. Link it so saveTrip doesn't insert a duplicate.
+      await supabase
+        .from("trip_items")
+        .update({ substitutes_list_item_id: (row as ListItem).id })
+        .eq("id", tripItem.id);
+      setItems((c) =>
+        c.map((i) =>
+          i.id === tripItem.id ? { ...i, substitutes_list_item_id: (row as ListItem).id } : i,
+        ),
+      );
       toast.success(`Added: ${productName}`);
+
     } else {
       // Not on list — ask the user: extra or substitute
       setOffList({ tripItem, productName });
@@ -494,6 +515,34 @@ export default function ActiveTrip() {
       return;
     }
     const endedAt = new Date();
+
+    // Persist manually checked-off planned items as trip_items so trips.total_cents
+    // (DB trigger) and every downstream read (history, receipts, finance) see them.
+    const backedPlannedIds = new Set(
+      items.map((i) => i.substitutes_list_item_id).filter(Boolean) as string[],
+    );
+    const unbacked = listItems.filter(
+      (i) => i.checked_at && i.price_cents != null && !backedPlannedIds.has(i.id),
+    );
+    if (unbacked.length > 0) {
+      const { error: insErr } = await supabase.from("trip_items").insert(
+        unbacked.map((i) => ({
+          trip_id: tripId,
+          store_id: activeStore?.id ?? null,
+          store_name_snapshot: activeStore?.name ?? null,
+          barcode: i.barcode ?? null,
+          name_snapshot: i.name,
+          price_cents: i.price_cents as number,
+          qty: i.qty || 1,
+          substitutes_list_item_id: i.id,
+        })),
+      );
+      if (insErr) {
+        toast.error(insErr.message);
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from("trips")
       .update({ status: "saved", ended_at: endedAt.toISOString() })
@@ -502,6 +551,7 @@ export default function ActiveTrip() {
       toast.error(error.message);
       return;
     }
+
     sessionStorage.removeItem(`trip:${tripId}:store`);
 
     // Build receipt payload
