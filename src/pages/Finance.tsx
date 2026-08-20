@@ -563,7 +563,17 @@ export default function Finance() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          {period === "month" ? (
+          {(period === "month" ? derived.monthTrips : yearly.tripCount) === 0 ? (
+            <EmptyState
+              icon={ScrollText}
+              title="nothing to print yet"
+              description={
+                period === "month"
+                  ? "No trips recorded this month."
+                  : "No trips recorded this year."
+              }
+            />
+          ) : period === "month" ? (
             <ReceiptView
               budgetCents={budgetCents ?? 0}
               monthSpend={derived.monthSpend}
