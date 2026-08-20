@@ -223,10 +223,10 @@ export default function Home() {
             </div>
             {recent.length === 0 ? (
               <EmptyState
-                icon={Sparkles}
+                icon={Receipt}
+                size="section"
                 title="no trips yet"
-                description="Your saved trips will live here."
-                className="py-8"
+                description="Your saved trips will show up here."
               />
             ) : (
               <ul className="divide-y divide-dashed divide-foreground/10">
