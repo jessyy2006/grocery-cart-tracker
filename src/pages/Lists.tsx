@@ -67,45 +67,45 @@ export default function Lists() {
 
   return (
     <div className="relative min-h-[calc(100dvh-6rem)] px-5 pt-3 pb-12">
-      {/* Header */}
-      <header className="flex items-end justify-between gap-3 pt-2 pb-2">
-        <div className="min-w-0">
-          <p className="text-eyebrow mb-1.5">plan your run</p>
-          <h1 className="font-display text-[2.25rem] leading-[1.25] lowercase tracking-tight pb-1">
-            your lists
-          </h1>
-        </div>
-        <Button
-          variant="primaryLight"
-          size="compact"
-          onClick={create}
-          disabled={creating}
-          className="mb-2 whitespace-nowrap"
-        >
-          + new list
-        </Button>
-      </header>
+      <PageLoadGate ready={ready}>
+        {/* Header */}
+        <header className="flex items-end justify-between gap-3 pt-2 pb-2">
+          <div className="min-w-0">
+            <p className="text-eyebrow mb-1.5">plan your run</p>
+            <h1 className="font-display text-[2.25rem] leading-[1.25] lowercase tracking-tight pb-1">
+              your lists
+            </h1>
+          </div>
+          <Button
+            variant="primaryLight"
+            size="compact"
+            onClick={create}
+            disabled={creating}
+            className="mb-2 whitespace-nowrap"
+          >
+            + new list
+          </Button>
+        </header>
 
-      {/* Notebook margin rule */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-[7rem] bottom-0"
-        style={{
-          left: `${MARGIN_LEFT}px`,
-          width: "1px",
-          backgroundColor: "hsl(20 40% 18% / 0.85)",
-        }}
-      />
+        {/* Notebook margin rule */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-[7rem] bottom-0"
+          style={{
+            left: `${MARGIN_LEFT}px`,
+            width: "1px",
+            backgroundColor: "hsl(20 40% 18% / 0.85)",
+          }}
+        />
 
-      <div style={{ paddingLeft: `${MARGIN_LEFT + 16}px` }}>
-        {!ready ? (
-          <MarketLoader minHeight="55vh" />
-        ) : lists.length === 0 ? (
+        <div style={{ paddingLeft: `${MARGIN_LEFT + 16}px` }}>
+          {lists.length === 0 ? (
           <EmptyState
             title="no lists yet"
             description='Tap "+ new list" to plan your next market run.'
           />
         ) : (
+
           <EntityList>
             {lists.map((l) => {
               const total = l.shopping_list_items?.length ?? 0;
