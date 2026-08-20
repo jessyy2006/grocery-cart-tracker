@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { differenceInCalendarDays, format, isToday } from "date-fns";
 
 export const SUPPORTED_CURRENCIES = ["CAD", "USD", "EUR", "GBP", "AUD", "JPY"] as const;
 export type Currency = (typeof SUPPORTED_CURRENCIES)[number];
