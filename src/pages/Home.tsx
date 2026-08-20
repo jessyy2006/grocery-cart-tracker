@@ -148,32 +148,25 @@ export default function Home() {
   const today = format(new Date(), "EEEE");
 
   return (
-    <div className="space-y-8 px-5 pt-3">
-      <PageHeader
-        eyebrow={
-          profileLoading
-            ? "\u00a0"
-            : firstName
-              ? `${greeting()}, ${firstName}`
-              : greeting()
-        }
-        title={`${today} market run?`}
-        action={
-          <button
-            onClick={() => navigate("/profile")}
-            aria-label="Profile"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
-          >
-            <User className="h-4 w-4" strokeWidth={1.75} />
-          </button>
-        }
-      />
+    <div className="px-5 pt-3">
       <FeatureIntroDialog open={introOpen} onClose={() => setIntroOpen(false)} />
 
-      {!ready ? (
-        <MarketLoader minHeight="55vh" />
-      ) : (
-        <>
+      <PageLoadGate ready={ready && !profileLoading}>
+        <div className="space-y-8">
+          <PageHeader
+            eyebrow={firstName ? `${greeting()}, ${firstName}` : greeting()}
+            title={`${today} market run?`}
+            action={
+              <button
+                onClick={() => navigate("/profile")}
+                aria-label="Profile"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
+              >
+                <User className="h-4 w-4" strokeWidth={1.75} />
+              </button>
+            }
+          />
+
           {/* Hero — this month */}
           {(() => {
             const pct = monthlyBudget && monthlyBudget > 0 ? Math.round((monthSpend / monthlyBudget) * 100) : null;
