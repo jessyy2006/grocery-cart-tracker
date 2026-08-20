@@ -105,7 +105,9 @@ export default function History() {
   }, [filtered]);
 
   return (
-    <div className="space-y-7 px-5 pt-3">
+    <div className="px-5 pt-3">
+      <PageLoadGate ready={ready}>
+        <div className="space-y-7">
       <PageHeader
         title="history"
         className="items-center [&_h1]:text-display [&_h1]:lowercase [&_h1]:leading-[1.25] [&_h1]:pb-1 [&_h1]:overflow-visible"
@@ -135,15 +137,13 @@ export default function History() {
         }
       />
 
-
-      {!ready ? (
-        <MarketLoader minHeight="55vh" />
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <EmptyState
           title={rows.length === 0 ? "no saved trips yet" : "no trips this month"}
           description={rows.length === 0 ? "Your completed trips will live here." : undefined}
         />
       ) : (
+
         <div className="space-y-8">
           {grouped.map(([k, items]) => (
             <section key={k}>
