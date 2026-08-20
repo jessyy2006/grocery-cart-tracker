@@ -390,7 +390,7 @@ export default function ScanReceipt() {
 
         {/* Frame overlay (only during capture) */}
         {stage === "capture" && (
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-5 px-6">
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-5 px-6 -translate-y-3">
             <p className="rounded-full bg-black/55 px-4 py-1.5 text-center text-sm">
               Scan your receipt within the frame
             </p>
