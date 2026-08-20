@@ -100,8 +100,14 @@ export default function Lists() {
         <div style={{ paddingLeft: `${MARGIN_LEFT + 16}px` }}>
           {lists.length === 0 ? (
           <EmptyState
+            icon={ClipboardList}
             title="no lists yet"
-            description='Tap "+ new list" to plan your next market run.'
+            description="Create a list to plan your next grocery run."
+            action={
+              <Button variant="primaryLight" size="lg" onClick={create} disabled={creating}>
+                + new list
+              </Button>
+            }
           />
         ) : (
 
