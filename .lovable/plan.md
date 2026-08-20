@@ -1,21 +1,32 @@
-## Fix stuck Google sign-in button after cancelled popup
+# Fix the header flash on tab navigation
 
-### Root cause
-On mobile the Lovable auth SDK opens Google in a new tab/popup. When the user closes it, one of two things happens and both leave `busy` stuck at `true`:
+## What's happening
 
-1. **Popup close undetected** — Cross-Origin-Opener-Policy blocks `popup.closed` polling on mobile Safari, so the SDK promise never resolves or rejects. Our `try/catch/finally` never runs → `busy` stays `true` forever.
-2. **Full-page redirect path** — SDK returns `{ redirected: true }`. Current code sets a 4s timeout, but if the user cancels and returns faster, the button is still locked, and the timeout is arbitrary.
+Every main page (Home, Lists, Finance, History) renders in two stages:
 
-Both cases affect *only* the Google button visually, but because `busy` is shared with the email/password submit buttons, all three end up disabled — matching the screenshot.
+1. The route mounts instantly and paints its header/eyebrow with empty data.
+2. A data fetch runs, and only the area *below* the header swaps from a loader to real content.
 
-### Fix (Signup.tsx only)
+So the moment you tap a tab you get the header alone, then the page reflows as the body arrives. Home makes it worse: the greeting eyebrow renders as a blank non-breaking space while the profile loads, then pops into "Good evening, Jessica" — the visual "disappear and reappear" you're seeing. The page-transition fade also runs at mount, so it animates the half-empty shell rather than the finished page.
 
-1. **Reset `busy` on window focus / visibility change** while a Google sign-in is in flight. When the OAuth tab closes (or the user returns to the app), `visibilitychange` (visible) and `focus` fire reliably on iOS/Android even when `popup.closed` doesn't. If `user` is still null at that point, unlock the buttons.
-2. **Drop the shared `busy` coupling for Google** — use a dedicated `googleBusy` state so a stuck Google flow can never lock the email/password buttons. Email/password keep their own `busy`.
-3. **Keep the existing try/catch/finally** as the happy-path unlock, and remove the fragile 4s timeout in favor of the focus listener.
+## The fix
 
-### Files
-- `src/pages/onboarding/Signup.tsx`
+Gate the *entire* page, header included, behind its ready state:
 
-### Risk
-Presentation-only change, scoped to the signup screen. No auth logic or backend changes.
+- While loading: show only the branded sprout loader, sized to fill the page area (no header, no partial layout).
+- When ready: render header and content together in a single fade-in, so the page arrives all at once.
+
+Applies to Home, Lists, Finance, and History. Home's ready state will also wait for the profile (name) so the greeting never pops in late.
+
+## Technical notes
+
+- Add `src/components/PageLoadGate.tsx`: takes `ready` and children; renders `<MarketLoader minHeight="80vh" />` until ready, then wraps children in a short framer-motion opacity fade (respecting `useReducedMotion`).
+- `src/pages/Home.tsx` — move `PageHeader` (and the hero/recent blocks) inside the gate; change readiness to `ready && !profileLoading`; drop the `\u00a0` eyebrow placeholder.
+- `src/pages/Lists.tsx` — move the `header` element and the notebook margin rule inside the gate, keeping the current `ready` flag.
+- `src/pages/History.tsx` — move `PageHeader` (with the month filter) inside the gate.
+- `src/pages/Finance.tsx` — move its header/eyebrow block inside the gate driven by the existing `loading` flag.
+- No changes to `PageTransition`, routing, or any data fetching logic.
+
+## Out of scope
+
+Trip pages, list detail, and onboarding keep their current behavior.
