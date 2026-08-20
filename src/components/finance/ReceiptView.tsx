@@ -497,9 +497,13 @@ export default function ReceiptView(props: Props) {
             }}
           >
             {/* Paper-colored content only — SVG below sits on transparent so its jagged shape shows */}
-            <div className="px-6 pt-3 pb-4" style={{ backgroundColor: PAPER }}>
+            <div className="px-6 pt-3 pb-2" style={{ backgroundColor: PAPER }}>
               <Barcode seed={barcodeSeed} />
+              <div className="mt-2 text-center text-[10px] tracking-[0.3em] text-neutral-600">
+                {archiveCode}
+              </div>
             </div>
+
             <JaggedEdge position="bottom" />
           </div>
         </div>
