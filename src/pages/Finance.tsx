@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MarketLoader } from "@/components/MarketLoader";
+import { PageLoadGate } from "@/components/PageLoadGate";
 import {
   Dialog,
   DialogContent,
@@ -510,7 +510,9 @@ export default function Finance() {
   })();
 
   return (
-    <div className="space-y-7 px-5 pt-3">
+    <div className="px-5 pt-3">
+      <PageLoadGate ready={!loading}>
+        <div className="space-y-7">
       <header className="flex items-end justify-between gap-3">
         <div>
           <h1 className="text-h1">Finance</h1>
@@ -536,10 +538,8 @@ export default function Finance() {
         </div>
       </header>
 
+      {view === "receipt" ? (
 
-      {loading ? (
-        <MarketLoader minHeight="55vh" />
-      ) : view === "receipt" ? (
         <div className="space-y-5">
           <div className="flex">
             <DropdownMenu>
@@ -613,6 +613,10 @@ export default function Finance() {
           rotatingInsight={rotatingInsight}
         />
       )}
+        </div>
+      </PageLoadGate>
+
+
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
