@@ -16,7 +16,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Money } from "@/components/Money";
 import { EntityList, EntityRow } from "@/components/EntityRow";
 import { EmptyState } from "@/components/EmptyState";
-import { MarketLoader } from "@/components/MarketLoader";
+import { PageLoadGate } from "@/components/PageLoadGate";
 import { TripTapeRow } from "@/components/trip/TripTapeRow";
 
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
