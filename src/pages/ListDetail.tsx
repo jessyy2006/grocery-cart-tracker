@@ -13,7 +13,7 @@ import {
   
 } from "@/components/ui/select";
 
-import { ArrowLeft, Plus, ShoppingBasket, Check, X } from "lucide-react";
+import { ArrowLeft, Plus, ShoppingBasket, Check, X, ListPlus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
 import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
