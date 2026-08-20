@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { EmptyState } from "@/components/EmptyState";
-import { ScanLine } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Clock, ScanLine } from "lucide-react";
 import { useCurrency } from "@/lib/format";
 import { format } from "date-fns";
 import { TripTapeRow } from "@/components/trip/TripTapeRow";
