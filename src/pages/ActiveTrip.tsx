@@ -817,11 +817,15 @@ export default function ActiveTrip() {
         ) : (
           <>
             {listItems.length === 0 && extras.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                {listHidden
-                  ? "Scan or add items as you shop — we'll sort them by category."
-                  : "No shopping list linked to this trip."}
-              </p>
+              <EmptyState
+                icon={ShoppingCart}
+                title="nothing in the cart"
+                description={
+                  listHidden
+                    ? "Scan or add items as you shop — we'll sort them by category."
+                    : "No shopping list is linked to this trip."
+                }
+              />
             ) : (
               <div className="space-y-6">
                 {listItems.length > 0 && (
