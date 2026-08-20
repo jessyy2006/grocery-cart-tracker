@@ -613,6 +613,10 @@ export default function Finance() {
           rotatingInsight={rotatingInsight}
         />
       )}
+        </div>
+      </PageLoadGate>
+
+
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
