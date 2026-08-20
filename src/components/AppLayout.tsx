@@ -14,7 +14,7 @@ export const AppLayout = () => {
         className={
           fullscreen
             ? "relative isolate flex-1 h-dvh overflow-hidden overscroll-contain"
-            : `relative isolate flex-1 min-h-dvh overflow-y-auto overscroll-contain safe-top ${hideNav ? "" : "pb-14"}`
+            : `relative isolate flex-1 min-h-dvh overflow-y-auto overscroll-contain safe-top ${hideNav ? "" : "pb-24"}`
         }
         style={{ overflowAnchor: "none" }}
       >

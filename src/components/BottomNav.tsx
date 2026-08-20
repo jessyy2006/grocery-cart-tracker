@@ -1,13 +1,18 @@
 import { NavLink, useLocation } from "react-router-dom";
+import { Clock, Home, ListChecks, Wallet, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const items = [
-  { to: "/", label: "HOME", end: true },
-  { to: "/lists", label: "LISTS" },
-  { to: "/finance", label: "FINANCE" },
-  { to: "/history", label: "HISTORY" },
+const items: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
+  { to: "/", label: "HOME", icon: Home, end: true },
+  { to: "/lists", label: "LISTS", icon: ListChecks },
+  { to: "/finance", label: "FINANCE", icon: Wallet },
+  { to: "/history", label: "HISTORY", icon: Clock },
 ];
 
+/**
+ * iOS-style floating tab bar: a frosted, rounded bar hovering above the
+ * home-indicator safe area with icon + label tabs.
+ */
 export const BottomNav = () => {
   const { pathname } = useLocation();
   if (pathname === "/trip" || pathname === "/trip/new" || pathname === "/scan-receipt") return null;
@@ -15,33 +20,46 @@ export const BottomNav = () => {
   return (
     <div
       className="pointer-events-none fixed inset-x-0 bottom-0 z-30"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
     >
-      {/* 48px binder area */}
-      <div className="relative h-12 w-full">
-        {/* Tabs grid */}
-        <div className="pointer-events-auto absolute inset-x-0 bottom-0 top-0 grid grid-cols-4 items-end px-3 gap-2">
-          {items.map(({ to, label, end }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              aria-label={label}
-              className={({ isActive }) =>
-                cn(
-                  "relative flex items-center justify-center font-mono uppercase tracking-widest text-[9px] py-2 transition-transform",
-                  "rounded-t-control",
-                  isActive
-                    ? "z-10 h-11 -mb-0 bg-primary text-primary-foreground font-bold"
-                    : "h-10 bg-surface-raised text-muted-foreground border border-b-0 border-hairline hover:-translate-y-0.5",
-                )
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
-        </div>
-      </div>
+      <nav
+        aria-label="Primary"
+        className="pointer-events-auto mx-4 grid grid-cols-4 rounded-[22px] border border-hairline bg-surface-raised/80 px-1 py-1.5 shadow-soft"
+        style={{
+          backdropFilter: "saturate(140%) blur(18px)",
+          WebkitBackdropFilter: "saturate(140%) blur(18px)",
+        }}
+      >
+        {items.map(({ to, label, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            aria-label={label}
+            className={({ isActive }) =>
+              cn(
+                "flex flex-col items-center justify-center gap-1 rounded-[16px] py-1.5 transition-colors",
+                "active:scale-95 motion-reduce:active:scale-100 transition-transform",
+                isActive ? "text-primary" : "text-muted-foreground",
+              )
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Icon className="h-5 w-5" strokeWidth={isActive ? 2.25 : 1.75} />
+                <span
+                  className={cn(
+                    "font-mono text-[9px] uppercase tracking-widest",
+                    isActive && "font-bold",
+                  )}
+                >
+                  {label}
+                </span>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
     </div>
   );
 };
