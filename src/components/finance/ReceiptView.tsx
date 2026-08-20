@@ -25,7 +25,6 @@ type Props = {
   impulseRate: number;
   biggestCategory: { label: string; delta: number } | null;
   streak: number;
-  personality: string;
   momDelta: number | null;
   prevSpend: number;
   monthStart: Date;
@@ -129,7 +128,6 @@ export default function ReceiptView(props: Props) {
     impulseRate,
     biggestCategory,
     streak,
-    personality,
     momDelta,
     monthStart,
     monthEnd,

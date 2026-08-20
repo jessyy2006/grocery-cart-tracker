@@ -464,18 +464,6 @@ export default function Finance() {
       }
     : null;
 
-  // Personality line (receipt) — strict priority
-  const nearLimit = hasBudget && !over && pctUsed >= 85;
-  const personality = (() => {
-    if (over) return "You've gone over budget.";
-    if (nearLimit) return "Getting close to your limit.";
-    if (impulseRate >= 26) return "Impulse spending is creeping up.";
-    if (biggestCat && biggestCat.delta > 0)
-      return `${biggestCat.label} are doing damage this month.`;
-    if (derived.streak >= 2) return "You're building a strong habit.";
-    return "You're staying under control.";
-  })();
-
   // Single rotating insight (standard view) — same priority, richer copy
   const rotatingInsight: { title: string; body: string } | null = (() => {
     if (over) {
@@ -584,7 +572,6 @@ export default function Finance() {
               impulseRate={impulseRate}
               biggestCategory={biggestCat}
               streak={derived.streak}
-              personality={personality}
               momDelta={derived.prevSpend > 0 ? derived.momDelta : null}
               prevSpend={derived.prevSpend}
               monthStart={new Date(new Date().getFullYear(), new Date().getMonth(), 1)}
