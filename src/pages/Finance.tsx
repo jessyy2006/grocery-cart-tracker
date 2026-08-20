@@ -464,6 +464,8 @@ export default function Finance() {
       }
     : null;
 
+  const nearLimit = hasBudget && !over && pctUsed >= 85;
+
   // Single rotating insight (standard view) — same priority, richer copy
   const rotatingInsight: { title: string; body: string } | null = (() => {
     if (over) {
