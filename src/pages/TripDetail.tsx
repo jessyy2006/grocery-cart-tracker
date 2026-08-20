@@ -126,13 +126,6 @@ export default function TripDetail() {
   }, [id]);
 
 
-  const highestItem = useMemo(() => {
-    if (items.length === 0) return null;
-    return items.reduce((acc, it) =>
-      it.price_cents * it.qty > acc.price_cents * acc.qty ? it : acc
-    );
-  }, [items]);
-
   const pctOfBudget = useMemo(() => {
     if (!trip || !budgetCents || budgetCents <= 0) return null;
     return Math.round((trip.total_cents / budgetCents) * 100);
@@ -284,18 +277,11 @@ export default function TripDetail() {
               />
 
               {/* Centered insights fine print */}
-              {(highestItem || budgetSentence) && (
+              {budgetSentence && (
                 <>
                   <Divider />
                   <div className="space-y-1 px-2 py-1 text-center font-mono text-[11px] lowercase leading-relaxed text-neutral-500">
-                    {highestItem && (
-                      <p>
-                        your most expensive item was the{" "}
-                        {stripQtyMarker(highestItem.name_snapshot, highestItem.qty).toLowerCase()} at{" "}
-                        {formatMoney(highestItem.price_cents * highestItem.qty)}.
-                      </p>
-                    )}
-                    {budgetSentence && <p>{budgetSentence}</p>}
+                    <p>{budgetSentence}</p>
                   </div>
                 </>
               )}
