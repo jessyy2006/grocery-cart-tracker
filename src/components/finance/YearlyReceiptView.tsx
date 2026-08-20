@@ -294,7 +294,7 @@ export default function YearlyReceiptView(props: Props) {
           <Divider />
 
           {/* Quote */}
-          <div className="my-5 px-2 text-center">
+          <div className="mt-3 mb-0 px-2 text-center">
             <p
               className="text-[15px] leading-snug text-neutral-800"
               style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic" }}
