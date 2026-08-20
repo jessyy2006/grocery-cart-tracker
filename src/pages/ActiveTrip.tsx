@@ -352,8 +352,18 @@ export default function ActiveTrip() {
       }
       setListItems((c) => [...c, row as ListItem]);
       // Keep the trip_item: it backs trips.total_cents (via DB trigger) and
-      // surfaces in receipts. UI cart total reads listItems, so no double count.
+      // surfaces in receipts. Link it so saveTrip doesn't insert a duplicate.
+      await supabase
+        .from("trip_items")
+        .update({ substitutes_list_item_id: (row as ListItem).id })
+        .eq("id", tripItem.id);
+      setItems((c) =>
+        c.map((i) =>
+          i.id === tripItem.id ? { ...i, substitutes_list_item_id: (row as ListItem).id } : i,
+        ),
+      );
       toast.success(`Added: ${productName}`);
+
     } else {
       // Not on list — ask the user: extra or substitute
       setOffList({ tripItem, productName });
