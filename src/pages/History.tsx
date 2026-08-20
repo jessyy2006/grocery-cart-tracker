@@ -167,6 +167,9 @@ export default function History() {
           ))}
         </div>
       )}
+        </div>
+      </PageLoadGate>
     </div>
+
   );
 }
