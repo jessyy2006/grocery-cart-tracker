@@ -244,8 +244,9 @@ export default function Home() {
               </ul>
             )}
           </section>
-        </>
-      )}
+        </div>
+      </PageLoadGate>
+
 
       {/* Unified start-trip bottom sheet (2 internal steps) */}
       <Drawer open={sheetOpen} onOpenChange={setSheetOpen}>
