@@ -453,10 +453,15 @@ export default function ReceiptView(props: Props) {
             />
           )}
           <Divider />
-          <div className="my-2 text-center text-xs italic text-neutral-700">* {personality} *</div>
-          <div className="mt-3 text-center text-[10px] uppercase tracking-widest text-neutral-500">
-            Generated {generated}
+          <div className="my-5 px-2 text-center">
+            <p
+              className="text-[15px] leading-snug text-neutral-800"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic" }}
+            >
+              “{quote}”
+            </p>
           </div>
+
         </div>
 
         {/* Perforation line — same dotted weight as the dividers above */}
