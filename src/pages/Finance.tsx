@@ -866,9 +866,10 @@ function FinanceCardView(props: any) {
 
       {!hasAnyTrips && (
         <EmptyState
+          icon={ReceiptIcon}
           className="border-t border-hairline"
           title="no trips yet"
-          description="Start tracking trips to see your spending insights."
+          description="Save a grocery run to see your spending."
           action={
             <Button variant="primaryLight" size="lg" asChild>
               <Link to="/">start a trip</Link>
