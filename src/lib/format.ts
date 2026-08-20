@@ -46,3 +46,14 @@ export const parsePriceToCents = (input: string): number | null => {
   if (!Number.isFinite(n) || n < 0) return null;
   return Math.round(n * 100);
 };
+
+/**
+ * Relative-ish timestamp used on list rows:
+ * today -> "11:36 pm", within 7 days -> "tuesday", older -> "2026-08-13".
+ */
+export const formatListTimestamp = (iso: string): string => {
+  const d = new Date(iso);
+  if (isToday(d)) return format(d, "h:mm a").toLowerCase();
+  if (differenceInCalendarDays(new Date(), d) < 7) return format(d, "EEEE").toLowerCase();
+  return format(d, "yyyy-MM-dd");
+};
