@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Share2 } from "lucide-react";
+import { pickQuote, monthArchiveCode } from "./receiptQuotes";
+
 
 type Props = {
   budgetCents: number;
@@ -161,13 +163,11 @@ export default function ReceiptView(props: Props) {
 
   const remaining = budgetCents - monthSpend;
   const over = budgetCents > 0 && remaining < 0;
-  const generated = new Date().toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 
   const barcodeSeed = `${monthStart.getFullYear()}-${monthStart.getMonth()}-${monthSpend}-${tripCount}`;
+  const quote = pickQuote(barcodeSeed);
+  const archiveCode = monthArchiveCode(monthStart);
+
 
   const generatePng = async (): Promise<{ dataUrl: string; blob: Blob; file: File } | null> => {
     if (!exportRef.current) return null;
@@ -453,10 +453,15 @@ export default function ReceiptView(props: Props) {
             />
           )}
           <Divider />
-          <div className="my-2 text-center text-xs italic text-neutral-700">* {personality} *</div>
-          <div className="mt-3 text-center text-[10px] uppercase tracking-widest text-neutral-500">
-            Generated {generated}
+          <div className="my-5 px-2 text-center">
+            <p
+              className="text-[15px] leading-snug text-neutral-800"
+              style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic" }}
+            >
+              “{quote}”
+            </p>
           </div>
+
         </div>
 
         {/* Perforation line — same dotted weight as the dividers above */}
@@ -492,9 +497,13 @@ export default function ReceiptView(props: Props) {
             }}
           >
             {/* Paper-colored content only — SVG below sits on transparent so its jagged shape shows */}
-            <div className="px-6 pt-3 pb-4" style={{ backgroundColor: PAPER }}>
+            <div className="px-6 pt-3 pb-2" style={{ backgroundColor: PAPER }}>
               <Barcode seed={barcodeSeed} />
+              <div className="mt-2 text-center text-[10px] tracking-[0.3em] text-neutral-600">
+                {archiveCode}
+              </div>
             </div>
+
             <JaggedEdge position="bottom" />
           </div>
         </div>
