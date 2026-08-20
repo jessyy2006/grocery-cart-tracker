@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MarketLoader } from "@/components/MarketLoader";
+import { PageLoadGate } from "@/components/PageLoadGate";
 import {
   Dialog,
   DialogContent,
