@@ -289,8 +289,6 @@ export default function YearlyReceiptView(props: Props) {
               );
             })}
           </div>
-
-          <Divider />
         </div>
 
         {/* Perforation */}
