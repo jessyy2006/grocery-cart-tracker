@@ -12,12 +12,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Receipt, MapPin, Heart, Camera } from "lucide-react";
+import { Trash2, Receipt, MapPin, Heart, Camera, Store as StoreIcon } from "lucide-react";
 import { toast } from "sonner";
 import { SUPPORTED_CURRENCIES, useCurrency, setCurrency, Currency } from "@/lib/format";
 import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
 import { searchCities } from "@/lib/cities";
 import { PageLoadGate } from "@/components/PageLoadGate";
+import { EmptyState } from "@/components/EmptyState";
 
 type Store = { id: string; name: string; address: string | null };
 
@@ -268,11 +269,12 @@ export default function Profile() {
             <h2 className={sectionLabel}>My stores</h2>
             <div className="mt-1">
               {stores.length === 0 ? (
-                <div className="py-3">
-                  <p className="text-small italic text-muted-foreground">
-                    Stores you've shopped at will appear here.
-                  </p>
-                </div>
+                <EmptyState
+                  size="section"
+                  icon={StoreIcon}
+                  title="no stores yet"
+                  description="add your first grocery store by starting a trip — the store you shop at gets saved here."
+                />
               ) : (
                 <ul>
                   {stores.map((s) => (
