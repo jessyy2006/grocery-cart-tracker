@@ -210,7 +210,7 @@ export default function PrintedReceiptOverlay({ open, payload, onDismiss }: Prop
                   </motion.div>
 
                   <motion.div variants={rowVariants}>
-                    <div className="h-4" aria-hidden />
+                    <div className="h-8" aria-hidden />
                   </motion.div>
 
                   {payload.biggestCategory && (
