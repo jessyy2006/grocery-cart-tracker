@@ -268,11 +268,12 @@ export default function Profile() {
             <h2 className={sectionLabel}>My stores</h2>
             <div className="mt-1">
               {stores.length === 0 ? (
-                <div className="py-3">
-                  <p className="text-small italic text-muted-foreground">
-                    Stores you've shopped at will appear here.
-                  </p>
-                </div>
+                <EmptyState
+                  size="section"
+                  icon={Store}
+                  title="no stores yet"
+                  description="add your first grocery store by starting a trip — the store you shop at gets saved here."
+                />
               ) : (
                 <ul>
                   {stores.map((s) => (
