@@ -16,7 +16,6 @@ import { Trash2, Receipt, MapPin, Heart, Camera, Store as StoreIcon } from "luci
 import { toast } from "sonner";
 import { SUPPORTED_CURRENCIES, useCurrency, setCurrency, Currency } from "@/lib/format";
 import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
-import { searchCities } from "@/lib/cities";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { EmptyState } from "@/components/EmptyState";
 import { cn } from "@/lib/utils";
@@ -42,7 +41,6 @@ export default function Profile() {
 
   const [editingCity, setEditingCity] = useState(false);
   const [cityQuery, setCityQuery] = useState("");
-  const suggestions = useMemo(() => searchCities(cityQuery), [cityQuery]);
 
   const loadStores = async () => {
     const { data } = await supabase.from("stores").select("id, name, address").order("name");
