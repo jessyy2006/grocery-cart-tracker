@@ -333,16 +333,19 @@ function StatLine({
   icon,
   label,
   children,
+  /** Disables truncation so overlays (e.g. autocomplete) aren't clipped. */
+  allowOverflow = false,
 }: {
   icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
+  allowOverflow?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2.5 text-body">
+    <div className={cn("flex items-center gap-2.5 text-body", allowOverflow && "relative z-10")}>
       <span className="shrink-0 text-muted-foreground">{icon}</span>
       <dt className="shrink-0 text-muted-foreground">{label}:</dt>
-      <dd className="min-w-0 flex-1 truncate">{children}</dd>
+      <dd className={cn("min-w-0 flex-1", !allowOverflow && "truncate")}>{children}</dd>
     </div>
   );
 }
