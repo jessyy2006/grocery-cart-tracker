@@ -136,7 +136,7 @@ export default function Profile() {
           <header className="mb-8">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h1 className="text-h1 truncate">{displayName}</h1>
+                <h1 className="text-h1 break-words pb-1 leading-[1.25]">{displayName}</h1>
                 <p className="mt-1 text-small text-muted-foreground">{user?.email}</p>
               </div>
               <button
