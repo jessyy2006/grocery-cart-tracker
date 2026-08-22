@@ -506,7 +506,7 @@ export default function Finance() {
     <div className="px-5 pt-3">
       <PageLoadGate ready={!loading}>
         <div className="space-y-7">
-      <header className="flex items-end justify-between gap-3">
+      <header className="flex items-end justify-between gap-3 pt-2">
         <div>
           <h1 className="text-h1">Finance</h1>
         </div>

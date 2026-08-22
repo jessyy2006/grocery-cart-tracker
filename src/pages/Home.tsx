@@ -22,20 +22,11 @@ import { TripTapeRow } from "@/components/trip/TripTapeRow";
 type Trip = { id: string; started_at: string; total_cents: number; status: string };
 type ShortList = { id: string; name: string; itemCount: number };
 
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 5) return "Late night";
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  if (h < 21) return "Good evening";
-  return "Evening";
-}
-
 export default function Home() {
   const { user } = useAuth();
   useCurrency();
   const navigate = useNavigate();
-  const { firstName, loading: profileLoading } = useProfile();
+  const { loading: profileLoading } = useProfile();
   const [searchParams, setSearchParams] = useSearchParams();
   const [introOpen, setIntroOpen] = useState(false);
   const [recent, setRecent] = useState<(Trip & { itemCount: number; title: string })[]>([]);
@@ -154,7 +145,6 @@ export default function Home() {
       <PageLoadGate ready={ready && !profileLoading}>
         <div className="space-y-8">
           <PageHeader
-            eyebrow={firstName ? `${greeting()}, ${firstName}` : greeting()}
             title={`${today} market run?`}
             action={
               <button

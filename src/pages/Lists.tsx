@@ -70,7 +70,6 @@ export default function Lists() {
         {/* Header */}
         <header className="flex items-end justify-between gap-3 pt-2 pb-2">
           <div className="min-w-0">
-            <p className="text-eyebrow mb-1.5">plan your run</p>
             <h1 className="font-display text-[2.25rem] leading-[1.25] lowercase tracking-tight pb-1">
               your lists
             </h1>
@@ -89,7 +88,7 @@ export default function Lists() {
         {/* Notebook margin rule */}
         <div
           aria-hidden
-          className="pointer-events-none absolute top-[7rem] bottom-0"
+          className="pointer-events-none absolute top-[5.25rem] bottom-0"
           style={{
             left: `${MARGIN_LEFT}px`,
             width: "1px",
