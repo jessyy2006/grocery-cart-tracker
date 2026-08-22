@@ -19,6 +19,7 @@ import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
 import { searchCities } from "@/lib/cities";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { EmptyState } from "@/components/EmptyState";
+import { cn } from "@/lib/utils";
 
 type Store = { id: string; name: string; address: string | null };
 
@@ -178,7 +179,7 @@ export default function Profile() {
                 <span className="text-foreground">{tripCount}</span>
               </StatLine>
 
-              <StatLine icon={<MapPin className="h-4 w-4" />} label="home">
+              <StatLine icon={<MapPin className="h-4 w-4" />} label="home" allowOverflow={editingCity}>
                 {editingCity ? (
                   <div className="relative w-full">
                     <Input
@@ -186,8 +187,17 @@ export default function Profile() {
                       value={cityQuery}
                       placeholder="search a city"
                       onChange={(e) => setCityQuery(e.target.value)}
-                      onBlur={() => setTimeout(() => setEditingCity(false), 120)}
-                      className="h-8 border-hairline bg-transparent text-[15px]"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const value = suggestions[0] ?? cityQuery.trim();
+                          if (value) saveCity(value);
+                        } else if (e.key === "Escape") {
+                          setEditingCity(false);
+                        }
+                      }}
+                      onBlur={() => setTimeout(() => setEditingCity(false), 150)}
+                      className="h-8 rounded-control border-hairline bg-transparent px-2 text-[15px] focus-visible:ring-0"
                     />
                     {suggestions.length > 0 && (
                       <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-card border border-hairline bg-background shadow-md">
@@ -257,7 +267,6 @@ export default function Profile() {
                   <Switch
                     checked={dupAlerts}
                     onCheckedChange={setDuplicateAlerts}
-                    className="h-5 w-9"
                   />
                 }
               />
@@ -324,16 +333,19 @@ function StatLine({
   icon,
   label,
   children,
+  /** Disables truncation so overlays (e.g. autocomplete) aren't clipped. */
+  allowOverflow = false,
 }: {
   icon: React.ReactNode;
   label: string;
   children: React.ReactNode;
+  allowOverflow?: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2.5 text-body">
+    <div className={cn("flex items-center gap-2.5 text-body", allowOverflow && "relative z-10")}>
       <span className="shrink-0 text-muted-foreground">{icon}</span>
       <dt className="shrink-0 text-muted-foreground">{label}:</dt>
-      <dd className="min-w-0 flex-1 truncate">{children}</dd>
+      <dd className={cn("min-w-0 flex-1", !allowOverflow && "truncate")}>{children}</dd>
     </div>
   );
 }
