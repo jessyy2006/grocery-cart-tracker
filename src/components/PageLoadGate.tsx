@@ -9,6 +9,8 @@ interface PageLoadGateProps {
   minHeight?: string;
   /** Grace period before the loader appears, so fast loads never flash it. */
   delayMs?: number;
+  /** Applied to the wrapper once the page renders (e.g. "h-full"). */
+  className?: string;
 }
 
 /**
