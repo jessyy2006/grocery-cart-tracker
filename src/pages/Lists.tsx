@@ -88,7 +88,7 @@ export default function Lists() {
         {/* Notebook margin rule */}
         <div
           aria-hidden
-          className="pointer-events-none absolute top-[7rem] bottom-0"
+          className="pointer-events-none absolute top-[5.25rem] bottom-0"
           style={{
             left: `${MARGIN_LEFT}px`,
             width: "1px",
