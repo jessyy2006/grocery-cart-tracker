@@ -780,6 +780,7 @@ export default function ListDetail() {
       </Dialog>
 
     </div>
+    </PageLoadGate>
   );
 }
 
