@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -11,10 +11,13 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Trash2, Receipt, MapPin, Heart, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { SUPPORTED_CURRENCIES, useCurrency, setCurrency, Currency } from "@/lib/format";
 import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
+import { searchCities } from "@/lib/cities";
+import { PageLoadGate } from "@/components/PageLoadGate";
 
 type Store = { id: string; name: string; address: string | null };
 
@@ -23,135 +26,313 @@ const rowDivider = "border-t border-hairline";
 
 export default function Profile() {
   const { user } = useAuth();
-  const { firstName, loading: profileLoading } = useProfile();
+  const { firstName } = useProfile();
   const currency = useCurrency();
   const [stores, setStores] = useState<Store[]>([]);
   const dupAlerts = useDuplicateAlerts();
 
-  const load = async () => {
+  const [ready, setReady] = useState(false);
+  const [tripCount, setTripCount] = useState(0);
+  const [favItem, setFavItem] = useState<string | null>(null);
+  const [city, setCity] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [editingCity, setEditingCity] = useState(false);
+  const [cityQuery, setCityQuery] = useState("");
+  const suggestions = useMemo(() => searchCities(cityQuery), [cityQuery]);
+
+  const loadStores = async () => {
     const { data } = await supabase.from("stores").select("id, name, address").order("name");
     setStores(data ?? []);
   };
+
+  const signAvatar = async (path: string) => {
+    const { data } = await supabase.storage.from("avatars").createSignedUrl(path, 60 * 60);
+    setAvatarUrl(data?.signedUrl ?? null);
+  };
+
   useEffect(() => {
-    if (user) load();
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const [storesRes, profileRes, tripsRes] = await Promise.all([
+        supabase.from("stores").select("id, name, address").order("name"),
+        (supabase as any).from("profiles").select("city, avatar_url").eq("id", user.id).maybeSingle(),
+        supabase.from("trips").select("id").eq("user_id", user.id).eq("status", "saved"),
+      ]);
+      if (cancelled) return;
+
+      setStores(storesRes.data ?? []);
+      setTripCount(tripsRes.data?.length ?? 0);
+      setCity(profileRes.data?.city ?? null);
+      if (profileRes.data?.avatar_url) await signAvatar(profileRes.data.avatar_url);
+
+      const tripIds = (tripsRes.data ?? []).map((t) => t.id);
+      if (tripIds.length) {
+        const { data: items } = await supabase
+          .from("trip_items")
+          .select("name_snapshot, qty")
+          .in("trip_id", tripIds);
+        const totals = new Map<string, { label: string; qty: number }>();
+        for (const it of items ?? []) {
+          const key = it.name_snapshot.trim().toLowerCase();
+          if (!key) continue;
+          const prev = totals.get(key);
+          totals.set(key, { label: it.name_snapshot.trim(), qty: (prev?.qty ?? 0) + (it.qty ?? 1) });
+        }
+        const top = [...totals.values()].sort((a, b) => b.qty - a.qty)[0];
+        if (!cancelled) setFavItem(top?.label ?? null);
+      }
+      if (!cancelled) setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const removeStore = async (id: string) => {
     const { error } = await supabase.from("stores").delete().eq("id", id);
     if (error) toast.error(error.message);
-    else load();
+    else loadStores();
   };
 
+  const saveCity = async (value: string) => {
+    if (!user) return;
+    setCity(value);
+    setEditingCity(false);
+    setCityQuery("");
+    const { error } = await (supabase as any)
+      .from("profiles")
+      .update({ city: value })
+      .eq("id", user.id);
+    if (error) toast.error(error.message);
+  };
+
+  const onPickAvatar = async (file: File) => {
+    if (!user) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/avatar.${ext}`;
+    const { error } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (error) {
+      toast.error(error.message);
+    } else {
+      await (supabase as any).from("profiles").update({ avatar_url: path }).eq("id", user.id);
+      await signAvatar(path);
+    }
+    setUploading(false);
+  };
+
+  const displayName = (firstName ?? user?.email?.split("@")[0] ?? "profile").toLowerCase();
+
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto px-5 pt-3 pb-6">
-        <header className="mb-8">
-          <p className={sectionLabel}>Your account</p>
-          <h1 className="mt-1 text-h1">
-            {profileLoading ? (
-              <span className="invisible">Profile</span>
-            ) : firstName ? (
-              firstName
-            ) : (
-              "Profile"
-            )}
-          </h1>
-          <p className="mt-1 text-small text-muted-foreground">{user?.email}</p>
-        </header>
-
-        {/* CURRENCY SETTINGS */}
-        <section className="mb-8">
-          <h2 className={sectionLabel}>Currency settings</h2>
-          <div className="mt-1">
-            <SettingRow
-              label="Display currency"
-              description="Used for all prices and totals."
-              control={
-                <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
-                  <SelectTrigger className="h-9 w-24 border-hairline bg-transparent">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SUPPORTED_CURRENCIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              }
-            />
-          </div>
-        </section>
-
-        {/* APP PREFERENCES */}
-        <section className="mb-8">
-          <h2 className={sectionLabel}>App preferences</h2>
-          <div className="mt-1">
-            <SettingRow
-              label="Duplicate item alerts"
-              description="Warn me before adding duplicate items."
-              control={
-                <Switch
-                  checked={dupAlerts}
-                  onCheckedChange={setDuplicateAlerts}
-                  className="h-5 w-9"
-                />
-              }
-            />
-          </div>
-        </section>
-
-        {/* MY STORES */}
-        <section className="mb-8">
-          <h2 className={sectionLabel}>My stores</h2>
-          <div className="mt-1">
-            {stores.length === 0 ? (
-              <div className={`${rowDivider} py-3`}>
-                <p className="text-small italic text-muted-foreground">
-                  Stores you've shopped at will appear here.
-                </p>
+    <PageLoadGate ready={ready}>
+      <div className="flex h-full flex-col">
+        <div className="flex-1 overflow-y-auto px-5 pt-3 pb-6">
+          {/* HERO */}
+          <header className="mb-8">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h1 className="text-h1 truncate">{displayName}</h1>
+                <p className="mt-1 text-small text-muted-foreground">{user?.email}</p>
               </div>
-            ) : (
-              <ul>
-                {stores.map((s) => (
-                  <li
-                    key={s.id}
-                    className={`${rowDivider} flex items-center justify-between gap-3 py-3 last:border-b last:border-hairline`}
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-sans text-[15px] text-foreground">{s.name}</p>
-                      {s.address && (
-                        <p className="truncate text-small italic text-muted-foreground">
-                          {s.address}
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => removeStore(s.id)}
-                      className="text-muted-foreground transition-colors hover:text-destructive"
-                      aria-label={`Remove ${s.name}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-      </div>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                aria-label="Change profile picture"
+                className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border border-hairline bg-muted"
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Profile picture" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center text-muted-foreground">
+                    <Camera className="h-5 w-5" />
+                  </span>
+                )}
+                {uploading && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-background/70 text-[10px] font-mono uppercase">
+                    …
+                  </span>
+                )}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onPickAvatar(f);
+                  e.target.value = "";
+                }}
+              />
+            </div>
 
-      <div className="px-5 pt-8 pb-6">
-        <Button
-          variant="secondaryLight"
-          size="lg"
-          className="w-full"
-          onClick={() => supabase.auth.signOut()}
-        >
-          sign out
-        </Button>
+            {/* STAT LINES */}
+            <dl className="mt-5 space-y-2.5">
+              <StatLine icon={<Receipt className="h-4 w-4" />} label="trips logged">
+                <span className="text-foreground">{tripCount}</span>
+              </StatLine>
+
+              <StatLine icon={<MapPin className="h-4 w-4" />} label="home">
+                {editingCity ? (
+                  <div className="relative w-full">
+                    <Input
+                      autoFocus
+                      value={cityQuery}
+                      placeholder="search a city"
+                      onChange={(e) => setCityQuery(e.target.value)}
+                      onBlur={() => setTimeout(() => setEditingCity(false), 120)}
+                      className="h-8 border-hairline bg-transparent text-[15px]"
+                    />
+                    {suggestions.length > 0 && (
+                      <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-card border border-hairline bg-background shadow-md">
+                        {suggestions.map((s) => (
+                          <li key={s}>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => saveCity(s)}
+                              className="block w-full px-3 py-2 text-left text-small hover:bg-muted"
+                            >
+                              {s}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCityQuery("");
+                      setEditingCity(true);
+                    }}
+                    className={city ? "text-foreground" : "text-primary"}
+                  >
+                    {city ?? "+Add"}
+                  </button>
+                )}
+              </StatLine>
+
+              <StatLine icon={<Heart className="h-4 w-4" />} label="favorite item">
+                <span className={favItem ? "text-foreground" : "text-muted-foreground italic"}>
+                  {favItem ?? "no items yet"}
+                </span>
+              </StatLine>
+            </dl>
+          </header>
+
+          {/* SETTINGS */}
+          <section className="mb-8">
+            <h2 className={sectionLabel}>Settings</h2>
+            <div className="mt-1">
+              <SettingRow
+                label="Display currency"
+                description="Used for all prices and totals."
+                control={
+                  <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
+                    <SelectTrigger className="h-9 w-24 border-hairline bg-transparent">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_CURRENCIES.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                }
+              />
+              <SettingRow
+                label="Duplicate item alerts"
+                description="Warn me before adding duplicate items."
+                control={
+                  <Switch
+                    checked={dupAlerts}
+                    onCheckedChange={setDuplicateAlerts}
+                    className="h-5 w-9"
+                  />
+                }
+              />
+            </div>
+          </section>
+
+          {/* MY STORES */}
+          <section className="mb-8">
+            <h2 className={sectionLabel}>My stores</h2>
+            <div className="mt-1">
+              {stores.length === 0 ? (
+                <div className={`${rowDivider} py-3`}>
+                  <p className="text-small italic text-muted-foreground">
+                    Stores you've shopped at will appear here.
+                  </p>
+                </div>
+              ) : (
+                <ul>
+                  {stores.map((s) => (
+                    <li
+                      key={s.id}
+                      className={`${rowDivider} flex items-center justify-between gap-3 py-3 last:border-b last:border-hairline`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-sans text-[15px] text-foreground">{s.name}</p>
+                        {s.address && (
+                          <p className="truncate text-small italic text-muted-foreground">
+                            {s.address}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => removeStore(s.id)}
+                        className="text-muted-foreground transition-colors hover:text-destructive"
+                        aria-label={`Remove ${s.name}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+        </div>
+
+        <div className="px-5 pt-8 pb-6">
+          <Button
+            variant="secondaryLight"
+            size="lg"
+            className="w-full"
+            onClick={() => supabase.auth.signOut()}
+          >
+            sign out
+          </Button>
+        </div>
       </div>
+    </PageLoadGate>
+  );
+}
+
+function StatLine({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2.5 text-body">
+      <span className="shrink-0 text-muted-foreground">{icon}</span>
+      <dt className="shrink-0 text-muted-foreground">{label}:</dt>
+      <dd className="min-w-0 flex-1 truncate">{children}</dd>
     </div>
   );
 }
@@ -171,9 +352,7 @@ function SettingRow({
     >
       <div className="min-w-0">
         <p className="font-sans text-[15px] text-foreground">{label}</p>
-        {description && (
-          <p className="text-small italic text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-small italic text-muted-foreground">{description}</p>}
       </div>
       <div className="shrink-0">{control}</div>
     </div>
