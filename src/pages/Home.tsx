@@ -154,7 +154,6 @@ export default function Home() {
       <PageLoadGate ready={ready && !profileLoading}>
         <div className="space-y-8">
           <PageHeader
-            eyebrow={firstName ? `${greeting()}, ${firstName}` : greeting()}
             title={`${today} market run?`}
             action={
               <button
