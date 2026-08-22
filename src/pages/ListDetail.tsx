@@ -387,6 +387,7 @@ export default function ListDetail() {
   };
 
   return (
+    <PageLoadGate ready={ready} className="h-full">
     <div className="flex h-full flex-col">
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 pt-3 safe-top">
         {/* Back arrow */}
