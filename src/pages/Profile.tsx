@@ -19,6 +19,7 @@ import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
 import { searchCities } from "@/lib/cities";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { EmptyState } from "@/components/EmptyState";
+import { cn } from "@/lib/utils";
 
 type Store = { id: string; name: string; address: string | null };
 
