@@ -186,8 +186,17 @@ export default function Profile() {
                       value={cityQuery}
                       placeholder="search a city"
                       onChange={(e) => setCityQuery(e.target.value)}
-                      onBlur={() => setTimeout(() => setEditingCity(false), 120)}
-                      className="h-8 border-hairline bg-transparent text-[15px]"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const value = suggestions[0] ?? cityQuery.trim();
+                          if (value) saveCity(value);
+                        } else if (e.key === "Escape") {
+                          setEditingCity(false);
+                        }
+                      }}
+                      onBlur={() => setTimeout(() => setEditingCity(false), 150)}
+                      className="h-8 rounded-control border-hairline bg-transparent px-2 text-[15px] focus-visible:ring-0"
                     />
                     {suggestions.length > 0 && (
                       <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-card border border-hairline bg-background shadow-md">
