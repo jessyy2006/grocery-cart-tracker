@@ -455,10 +455,6 @@ export default function ListDetail() {
           </button>
         </div>
 
-        {(
-          <></>
-        ) || (
-          <>
 
             {items.length > 0 && (
               <div className="mt-6 flex items-center gap-2 text-[12px] lowercase">
