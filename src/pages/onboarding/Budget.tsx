@@ -61,7 +61,7 @@ export default function OnboardingBudget() {
             id="budget"
             inputMode="decimal"
             placeholder="400"
-            className="text-lg"
+            className="h-10 text-lg"
             value={value}
             onChange={(e) => setValue(e.target.value)}
           />
