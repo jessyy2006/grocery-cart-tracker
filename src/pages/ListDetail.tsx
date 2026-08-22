@@ -17,7 +17,7 @@ import { ArrowLeft, Plus, ShoppingBasket, Check, X, ListPlus } from "lucide-reac
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
 import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
-import { MarketLoader } from "@/components/MarketLoader";
+import { PageLoadGate } from "@/components/PageLoadGate";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { LedgerRow } from "@/components/LedgerRow";
@@ -387,6 +387,7 @@ export default function ListDetail() {
   };
 
   return (
+    <PageLoadGate ready={ready} className="h-full">
     <div className="flex h-full flex-col">
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 pt-3 safe-top">
         {/* Back arrow */}
@@ -455,12 +456,7 @@ export default function ListDetail() {
           </button>
         </div>
 
-        {!ready ? (
-          <div className="mt-8">
-            <MarketLoader minHeight="40vh" />
-          </div>
-        ) : (
-          <>
+
             {items.length > 0 && (
               <div className="mt-6 flex items-center gap-2 text-[12px] lowercase">
                 <span className="text-muted-foreground">group by:</span>
@@ -541,8 +537,6 @@ export default function ListDetail() {
 
 
             <div ref={endRef} className="h-4" />
-          </>
-        )}
       </div>
 
       <AnimatePresence initial={false}>
@@ -786,6 +780,7 @@ export default function ListDetail() {
       </Dialog>
 
     </div>
+    </PageLoadGate>
   );
 }
 
