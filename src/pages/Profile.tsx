@@ -282,7 +282,7 @@ export default function Profile() {
                   size="section"
                   icon={StoreIcon}
                   title="no stores yet"
-                  description="add your first grocery store by starting a trip — the store you shop at gets saved here."
+                  description="start a trip to add your first store"
                 />
               ) : (
                 <ul>
