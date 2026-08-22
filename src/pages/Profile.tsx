@@ -22,7 +22,6 @@ import { PageLoadGate } from "@/components/PageLoadGate";
 type Store = { id: string; name: string; address: string | null };
 
 const sectionLabel = "text-eyebrow";
-const rowDivider = "border-t border-hairline";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -231,7 +230,7 @@ export default function Profile() {
           {/* SETTINGS */}
           <section className="mb-8">
             <h2 className={sectionLabel}>Settings</h2>
-            <div className="mt-1">
+            <div className="mt-1 divide-y divide-hairline">
               <SettingRow
                 label="Display currency"
                 description="Used for all prices and totals."
@@ -269,7 +268,7 @@ export default function Profile() {
             <h2 className={sectionLabel}>My stores</h2>
             <div className="mt-1">
               {stores.length === 0 ? (
-                <div className={`${rowDivider} py-3`}>
+                <div className="py-3">
                   <p className="text-small italic text-muted-foreground">
                     Stores you've shopped at will appear here.
                   </p>
@@ -279,7 +278,7 @@ export default function Profile() {
                   {stores.map((s) => (
                     <li
                       key={s.id}
-                      className={`${rowDivider} flex items-center justify-between gap-3 py-3 last:border-b last:border-hairline`}
+                      className="flex items-center justify-between gap-3 py-3"
                     >
                       <div className="min-w-0">
                         <p className="truncate font-sans text-[15px] text-foreground">{s.name}</p>
@@ -348,7 +347,7 @@ function SettingRow({
 }) {
   return (
     <div
-      className={`${rowDivider} flex items-center justify-between gap-4 py-3 last:border-b last:border-hairline`}
+      className="flex items-center justify-between gap-4 py-3"
     >
       <div className="min-w-0">
         <p className="font-sans text-[15px] text-foreground">{label}</p>
