@@ -179,48 +179,37 @@ export default function Profile() {
                 <span className="text-foreground">{tripCount}</span>
               </StatLine>
 
-              <StatLine icon={<MapPin className="h-4 w-4" />} label="home" allowOverflow={editingCity}>
+              <StatLine icon={<MapPin className="h-4 w-4" />} label="home">
                 {editingCity ? (
-                  <div className="relative w-full">
-                    <Input
-                      autoFocus
-                      value={cityQuery}
-                      placeholder="search a city"
-                      onChange={(e) => setCityQuery(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          const value = suggestions[0] ?? cityQuery.trim();
-                          if (value) saveCity(value);
-                        } else if (e.key === "Escape") {
-                          setEditingCity(false);
-                        }
-                      }}
-                      onBlur={() => setTimeout(() => setEditingCity(false), 150)}
-                      className="h-8 rounded-control border-hairline bg-transparent px-2 text-[15px] focus-visible:ring-0"
-                    />
-                    {suggestions.length > 0 && (
-                      <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-card border border-hairline bg-background shadow-md">
-                        {suggestions.map((s) => (
-                          <li key={s}>
-                            <button
-                              type="button"
-                              onMouseDown={(e) => e.preventDefault()}
-                              onClick={() => saveCity(s)}
-                              className="block w-full px-3 py-2 text-left text-small hover:bg-muted"
-                            >
-                              {s}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
+                  <Input
+                    autoFocus
+                    value={cityQuery}
+                    placeholder="where do you live?"
+                    enterKeyHint="done"
+                    onChange={(e) => setCityQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        e.currentTarget.blur();
+                        const value = cityQuery.trim();
+                        if (value) saveCity(value);
+                        else setEditingCity(false);
+                      } else if (e.key === "Escape") {
+                        setEditingCity(false);
+                      }
+                    }}
+                    onBlur={() => {
+                      const value = cityQuery.trim();
+                      if (value) saveCity(value);
+                      else setEditingCity(false);
+                    }}
+                    className="h-8 rounded-control border-hairline bg-transparent px-2 text-[15px] focus-visible:ring-0"
+                  />
                 ) : (
                   <button
                     type="button"
                     onClick={() => {
-                      setCityQuery("");
+                      setCityQuery(city ?? "");
                       setEditingCity(true);
                     }}
                     className={city ? "text-foreground" : "text-primary"}
