@@ -536,8 +536,6 @@ export default function ListDetail() {
 
 
             <div ref={endRef} className="h-4" />
-          </>
-        )}
       </div>
 
       <AnimatePresence initial={false}>
