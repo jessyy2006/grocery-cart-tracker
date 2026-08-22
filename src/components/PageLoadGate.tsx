@@ -23,6 +23,7 @@ export function PageLoadGate({
   ready,
   minHeight = "80vh",
   delayMs = 200,
+  className,
   children,
 }: PropsWithChildren<PageLoadGateProps>) {
   const reduce = useReducedMotion();
@@ -42,11 +43,13 @@ export function PageLoadGate({
 
   return (
     <motion.div
+      className={className}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: reduce ? 0.1 : 0.18, ease: "easeOut" }}
     >
       {children}
     </motion.div>
+
   );
 }
