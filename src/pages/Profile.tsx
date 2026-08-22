@@ -179,7 +179,7 @@ export default function Profile() {
                 <span className="text-foreground">{tripCount}</span>
               </StatLine>
 
-              <StatLine icon={<MapPin className="h-4 w-4" />} label="home">
+              <StatLine icon={<MapPin className="h-4 w-4" />} label="home" allowOverflow={editingCity}>
                 {editingCity ? (
                   <div className="relative w-full">
                     <Input
@@ -267,7 +267,6 @@ export default function Profile() {
                   <Switch
                     checked={dupAlerts}
                     onCheckedChange={setDuplicateAlerts}
-                    className="h-5 w-9"
                   />
                 }
               />
