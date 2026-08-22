@@ -455,12 +455,11 @@ export default function ListDetail() {
           </button>
         </div>
 
-        {!ready ? (
-          <div className="mt-8">
-            <MarketLoader minHeight="40vh" />
-          </div>
-        ) : (
+        {(
+          <></>
+        ) || (
           <>
+
             {items.length > 0 && (
               <div className="mt-6 flex items-center gap-2 text-[12px] lowercase">
                 <span className="text-muted-foreground">group by:</span>
