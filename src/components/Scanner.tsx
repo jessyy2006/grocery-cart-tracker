@@ -75,7 +75,8 @@ export const Scanner = ({
           </div>
         )}
       </div>
-      <div className="absolute left-0 right-0 top-0 flex justify-between p-4 safe-top">
+      {/* iOS convention: 16pt side margins, top offset = safe-area inset (min 12pt fallback). */}
+      <div className="absolute left-0 right-0 top-0 flex justify-between px-4 pb-4 pt-[max(env(safe-area-inset-top),12px)]">
         <Button size="icon" variant="primaryDark" onClick={onClose}>
           <X className="h-5 w-5" />
         </Button>
