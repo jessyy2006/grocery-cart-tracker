@@ -449,7 +449,6 @@ export default function ReceiptView(props: Props) {
               value={`${momDelta < 0 ? "-" : "+"}${formatMoney(Math.abs(momDelta), currency)}`}
             />
           )}
-          <Divider />
         </div>
 
         {/* Perforation line — same dotted weight as the dividers above */}
