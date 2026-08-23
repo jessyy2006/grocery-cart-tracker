@@ -190,6 +190,19 @@
     backdrop-filter: saturate(140%) blur(18px);
     -webkit-backdrop-filter: saturate(140%) blur(18px);
   }
+
+  /* Native date input: move calendar picker indicator to the left. */
+  .date-icon-left {
+    position: relative;
+    padding-left: 2.75rem !important;
+  }
+  .date-icon-left::-webkit-calendar-picker-indicator {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+  }
 }
 
 @keyframes confetti-bounce {
