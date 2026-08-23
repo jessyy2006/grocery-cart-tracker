@@ -31,16 +31,23 @@ type Store = { id: string; name: string };
 type ListLite = { id: string; name: string; items: { id: string; name: string; checked_at: string | null }[] };
 
 const REVEAL = 76;
+const FULL_SWIPE = 180;
 
 function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete: () => void }) {
   const x = useMotionValue(0);
+  const spring = { type: "spring" as const, stiffness: 520, damping: 34, mass: 0.6 };
   const onDragEnd = (_e: unknown, info: PanInfo) => {
+    if (info.offset.x < -FULL_SWIPE || info.velocity.x < -900) {
+      animate(x, -window.innerWidth, { ...spring, damping: 40 });
+      window.setTimeout(onDelete, 140);
+      return;
+    }
     const target = info.offset.x < -REVEAL / 2 || info.velocity.x < -300 ? -REVEAL : 0;
-    animate(x, target, { type: "spring", stiffness: 500, damping: 40 });
+    animate(x, target, spring);
   };
   const handleDelete = () => {
-    animate(x, 0, { duration: 0.12 });
-    onDelete();
+    animate(x, -window.innerWidth, { ...spring, damping: 40 });
+    window.setTimeout(onDelete, 140);
   };
   return (
     <li className="relative overflow-hidden">
@@ -55,8 +62,8 @@ function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete:
       </button>
       <motion.div
         drag="x"
-        dragConstraints={{ left: -REVEAL, right: 0 }}
-        dragElastic={0.05}
+        dragConstraints={{ left: -window.innerWidth, right: 0 }}
+        dragElastic={{ left: 0.15, right: 0 }}
         style={{ x }}
         onDragEnd={onDragEnd}
         className="relative bg-card touch-pan-y"
@@ -66,6 +73,7 @@ function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete:
     </li>
   );
 }
+
 
 export default function ScanReceipt() {
   const { user } = useAuth();
