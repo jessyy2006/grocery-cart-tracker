@@ -14,7 +14,11 @@ import { formatMoney, parsePriceToCents } from "@/lib/format";
 import { guessCategory, tokens } from "@/lib/categories";
 import { format, parseISO } from "date-fns";
 
+let keySeq = 0;
+const nextKey = () => ++keySeq;
+
 type ParsedItem = {
+  _k?: number;
   name: string;
   qty: number;
   unit_price_cents: number | null;
@@ -31,16 +35,23 @@ type Store = { id: string; name: string };
 type ListLite = { id: string; name: string; items: { id: string; name: string; checked_at: string | null }[] };
 
 const REVEAL = 76;
+const FULL_SWIPE = 180;
 
 function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete: () => void }) {
   const x = useMotionValue(0);
+  const spring = { type: "spring" as const, stiffness: 520, damping: 34, mass: 0.6 };
   const onDragEnd = (_e: unknown, info: PanInfo) => {
+    if (info.offset.x < -FULL_SWIPE || info.velocity.x < -900) {
+      animate(x, -window.innerWidth, { ...spring, damping: 40 });
+      window.setTimeout(onDelete, 140);
+      return;
+    }
     const target = info.offset.x < -REVEAL / 2 || info.velocity.x < -300 ? -REVEAL : 0;
-    animate(x, target, { type: "spring", stiffness: 500, damping: 40 });
+    animate(x, target, spring);
   };
   const handleDelete = () => {
-    animate(x, 0, { duration: 0.12 });
-    onDelete();
+    animate(x, -window.innerWidth, { ...spring, damping: 40 });
+    window.setTimeout(onDelete, 140);
   };
   return (
     <li className="relative overflow-hidden">
@@ -55,8 +66,8 @@ function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete:
       </button>
       <motion.div
         drag="x"
-        dragConstraints={{ left: -REVEAL, right: 0 }}
-        dragElastic={0.05}
+        dragConstraints={{ left: -window.innerWidth, right: 0 }}
+        dragElastic={{ left: 0.15, right: 0 }}
         style={{ x }}
         onDragEnd={onDragEnd}
         className="relative bg-card touch-pan-y"
@@ -66,6 +77,7 @@ function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete:
     </li>
   );
 }
+
 
 export default function ScanReceipt() {
   const { user } = useAuth();
@@ -197,7 +209,7 @@ export default function ScanReceipt() {
       const p: Parsed = data;
       setParsed(p);
       setStoreName(p.store_name ?? "");
-      setItems(p.items ?? []);
+      setItems((p.items ?? []).map((i) => ({ ...i, _k: nextKey() })));
       setTripDate(p.purchased_at || format(new Date(), "yyyy-MM-dd"));
       setNewListName(p.store_name ? `${p.store_name} Essentials` : "Receipt Essentials");
       await loadStoresAndLists(p);
@@ -273,9 +285,19 @@ export default function ScanReceipt() {
   const updateItem = (idx: number, patch: Partial<ParsedItem>) => {
     setItems((arr) => arr.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   };
-  const removeItem = (idx: number) => setItems((arr) => arr.filter((_, i) => i !== idx));
-  const addItem = () =>
-    setItems((arr) => [...arr, { name: "", qty: 1, unit_price_cents: null, line_total_cents: 0 }]);
+  const removeItem = (idx: number) => {
+    setItems((arr) => arr.filter((_, i) => i !== idx));
+    setPriceDrafts({});
+  };
+  const addItem = () => {
+    // New rows land at the top of the list
+    setItems((arr) => [
+      { _k: nextKey(), name: "", qty: 1, unit_price_cents: null, line_total_cents: 0 },
+      ...arr,
+    ]);
+    setPriceDrafts({});
+  };
+
 
   const save = async () => {
     if (!user) return;
@@ -524,7 +546,7 @@ export default function ScanReceipt() {
                   <li className="p-4 text-center text-small text-muted-foreground">No items detected</li>
                 )}
                 {items.map((it, idx) => (
-                  <SwipeRow key={idx} onDelete={() => removeItem(idx)}>
+                  <SwipeRow key={it._k ?? idx} onDelete={() => removeItem(idx)}>
                     <div className="grid grid-cols-[1fr_44px_72px] items-center gap-2 bg-card p-2.5">
                       <Input
                         value={it.name}
