@@ -14,7 +14,11 @@ import { formatMoney, parsePriceToCents } from "@/lib/format";
 import { guessCategory, tokens } from "@/lib/categories";
 import { format, parseISO } from "date-fns";
 
+let keySeq = 0;
+const nextKey = () => ++keySeq;
+
 type ParsedItem = {
+  _k?: number;
   name: string;
   qty: number;
   unit_price_cents: number | null;
