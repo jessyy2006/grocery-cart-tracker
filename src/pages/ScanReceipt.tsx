@@ -552,7 +552,7 @@ export default function ScanReceipt() {
             {/* Date */}
             <div className="mt-4 space-y-2">
               <Label className="text-small">Date</Label>
-              <Input type="date" value={tripDate} onChange={(e) => setTripDate(e.target.value)} />
+              <Input type="date" value={tripDate} onChange={(e) => setTripDate(e.target.value)} className="date-icon-left" />
             </div>
 
             {/* Items */}
