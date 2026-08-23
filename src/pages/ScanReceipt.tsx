@@ -54,16 +54,17 @@ function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete:
     window.setTimeout(onDelete, 140);
   };
   return (
-    <li className="relative overflow-hidden">
+    <li className="relative overflow-hidden bg-destructive">
       <button
         type="button"
         onClick={handleDelete}
         aria-label="Delete item"
-        className="absolute inset-y-0 right-0 flex items-center justify-center bg-destructive text-destructive-foreground"
+        className="absolute inset-y-0 right-0 flex items-center justify-center text-destructive-foreground"
         style={{ width: REVEAL }}
       >
         <Trash2 className="h-4 w-4" />
       </button>
+
       <motion.div
         drag="x"
         dragConstraints={{ left: -window.innerWidth, right: 0 }}
