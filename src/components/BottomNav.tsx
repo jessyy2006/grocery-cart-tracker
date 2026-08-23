@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const items: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
   { to: "/", label: "HOME", icon: Home, end: true },
   { to: "/lists", label: "LISTS", icon: ListChecks },
-  { to: "/finance", label: "FINANCE", icon: Wallet },
+  { to: "/finance", label: "FINANCE", icon: Target },
   { to: "/history", label: "HISTORY", icon: Clock },
 ];
 
