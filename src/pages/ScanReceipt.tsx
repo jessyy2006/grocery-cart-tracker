@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, useMotionValue, animate, type PanInfo } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -560,7 +560,40 @@ export default function ScanReceipt() {
                 {items.map((it, idx) => (
                   <SwipeRow key={it._k ?? idx} onDelete={() => removeItem(idx)}>
                     <div className="grid grid-cols-[1fr_44px_72px] items-center gap-2 bg-card p-2.5">
-...
+                      <Input
+                        value={it.name}
+                        onChange={(e) => updateItem(idx, { name: e.target.value })}
+                        placeholder="Item"
+                        className="h-10"
+                      />
+                      <Input
+                        type="number"
+                        min={1}
+                        max={99}
+                        value={it.qty}
+                        onChange={(e) =>
+                          updateItem(idx, { qty: Math.max(1, parseInt(e.target.value || "1", 10)) })
+                        }
+                        className="h-10 px-1 text-center"
+                      />
+                      <Input
+                        inputMode="decimal"
+                        pattern="[0-9]*[.,]?[0-9]*"
+                        value={priceDrafts[idx] ?? (it.line_total_cents / 100).toFixed(2)}
+                        onChange={(e) =>
+                          setPriceDrafts((d) => ({ ...d, [idx]: e.target.value }))
+                        }
+                        onBlur={(e) => {
+                          const c = parsePriceToCents(e.target.value) ?? 0;
+                          updateItem(idx, { line_total_cents: c });
+                          setPriceDrafts((d) => {
+                            const { [idx]: _, ...rest } = d;
+                            return rest;
+                          });
+                        }}
+                        className="h-10 px-2 text-right"
+                      />
+                    </div>
                   </SwipeRow>
                 ))}
                 </AnimatePresence>
