@@ -945,7 +945,7 @@ export default function ActiveTrip() {
               onClick={saveTrip}
               className="font-mono text-[12px] lowercase tracking-wide text-forest-foreground/80 hover:text-forest-foreground transition-colors"
             >
-              [ save trip ]
+              [ end trip ]
             </button>
           </div>
           <p className="mt-3 flex items-baseline gap-2 leading-none">
