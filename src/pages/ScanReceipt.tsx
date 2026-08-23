@@ -546,7 +546,7 @@ export default function ScanReceipt() {
                   <li className="p-4 text-center text-small text-muted-foreground">No items detected</li>
                 )}
                 {items.map((it, idx) => (
-                  <SwipeRow key={idx} onDelete={() => removeItem(idx)}>
+                  <SwipeRow key={it._k ?? idx} onDelete={() => removeItem(idx)}>
                     <div className="grid grid-cols-[1fr_44px_72px] items-center gap-2 bg-card p-2.5">
                       <Input
                         value={it.name}
