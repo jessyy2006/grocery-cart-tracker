@@ -281,9 +281,19 @@ export default function ScanReceipt() {
   const updateItem = (idx: number, patch: Partial<ParsedItem>) => {
     setItems((arr) => arr.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
   };
-  const removeItem = (idx: number) => setItems((arr) => arr.filter((_, i) => i !== idx));
-  const addItem = () =>
-    setItems((arr) => [...arr, { name: "", qty: 1, unit_price_cents: null, line_total_cents: 0 }]);
+  const removeItem = (idx: number) => {
+    setItems((arr) => arr.filter((_, i) => i !== idx));
+    setPriceDrafts({});
+  };
+  const addItem = () => {
+    // New rows land at the top of the list
+    setItems((arr) => [
+      { _k: nextKey(), name: "", qty: 1, unit_price_cents: null, line_total_cents: 0 },
+      ...arr,
+    ]);
+    setPriceDrafts({});
+  };
+
 
   const save = async () => {
     if (!user) return;
