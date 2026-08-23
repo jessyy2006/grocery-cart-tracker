@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, useMotionValue, animate, type PanInfo } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, animate, type PanInfo } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -40,24 +40,28 @@ const FULL_SWIPE = 180;
 function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete: () => void }) {
   const x = useMotionValue(0);
   const spring = { type: "spring" as const, stiffness: 520, damping: 34, mass: 0.6 };
+  const dismiss = () => {
+    animate(x, -window.innerWidth, { ...spring, damping: 40 });
+    onDelete();
+  };
   const onDragEnd = (_e: unknown, info: PanInfo) => {
     if (info.offset.x < -FULL_SWIPE || info.velocity.x < -900) {
-      animate(x, -window.innerWidth, { ...spring, damping: 40 });
-      window.setTimeout(onDelete, 140);
+      dismiss();
       return;
     }
     const target = info.offset.x < -REVEAL / 2 || info.velocity.x < -300 ? -REVEAL : 0;
     animate(x, target, spring);
   };
-  const handleDelete = () => {
-    animate(x, -window.innerWidth, { ...spring, damping: 40 });
-    window.setTimeout(onDelete, 140);
-  };
   return (
-    <li className="relative overflow-hidden bg-destructive">
+    <motion.li
+      layout
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+      className="relative overflow-hidden bg-destructive"
+    >
       <button
         type="button"
-        onClick={handleDelete}
+        onClick={dismiss}
         aria-label="Delete item"
         className="absolute inset-y-0 right-0 flex items-center justify-center text-destructive-foreground"
         style={{ width: REVEAL }}
@@ -75,9 +79,10 @@ function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete:
       >
         {children}
       </motion.div>
-    </li>
+    </motion.li>
   );
 }
+
 
 
 export default function ScanReceipt() {
@@ -551,6 +556,7 @@ export default function ScanReceipt() {
                 {items.length === 0 && (
                   <li className="p-4 text-center text-small text-muted-foreground">No items detected</li>
                 )}
+                <AnimatePresence initial={false}>
                 {items.map((it, idx) => (
                   <SwipeRow key={it._k ?? idx} onDelete={() => removeItem(idx)}>
                     <div className="grid grid-cols-[1fr_44px_72px] items-center gap-2 bg-card p-2.5">
@@ -590,6 +596,8 @@ export default function ScanReceipt() {
                     </div>
                   </SwipeRow>
                 ))}
+                </AnimatePresence>
+
               </ul>
               <div className="mt-3 flex items-baseline justify-between">
                 <span className="text-small text-muted-foreground">Total</span>
