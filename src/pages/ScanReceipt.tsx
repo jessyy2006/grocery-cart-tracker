@@ -209,7 +209,7 @@ export default function ScanReceipt() {
       const p: Parsed = data;
       setParsed(p);
       setStoreName(p.store_name ?? "");
-      setItems(p.items ?? []);
+      setItems((p.items ?? []).map((i) => ({ ...i, _k: nextKey() })));
       setTripDate(p.purchased_at || format(new Date(), "yyyy-MM-dd"));
       setNewListName(p.store_name ? `${p.store_name} Essentials` : "Receipt Essentials");
       await loadStoresAndLists(p);
