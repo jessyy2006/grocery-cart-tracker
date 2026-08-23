@@ -1,11 +1,11 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Clock, Home, ListChecks, Target, type LucideIcon } from "lucide-react";
+import { Clock, Home, ListChecks, Wallet, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
   { to: "/", label: "HOME", icon: Home, end: true },
   { to: "/lists", label: "LISTS", icon: ListChecks },
-  { to: "/finance", label: "FINANCE", icon: Target },
+  { to: "/finance", label: "FINANCE", icon: Wallet },
   { to: "/history", label: "HISTORY", icon: Clock },
 ];
 
