@@ -39,8 +39,12 @@ const FULL_SWIPE = 180;
 
 function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete: () => void }) {
   const x = useMotionValue(0);
+  // Red backdrop is only mounted while the row is being swiped, so the 1px
+  // row dividers never briefly reveal red during the collapse animation.
+  const [swiping, setSwiping] = useState(false);
   const spring = { type: "spring" as const, stiffness: 520, damping: 34, mass: 0.6 };
   const dismiss = () => {
+    setSwiping(true);
     animate(x, -window.innerWidth, { ...spring, damping: 40 });
     onDelete();
   };
@@ -50,30 +54,36 @@ function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete:
       return;
     }
     const target = info.offset.x < -REVEAL / 2 || info.velocity.x < -300 ? -REVEAL : 0;
-    animate(x, target, spring);
+    animate(x, target, { ...spring, onComplete: () => target === 0 && setSwiping(false) });
   };
   return (
     <motion.li
       layout
       exit={{ height: 0, opacity: 0 }}
       transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-      className="relative overflow-hidden bg-destructive"
+      className="relative overflow-hidden bg-card"
     >
-      <button
-        type="button"
-        onClick={dismiss}
-        aria-label="Delete item"
-        className="absolute inset-y-0 right-0 flex items-center justify-center text-destructive-foreground"
-        style={{ width: REVEAL }}
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
+      {swiping && (
+        <>
+          <div className="absolute inset-0 bg-destructive" aria-hidden />
+          <button
+            type="button"
+            onClick={dismiss}
+            aria-label="Delete item"
+            className="absolute inset-y-0 right-0 flex items-center justify-center text-destructive-foreground"
+            style={{ width: REVEAL }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </>
+      )}
 
       <motion.div
         drag="x"
         dragConstraints={{ left: -window.innerWidth, right: 0 }}
         dragElastic={{ left: 0.15, right: 0 }}
         style={{ x }}
+        onDragStart={() => setSwiping(true)}
         onDragEnd={onDragEnd}
         className="relative bg-card touch-pan-y"
       >
@@ -82,6 +92,7 @@ function SwipeRow({ children, onDelete }: { children: React.ReactNode; onDelete:
     </motion.li>
   );
 }
+
 
 
 
