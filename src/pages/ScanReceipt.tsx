@@ -388,47 +388,46 @@ export default function ScanReceipt() {
           <img src={captured} alt="Receipt" className="h-full w-full object-contain bg-black" />
         )}
 
-        {/* Frame overlay (only during capture) */}
+        {/* Frame overlay (only during capture) — mirrors the barcode scanner */}
         {stage === "capture" && (
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-5 px-6 -translate-y-3">
-            <p className="rounded-full bg-black/55 px-4 py-1.5 text-center text-sm">
-              Scan your receipt within the frame
-            </p>
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4 px-6 -translate-y-3">
             <div
-              className="rounded-2xl border-2 border-white/90 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"
-              style={{ width: "min(78vw, 380px)", height: "min(70vh, 560px)" }}
+              className="rounded-2xl border-2 border-primary-foreground/80 shadow-elevated"
+              style={{ width: "min(78vw, 380px)", height: "min(62vh, 520px)" }}
             />
+            <p className="text-center text-sm text-primary-foreground">
+              Center your receipt in the frame
+            </p>
           </div>
         )}
 
-        {/* Top close */}
-        <button
-          onClick={close}
-          className="absolute left-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/55"
-          aria-label="Close"
-        >
-          <X className="h-5 w-5" />
-        </button>
+        {/* Top close — iOS safe-area top offset, 16pt side margin */}
+        <div className="absolute left-0 right-0 top-0 z-10 flex justify-between px-4 pb-4 pt-[max(env(safe-area-inset-top),12px)]">
+          <Button size="icon" variant="primaryDark" onClick={close} aria-label="Close">
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
 
         {/* Bottom controls */}
         <div className="absolute bottom-4 left-0 right-0 flex items-center justify-around px-6 pb-10 pt-6 safe-bottom">
           {stage === "capture" && (
             <>
-              <button
+              <Button
+                size="icon"
+                variant="primaryDark"
                 onClick={() => fileRef.current?.click()}
-                className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur"
                 aria-label="Upload photo"
               >
                 <ImageIcon className="h-5 w-5" />
-              </button>
+              </Button>
               <button
                 onClick={shoot}
-                className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-2xl"
+                className="flex h-16 w-16 items-center justify-center rounded-full border border-primary-foreground/80 bg-transparent transition-colors hover:bg-primary-foreground/10"
                 aria-label="Capture"
               >
-                <span className="h-16 w-16 rounded-full border-4 border-black" />
+                <span className="h-12 w-12 rounded-full border border-primary-foreground/80" />
               </button>
-              <div className="h-12 w-12" />
+              <div className="h-10 w-10" />
             </>
           )}
           {stage === "preview" && (
