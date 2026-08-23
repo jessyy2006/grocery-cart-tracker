@@ -454,7 +454,12 @@ export default function ScanReceipt() {
           )}
           {stage === "preview" && (
             <>
-              <Button variant="secondaryLight" size="lg" onClick={retake} className="flex-1 mr-2">
+              <Button
+                variant="secondaryLight"
+                size="lg"
+                onClick={retake}
+                className="flex-1 mr-2 border-primary-foreground/70 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+              >
                 <RefreshCw className="h-4 w-4" /> Retake
               </Button>
               <Button variant="primaryLight" size="lg" onClick={parse} className="flex-1 ml-2">
