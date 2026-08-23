@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { guessCategory, getCategory, tokens } from "@/lib/categories";
-import { Pencil, LayoutGrid, Receipt as ReceiptIcon, ChevronDown, Wallet, ScrollText } from "lucide-react";
+import { Target, LayoutGrid, Receipt as ReceiptIcon, ChevronDown, Wallet, ScrollText } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   DropdownMenu,
@@ -526,7 +526,7 @@ export default function Finance() {
             </ToggleGroupItem>
           </ToggleGroup>
           <Button size="icon" variant="ghost" onClick={openEditBudget} aria-label="Edit budget">
-            <Pencil className="h-5 w-5" />
+            <Target className="h-5 w-5" />
           </Button>
         </div>
       </header>
