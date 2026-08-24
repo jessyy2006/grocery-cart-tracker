@@ -1,6 +1,6 @@
 import { PropsWithChildren, useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { MarketLoader } from "@/components/MarketLoader";
+import { Spinner } from "@/components/Spinner";
 
 interface PageLoadGateProps {
   /** Page renders only once every dependency it needs has resolved. */
