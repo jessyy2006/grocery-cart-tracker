@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
+import { isNative } from "@/lib/native";
 
 /**
  * Shared tear/share machinery for receipt-style components.
@@ -86,7 +87,8 @@ export function useReceiptShare(exportRef: RefObject<HTMLDivElement>, filename: 
     return Boolean(navigator.share && nav.canShare?.({ files: [file] }));
   };
   const isMobile = () =>
-    typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    isNative() ||
+    (typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
 
   const handleSave = async () => {
     if (busy || !exportFile || !exportDataUrl) return;
@@ -134,7 +136,9 @@ export function useReceiptShare(exportRef: RefObject<HTMLDivElement>, filename: 
         });
       } else {
         toast.message("Sharing not supported here", {
-          description: "Use Save image instead, or open in mobile Safari.",
+          description: isNative()
+            ? "Use Save image instead."
+            : "Use Save image instead, or open in mobile Safari.",
         });
       }
     } catch (e) {
