@@ -672,6 +672,13 @@ function FinanceCardView(props: any) {
   const budgetHistMap: Map<string, number> = budgetHistory ?? new Map();
   const currentMonthKey = derived.series[derived.series.length - 1]?.key as string | undefined;
   const [selectedMonthKey, setSelectedMonthKey] = useState<string | null>(currentMonthKey ?? null);
+  // "vs last" comparison always references the previous calendar month.
+  const prevMonthLabel = (() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - 1);
+    return d.toLocaleDateString(undefined, { month: "long" }).toLowerCase();
+  })();
   if (!hasBudget) {
     return (
       <EmptyState
