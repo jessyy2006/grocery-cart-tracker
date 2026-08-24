@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
 import { formatListTimestamp } from "@/lib/format";
 
 type ShoppingList = {
