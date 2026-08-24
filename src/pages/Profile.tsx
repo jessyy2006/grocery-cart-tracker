@@ -340,9 +340,10 @@ export default function Profile() {
           >
             sign out
           </Button>
-<Button
+          <Button
+            variant="destructiveSoft"
             size="lg"
-            className="w-full rounded-[8px] bg-destructive/10 font-mono lowercase text-destructive hover:bg-destructive/15 active:bg-destructive/20"
+            className="w-full"
             onClick={() => {
               setDeleteConfirm("");
               setDeleteOpen(true);
