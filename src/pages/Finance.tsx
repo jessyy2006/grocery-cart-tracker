@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney, parsePriceToCents, useCurrency } from "@/lib/format";
 import { guessCategory, getCategory, tokens } from "@/lib/categories";
-import { Target, LayoutGrid, Receipt as ReceiptIcon, ChevronDown, Wallet, ScrollText } from "lucide-react";
+import { DollarSign, LayoutGrid, Receipt as ReceiptIcon, ChevronDown, Wallet, ScrollText } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   DropdownMenu,
@@ -525,9 +525,15 @@ export default function Finance() {
               <LayoutGrid className="h-4 w-4" />
             </ToggleGroupItem>
           </ToggleGroup>
-          <Button size="icon" variant="ghost" onClick={openEditBudget} aria-label="Edit budget">
-            <Target className="h-5 w-5" />
-          </Button>
+          {/* Same chip shape/size as the view switcher above. */}
+          <button
+            type="button"
+            onClick={openEditBudget}
+            aria-label="Edit budget"
+            className="press focus-ring inline-flex h-9 w-9 items-center justify-center rounded-card border border-input bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground"
+          >
+            <DollarSign className="h-4 w-4" />
+          </button>
         </div>
       </header>
 
@@ -754,11 +760,11 @@ function FinanceCardView(props: any) {
           }
           meta={
             derived.momDelta === 0 ? (
-              <span>no change</span>
-            ) : derived.momDelta < 0 ? (
-              <span className="font-bold text-[hsl(163_94%_24%)]">SAVED</span>
+              <span>vs {prevMonthLabel}</span>
             ) : (
-              <span className="font-bold text-destructive">OVER</span>
+              <span>
+                {derived.momDelta > 0 ? "over" : "under"} vs {prevMonthLabel}
+              </span>
             )
           }
           bordered
