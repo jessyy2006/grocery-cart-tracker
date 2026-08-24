@@ -48,12 +48,13 @@ const DrawerContent = React.forwardRef<
 DrawerContent.displayName = "DrawerContent";
 
 const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("grid gap-1.5 p-4 text-center sm:text-left", className)} {...props} />
+  <div className={cn("flex flex-col space-y-2 p-5 text-center", className)} {...props} />
 );
 DrawerHeader.displayName = "DrawerHeader";
 
+/** Same 50/50 action row as DialogFooter, so confirms read identically. */
 const DrawerFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("mt-auto flex flex-col gap-2 p-4", className)} {...props} />
+  <div className={cn("mt-auto flex flex-row gap-2 p-5 pt-0 [&>*]:flex-1 [&>*]:min-w-0", className)} {...props} />
 );
 DrawerFooter.displayName = "DrawerFooter";
 
@@ -63,7 +64,7 @@ const DrawerTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Title
     ref={ref}
-    className={cn("font-display text-h2 leading-tight tracking-tight", className)}
+    className={cn("font-display text-h2 font-semibold leading-tight tracking-tight text-center", className)}
     {...props}
   />
 ));
@@ -73,7 +74,7 @@ const DrawerDescription = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description>
 >(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Description ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} />
+  <DrawerPrimitive.Description ref={ref} className={cn("text-body text-muted-foreground text-center", className)} {...props} />
 ));
 DrawerDescription.displayName = DrawerPrimitive.Description.displayName;
 
