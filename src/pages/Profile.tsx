@@ -257,7 +257,7 @@ export default function Profile() {
           {/* SETTINGS */}
           <section className="mb-8">
             <h2 className={sectionLabel}>Settings</h2>
-            <div className="mt-1 divide-y divide-hairline">
+            <div className="mt-1 border-t border-hairline">
               <SettingRow
                 label="Display currency"
                 description="Used for all prices and totals."
