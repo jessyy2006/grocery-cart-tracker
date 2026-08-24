@@ -40,6 +40,13 @@ export default {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+          soft: "hsl(var(--destructive-soft))",
+          "soft-foreground": "hsl(var(--destructive-soft-foreground))",
+        },
+        scrim: "hsl(var(--scrim) / var(--scrim-opacity))",
+        camera: {
+          DEFAULT: "hsl(var(--camera-bg))",
+          foreground: "hsl(var(--camera-fg))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
