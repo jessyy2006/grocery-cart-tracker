@@ -398,14 +398,7 @@ export default function ListDetail() {
     <PageLoadGate ready={ready} className="h-full">
     <div className="flex h-full flex-col">
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 safe-top-page">
-        {/* Back arrow */}
-        <button
-          onClick={() => navigate("/lists")}
-          className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-          aria-label="Back"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+        <BackHeader to="/lists" className="-mt-1" />
 
         {/* Title row */}
         <div className="mt-3 flex items-start justify-between gap-3">
