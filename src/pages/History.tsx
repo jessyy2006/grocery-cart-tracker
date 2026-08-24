@@ -157,13 +157,14 @@ export default function History() {
         />
       ) : (
 
-        <div className="space-y-8">
+        {/* Section rhythm: 24px above the header, 12px below it. */}
+        <div className="space-y-0">
           {grouped.map(([k, items]) => (
-            <section key={k}>
-              <div className="sticky top-0 z-10 bg-background py-2">
-                <p className="font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground">{monthLabel(k).toLowerCase()}</p>
+            <section key={k} className="pt-6 first:pt-0">
+              <div className="sticky top-0 z-10 bg-background pb-3">
+                <p className="font-mono text-[11px] lowercase tracking-[0.14em] text-foreground/60">{monthLabel(k).toLowerCase()}</p>
               </div>
-              <ul className="mt-1 divide-y divide-dashed divide-foreground/10">
+              <ul className="divide-y divide-dashed divide-foreground/10">
                 {items.map((t) => (
                   <li key={t.id}>
                     <TripTapeRow
