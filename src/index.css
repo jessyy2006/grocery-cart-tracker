@@ -160,6 +160,8 @@
 @layer utilities {
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
   .safe-top { padding-top: env(safe-area-inset-top); }
+  /* Standard in-app top offset: safe area + 20px (matches tabbed pages). */
+  .safe-top-page { padding-top: calc(env(safe-area-inset-top) + 20px); }
   .gradient-hero { background-image: var(--gradient-hero); }
   .gradient-paper { background-image: var(--gradient-paper); }
   .shadow-soft { box-shadow: var(--shadow-soft); }
