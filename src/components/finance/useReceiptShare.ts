@@ -132,7 +132,7 @@ export function useReceiptShare(exportRef: RefObject<HTMLDivElement>, filename: 
         await navigator.share({
           files: [exportFile],
           title: "Grocery Summary",
-          text: "My grocery receipt",
+          text: "Check out my grocery stats on Cartwise!",
         });
       } else {
         toast.message("Sharing not supported here", {
