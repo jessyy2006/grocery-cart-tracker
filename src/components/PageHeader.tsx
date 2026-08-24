@@ -19,7 +19,7 @@ export function PageHeader({ eyebrow, title, subtitle, action, className }: Page
     <header className={cn("flex items-end justify-between gap-3", className)}>
       <div className="min-w-0">
         {eyebrow && <p className="text-eyebrow mb-1.5">{eyebrow}</p>}
-        <h1 className="text-display lowercase leading-[1.25] pb-1 truncate">{title}</h1>
+        <h1 className="text-display lowercase leading-[1.15] pb-1 text-balance break-words">{title}</h1>
         {subtitle && <p className="text-small text-muted-foreground">{subtitle}</p>}
       </div>
       {action && <div className="mb-2 shrink-0">{action}</div>}
