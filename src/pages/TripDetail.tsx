@@ -240,7 +240,7 @@ export default function TripDetail() {
 
               {/* Items */}
               {items.length === 0 && (
-                <p className="py-3 text-center text-[12px] text-neutral-500">
+                <p className="py-3 text-center text-[12px] opacity-60">
                   no items on this trip
                 </p>
               )}
