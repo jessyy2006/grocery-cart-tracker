@@ -19,6 +19,15 @@ import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { EmptyState } from "@/components/EmptyState";
 import { cn } from "@/lib/utils";
+import { invokeWithTimeout } from "@/lib/invoke";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type Store = { id: string; name: string; address: string | null };
 
@@ -369,8 +378,8 @@ export default function Profile() {
                 cancel
               </Button>
               <Button
-                variant="destructive"
-                className="min-w-0 flex-1"
+                variant="primaryLight"
+                className="min-w-0 flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 disabled={deleting || deleteConfirm.trim().toUpperCase() !== "DELETE"}
                 onClick={deleteAccount}
               >
