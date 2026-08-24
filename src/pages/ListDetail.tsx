@@ -437,7 +437,7 @@ export default function ListDetail() {
                   setNameDraft(listName);
                   setNameEditing(true);
                 }}
-                className="block min-w-0 max-w-full truncate text-left font-display text-h1"
+                className="block min-w-0 max-w-full text-balance break-words text-left font-display text-display lowercase leading-[1.15] pb-1"
                 aria-label="Rename list"
               >
                 {listName}
