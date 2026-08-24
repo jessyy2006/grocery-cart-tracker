@@ -301,7 +301,7 @@ export default function Profile() {
           </section>
         </div>
 
-        <div className="px-5 pt-8 pb-6">
+        <div className="space-y-3 px-5 pt-8 pb-6">
           <Button
             variant="secondaryLight"
             size="lg"
@@ -310,7 +310,56 @@ export default function Profile() {
           >
             sign out
           </Button>
+          <Button
+            variant="ghost"
+            size="lg"
+            className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => {
+              setDeleteConfirm("");
+              setDeleteOpen(true);
+            }}
+          >
+            delete account
+          </Button>
         </div>
+
+        <Dialog open={deleteOpen} onOpenChange={(o) => !deleting && setDeleteOpen(o)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete account</DialogTitle>
+              <DialogDescription>
+                This permanently deletes your trips, lists and stores. It can't be undone. Type
+                DELETE to confirm.
+              </DialogDescription>
+            </DialogHeader>
+            <Input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder="DELETE"
+              autoCapitalize="characters"
+              autoCorrect="off"
+            />
+            <DialogFooter className="flex-row gap-3">
+              <Button
+                variant="secondaryLight"
+                className="min-w-0 flex-1"
+                disabled={deleting}
+                onClick={() => setDeleteOpen(false)}
+              >
+                cancel
+              </Button>
+              <Button
+                variant="destructive"
+                className="min-w-0 flex-1"
+                disabled={deleting || deleteConfirm.trim().toUpperCase() !== "DELETE"}
+                onClick={deleteAccount}
+              >
+                {deleting ? "deleting…" : "delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </PageLoadGate>
   );
