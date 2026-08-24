@@ -137,8 +137,6 @@ export default function Home() {
     }
   };
 
-  const today = format(new Date(), "EEEE");
-
   return (
     <div className="page-gutter safe-top-page pb-12">
       <FeatureIntroDialog open={introOpen} onClose={() => setIntroOpen(false)} />
@@ -146,7 +144,7 @@ export default function Home() {
       <PageLoadGate ready={ready && !profileLoading}>
         <div className="section-stack">
           <PageHeader
-            title={`${today} market run?`}
+            title={`hi, ${firstName || "there"}.`}
             action={
               <button
                 onClick={() => navigate("/profile")}
