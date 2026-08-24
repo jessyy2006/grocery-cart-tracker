@@ -71,16 +71,38 @@
 
     --receipt-paper: 43 35% 97%;
     --receipt-ink: 36 10% 10%;
+    /* Deep forest used inside receipt/printed surfaces (was #13261d / #143F2D). */
+    --receipt-forest: 155 34% 12%;
+    --receipt-rule: 43 18% 80%;
 
-    --radius-sm: 0.5rem;
-    --radius: 0.75rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.5rem;
+    /* Fullscreen camera chrome (scanner, receipt capture). */
+    --camera-bg: 0 0% 0%;
+    --camera-fg: 0 0% 100%;
 
-    /* Brand radius scale (Swiss-brutalist — tight corners). */
+    /* Single overlay scrim for every modal surface. */
+    --scrim: 36 10% 6%;
+    --scrim-opacity: 0.55;
+
+    /* Radius scale — only four values are sanctioned.
+       Legacy shadcn aliases below map onto them so primitives inherit. */
     --radius-control: 0.25rem; /* 4px — buttons, inputs, chips, steppers */
     --radius-card: 0.375rem;   /* 6px — cards, rows, dialogs */
     --radius-sheet: 1.75rem;   /* 28px — bottom drawer top edge */
+    --radius-sm: var(--radius-control);
+    --radius: var(--radius-card);
+    --radius-lg: var(--radius-card);
+    --radius-xl: var(--radius-sheet);
+
+    /* Layout rhythm. */
+    --page-gutter: 1.25rem;   /* 20px — every page's horizontal gutter */
+    --page-top: 1.25rem;      /* 20px — offset below the safe area */
+    --section-gap: 1.75rem;   /* 28px — gap between page sections */
+
+    /* Motion. */
+    --motion-fast: 120ms;
+    --motion-base: 180ms;
+    --motion-slow: 260ms;
+    --press-scale: 0.98;
 
     --gradient-hero: linear-gradient(140deg, hsl(36 10% 10%), hsl(36 10% 22%));
     --gradient-paper: linear-gradient(180deg, hsl(43 35% 97%), hsl(40 26% 92%));
@@ -88,6 +110,7 @@
     --shadow-raised: 0 2px 4px hsl(36 10% 10% / 0.05), 0 16px 36px -20px hsl(36 10% 10% / 0.14);
     --shadow-elevated: 0 4px 8px hsl(36 10% 10% / 0.06), 0 24px 48px -24px hsl(36 10% 10% / 0.20);
     --shadow-glow: 0 0 28px -10px hsl(36 10% 10% / 0.25);
+    --shadow-paper: drop-shadow(0 8px 18px hsl(36 10% 10% / 0.18));
 
     --sidebar-background: 43 30% 95%;
     --sidebar-foreground: 36 10% 10%;
