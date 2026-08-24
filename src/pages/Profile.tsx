@@ -39,6 +39,26 @@ export default function Profile() {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  /** Apple guideline 5.1.1(v): in-app, permanent account deletion. */
+  const deleteAccount = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await invokeWithTimeout("delete-account", {}, 30_000);
+      await supabase.auth.signOut();
+      toast.success("Account deleted");
+      window.location.replace("/");
+    } catch (e) {
+      toast.error((e as Error)?.message ?? "Couldn't delete account");
+      setDeleting(false);
+    }
+  };
+
+
   const [editingCity, setEditingCity] = useState(false);
   const [cityQuery, setCityQuery] = useState("");
 
