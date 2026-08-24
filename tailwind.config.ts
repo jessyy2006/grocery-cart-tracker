@@ -79,6 +79,8 @@ export default {
         receipt: {
           paper: "hsl(var(--receipt-paper))",
           ink: "hsl(var(--receipt-ink))",
+          forest: "hsl(var(--receipt-forest))",
+          rule: "hsl(var(--receipt-rule))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
