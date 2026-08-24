@@ -172,15 +172,13 @@ export default function Home() {
                 </button>
                 <div className="p-6">
                   <p className="text-eyebrow">This month</p>
-                  <div className="mt-3 flex items-baseline gap-2">
+<div className="mt-3 flex items-baseline gap-2">
                     <Money cents={monthSpend} size="display" />
+                    <span className="text-small lowercase text-muted-foreground">spent</span>
                   </div>
-                  <p className="mt-3 text-small lowercase text-muted-foreground">
-                    {monthSpend === 0 ? "no spending yet. start your first trip or scan an old receipt." : "tracked across your saved trips."}
-                  </p>
                   {pct !== null && monthSpend > 0 && (
                     <p className="mt-1 font-mono text-[12px] lowercase text-muted-foreground">
-                      ── {pct}% of this month's budget utilized
+                      {pct}% of this month's budget used
                     </p>
                   )}
                   <Button
