@@ -13,7 +13,8 @@ import {
   
 } from "@/components/ui/select";
 
-import { ArrowLeft, Plus, ShoppingBasket, Check, X, ListPlus } from "lucide-react";
+import { Plus, ShoppingBasket, Check, X, ListPlus } from "lucide-react";
+import { BackHeader } from "@/components/BackHeader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
 import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
@@ -397,14 +398,7 @@ export default function ListDetail() {
     <PageLoadGate ready={ready} className="h-full">
     <div className="flex h-full flex-col">
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 safe-top-page">
-        {/* Back arrow */}
-        <button
-          onClick={() => navigate("/lists")}
-          className="-ml-2 flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-          aria-label="Back"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+        <BackHeader to="/lists" className="-mt-1" />
 
         {/* Title row */}
         <div className="mt-3 flex items-start justify-between gap-3">
@@ -425,7 +419,7 @@ export default function ListDetail() {
                       setNameDraft(listName);
                     }
                   }}
-                  className="h-auto rounded-none border-0 border-b border-foreground/30 bg-transparent px-0 py-0 font-display text-h1 focus-visible:ring-0"
+                  className="h-auto rounded-none border-0 border-b border-foreground/30 bg-transparent px-0 py-0 font-display text-display lowercase leading-[1.15] focus-visible:ring-0"
                 />
                 <button
                   type="button"
@@ -443,7 +437,7 @@ export default function ListDetail() {
                   setNameDraft(listName);
                   setNameEditing(true);
                 }}
-                className="block min-w-0 max-w-full truncate text-left font-display text-h1"
+                className="block min-w-0 max-w-full text-balance break-words text-left font-display text-display lowercase leading-[1.15] pb-1"
                 aria-label="Rename list"
               >
                 {listName}
