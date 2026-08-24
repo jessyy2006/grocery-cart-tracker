@@ -451,11 +451,24 @@ export default function ScanReceipt() {
               className="rounded-2xl border-2 border-primary-foreground/80 shadow-elevated"
               style={{ width: "min(78vw, 380px)", height: "min(62vh, 520px)" }}
             />
-            <p className="text-center text-sm text-primary-foreground">
-              Center your receipt in the frame
+            <p className="max-w-xs text-center text-sm text-primary-foreground">
+              {cameraError ?? "Center your receipt in the frame"}
             </p>
+            {cameraError && (
+              <div className="pointer-events-auto">
+                <Button
+                  size="sm"
+                  variant="primaryDark"
+                  onClick={() => fileRef.current?.click()}
+                  className="shadow-elevated"
+                >
+                  <ImageIcon className="mr-1 h-4 w-4" /> Upload photo
+                </Button>
+              </div>
+            )}
           </div>
         )}
+
 
         {/* Top close — iOS safe-area top offset, 16pt side margin */}
         <div className="absolute left-0 right-0 top-0 z-10 flex justify-between px-4 pb-4 pt-[max(env(safe-area-inset-top),12px)]">
