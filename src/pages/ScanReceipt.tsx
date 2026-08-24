@@ -106,6 +106,8 @@ export default function ScanReceipt() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [stage, setStage] = useState<"capture" | "preview" | "parsing" | "review">("capture");
   const [streamRef, setStreamRef] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
   const [captured, setCaptured] = useState<string | null>(null);
   const [parsed, setParsed] = useState<Parsed | null>(null);
 
