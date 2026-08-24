@@ -1,8 +1,8 @@
-export const PAPER = "#fdfaf1";
-export const INK = "#0e1a14";
+export const PAPER = "hsl(var(--receipt-paper))";
+export const INK = "hsl(var(--receipt-ink))";
 
 export const Divider = () => (
-  <div className="my-2 border-t border-dashed border-neutral-500/60" />
+  <div className="my-2 border-t border-dashed border-current/40" />
 );
 
 export const Row = ({

@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/Spinner";
 import { toast } from "sonner";
 import { snapshotListIntoTrip } from "@/lib/snapshotList";
 
@@ -79,7 +79,7 @@ export default function StartTrip() {
 
   return (
     <div className="flex h-full items-center justify-center">
-      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <Spinner size="md" className="text-muted-foreground" />
     </div>
   );
 }

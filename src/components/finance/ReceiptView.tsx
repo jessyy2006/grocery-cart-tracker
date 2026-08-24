@@ -32,7 +32,7 @@ type Props = {
   currency: Currency;
 };
 
-const PAPER = "#fdfaf1";
+const PAPER = "hsl(var(--receipt-paper))";
 
 const fmtRange = (a: Date, b: Date) => {
   const m = a.toLocaleString(undefined, { month: "long" });
@@ -401,8 +401,7 @@ export default function ReceiptView(props: Props) {
       {/* Receipt assembly — captured for export */}
       <div
         ref={exportRef}
-        className="relative w-full max-w-sm"
-        style={{ filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.18))" }}
+        className="relative w-full max-w-sm shadow-paper"
       >
         <JaggedEdge position="top" />
 

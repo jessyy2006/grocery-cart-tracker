@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { X, Loader2, Plus, Image as ImageIcon, RefreshCw, Trash2 } from "lucide-react";
+import { X, Plus, Image as ImageIcon, RefreshCw, Trash2 } from "lucide-react";
+import { Spinner } from "@/components/Spinner";
 import { toast } from "sonner";
 import { formatMoney, parsePriceToCents } from "@/lib/format";
 import { guessCategory, tokens } from "@/lib/categories";
@@ -438,13 +439,13 @@ export default function ScanReceipt() {
   // ----- Capture stage -----
   if (stage === "capture" || stage === "preview" || stage === "parsing") {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-black text-white">
+      <div className="fixed inset-0 z-50 flex flex-col bg-camera text-camera-foreground">
         {stage === "capture" && (
           <video ref={videoRef} className="h-full w-full object-cover" playsInline muted autoPlay />
         )}
         {(stage === "preview" || stage === "parsing") && captured && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={captured} alt="Receipt" className="h-full w-full object-contain bg-black" />
+          <img src={captured} alt="Receipt" className="h-full w-full object-contain bg-camera" />
         )}
 
         {/* Frame overlay (only during capture) — mirrors the barcode scanner */}
@@ -519,7 +520,7 @@ export default function ScanReceipt() {
           )}
           {stage === "parsing" && (
             <div className="flex w-full flex-col items-center gap-3">
-              <Loader2 className="h-7 w-7 animate-spin" />
+              <Spinner size="lg" />
               <p className="text-sm">Reading your receipt…</p>
             </div>
           )}
@@ -694,12 +695,12 @@ export default function ScanReceipt() {
                 Cancel
               </Button>
               <Button variant="primaryLight" size="lg" className="flex-1" onClick={save} disabled={saving}>
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save trip"}
+                {saving ? <Spinner /> : "Save trip"}
               </Button>
             </div>
           </Card>
           {parsed && parsed.purchased_at && (
-            <p className="mt-3 text-center text-xs text-white/80">
+            <p className="mt-3 text-center text-xs text-camera-foreground/80">
               Receipt date detected: {format(parseISO(parsed.purchased_at), "MMM d, yyyy")}
             </p>
           )}

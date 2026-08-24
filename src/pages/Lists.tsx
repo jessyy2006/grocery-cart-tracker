@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
 import { formatListTimestamp } from "@/lib/format";
 
 type ShoppingList = {
@@ -65,25 +66,17 @@ export default function Lists() {
   const MARGIN_LEFT = 28;
 
   return (
-    <div className="relative min-h-[calc(100dvh-6rem)] px-5 pt-3 pb-12">
+    <div className="relative min-h-[calc(100dvh-6rem)] page-gutter safe-top-page pb-12">
       <PageLoadGate ready={ready}>
-        {/* Header */}
-        <header className="flex items-end justify-between gap-3 pt-2 pb-2">
-          <div className="min-w-0">
-            <h1 className="font-display text-[2.25rem] leading-[1.25] lowercase tracking-tight pb-1">
-              your lists
-            </h1>
-          </div>
-          <Button
-            variant="primaryLight"
-            size="compact"
-            onClick={create}
-            disabled={creating}
-            className="mb-2 whitespace-nowrap"
-          >
-            + new list
-          </Button>
-        </header>
+        <PageHeader
+          title="your lists"
+          className="pb-2"
+          action={
+            <Button variant="primaryLight" size="sm" onClick={create} disabled={creating}>
+              + new list
+            </Button>
+          }
+        />
 
         {/* Notebook margin rule */}
         <div

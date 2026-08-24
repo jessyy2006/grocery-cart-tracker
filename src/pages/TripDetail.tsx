@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
-import { MarketLoader } from "@/components/MarketLoader";
+import { PageLoadGate } from "@/components/PageLoadGate";
+import { BackHeader } from "@/components/BackHeader";
+import { EmptyState } from "@/components/EmptyState";
 import { JaggedEdge, Row, Divider, PAPER, INK } from "@/components/trip/ReceiptPaper";
 import { guessCategory } from "@/lib/categories";
 
@@ -187,34 +188,26 @@ export default function TripDetail() {
 
   if (!ready) {
     return (
-      <div className="px-5 pb-6 pt-4">
-        <MarketLoader minHeight="55vh" />
+      <div className="page-gutter safe-top-page pb-6">
+        <PageLoadGate ready={false} minHeight="55vh">
+          <span />
+        </PageLoadGate>
       </div>
     );
   }
 
   if (!trip) {
     return (
-      <div className="px-5 pb-6 pt-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1 text-small text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </button>
-        <p className="mt-8 text-center text-muted-foreground">Trip not found.</p>
+      <div className="page-gutter safe-top-page pb-6">
+        <BackHeader className="-mt-1" />
+        <EmptyState title="trip not found" description="This trip may have been deleted." />
       </div>
     );
   }
 
   return (
-    <div className="px-5 pb-12 pt-4">
-      <button
-        onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-1 text-small text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back
-      </button>
+    <div className="page-gutter safe-top-page pb-12">
+      <BackHeader className="-mt-1" />
 
       <div className="mx-auto mt-6 flex w-full max-w-sm flex-col items-stretch">
         {/* Trip title header */}
@@ -226,7 +219,7 @@ export default function TripDetail() {
         </header>
 
         {/* Receipt sheet */}
-        <div style={{ filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.18))" }}>
+        <div className="shadow-paper">
           <JaggedEdge position="top" />
           <div
             className="font-mono text-[13px] leading-snug"
@@ -247,7 +240,7 @@ export default function TripDetail() {
 
               {/* Items */}
               {items.length === 0 && (
-                <p className="py-3 text-center text-[12px] text-neutral-500">
+                <p className="py-3 text-center text-[12px] opacity-60">
                   no items on this trip
                 </p>
               )}

@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { SUPPORTED_CURRENCIES, useCurrency, setCurrency, Currency } from "@/lib/format";
 import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
 import { PageLoadGate } from "@/components/PageLoadGate";
+import { BackHeader } from "@/components/BackHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { cn } from "@/lib/utils";
 import { invokeWithTimeout } from "@/lib/invoke";
@@ -160,12 +161,13 @@ export default function Profile() {
   return (
     <PageLoadGate ready={ready}>
       <div className="flex h-full flex-col">
-        <div className="flex-1 overflow-y-auto px-5 pt-3 pb-6">
+        <div className="flex-1 overflow-y-auto page-gutter safe-top-page pb-6">
+          <BackHeader to="/" className="-mt-1 mb-2" />
           {/* HERO */}
-          <header className="mb-8 pt-2">
+          <header className="mb-8">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h1 className="text-h1 break-words pb-1 leading-[1.25]">{displayName}</h1>
+                <h1 className="text-display lowercase break-words pb-1 leading-[1.25]">{displayName}</h1>
                 <p className="mt-1 text-small text-muted-foreground">{user?.email}</p>
               </div>
               <button
@@ -339,9 +341,10 @@ export default function Profile() {
           >
             sign out
           </Button>
-<Button
+          <Button
+            variant="destructiveSoft"
             size="lg"
-            className="w-full rounded-[8px] bg-destructive/10 font-mono lowercase text-destructive hover:bg-destructive/15 active:bg-destructive/20"
+            className="w-full"
             onClick={() => {
               setDeleteConfirm("");
               setDeleteOpen(true);

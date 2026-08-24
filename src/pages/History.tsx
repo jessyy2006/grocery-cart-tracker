@@ -106,12 +106,12 @@ export default function History() {
   }, [filtered]);
 
   return (
-    <div className="px-5 pt-3">
+    <div className="page-gutter safe-top-page pb-12">
       <PageLoadGate ready={ready}>
-        <div className="space-y-7">
+        <div className="section-stack">
       <PageHeader
         title="history"
-        className="items-center [&_h1]:text-display [&_h1]:lowercase [&_h1]:leading-[1.25] [&_h1]:pb-1 [&_h1]:overflow-visible"
+        className="items-center"
         action={
           <div className="flex items-center gap-2">
             {monthOptions.length > 0 && (

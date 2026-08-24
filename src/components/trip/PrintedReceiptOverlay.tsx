@@ -18,7 +18,7 @@ export type TripReceiptPayload = {
   currency: Currency;
 };
 
-const GREEN_BG = "#13261d";
+const GREEN_BG = "hsl(var(--receipt-forest))";
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 const fmtDateTime = (d: Date) => {

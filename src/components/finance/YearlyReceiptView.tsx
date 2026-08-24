@@ -14,7 +14,7 @@ import { JaggedEdge, PAPER, Divider, Row } from "@/components/trip/ReceiptPaper"
 import { useReceiptShare } from "./useReceiptShare";
 import { yearArchiveCode } from "./receiptQuotes";
 
-const FOREST = "#143F2D";
+const FOREST = "hsl(var(--receipt-forest))";
 
 export type YearlyQuarter = {
   q: 0 | 1 | 2 | 3;
@@ -175,8 +175,7 @@ export default function YearlyReceiptView(props: Props) {
     <div className="flex flex-col items-center">
       <div
         ref={exportRef}
-        className="relative w-full max-w-sm"
-        style={{ filter: "drop-shadow(0 8px 18px rgba(0,0,0,0.18))" }}
+        className="relative w-full max-w-sm shadow-paper"
       >
         <JaggedEdge position="top" />
 
@@ -219,7 +218,7 @@ export default function YearlyReceiptView(props: Props) {
               <line
                 x1={padX} x2={chartW - padX}
                 y1={chartH - padY} y2={chartH - padY}
-                stroke="#d6d2c4" strokeDasharray="2 3" strokeWidth={0.6}
+                stroke="hsl(var(--receipt-rule))" strokeDasharray="2 3" strokeWidth={0.6}
               />
               {totalOutlayCents > 0 && (
                 <>
