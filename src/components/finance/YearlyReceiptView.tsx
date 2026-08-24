@@ -175,8 +175,7 @@ export default function YearlyReceiptView(props: Props) {
     <div className="flex flex-col items-center">
       <div
         ref={exportRef}
-        className="relative w-full max-w-sm"
-        className="shadow-paper"
+        className="relative w-full max-w-sm shadow-paper"
       >
         <JaggedEdge position="top" />
 

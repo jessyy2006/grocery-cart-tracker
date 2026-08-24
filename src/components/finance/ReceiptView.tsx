@@ -401,8 +401,7 @@ export default function ReceiptView(props: Props) {
       {/* Receipt assembly — captured for export */}
       <div
         ref={exportRef}
-        className="relative w-full max-w-sm"
-        className="shadow-paper"
+        className="relative w-full max-w-sm shadow-paper"
       >
         <JaggedEdge position="top" />
 
