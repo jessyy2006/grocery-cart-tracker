@@ -790,6 +790,31 @@ export default function ActiveTrip() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          {/* Ending a trip with nothing in the cart: keep shopping or exit. */}
+          <AlertDialog open={emptyEndOpen} onOpenChange={setEmptyEndOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Nothing in your cart yet</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Add an item to end this trip, or exit without saving.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex-row gap-2 sm:justify-stretch">
+                <AlertDialogAction
+                  onClick={exitTrip}
+                  className={cn(buttonVariants({ variant: "destructiveSoft", size: "lg" }), "min-w-0 flex-1")}
+                >
+                  Exit
+                </AlertDialogAction>
+                <AlertDialogCancel
+                  className={cn(buttonVariants({ variant: "primaryLight", size: "lg" }), "mt-0 min-w-0 flex-1")}
+                >
+                  Keep shopping
+                </AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         {/* CENTER — list name (+ store) */}
