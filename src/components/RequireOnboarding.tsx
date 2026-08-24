@@ -1,4 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
+import { safeGetItem, safeSetItem } from "@/lib/native";
 import { useAuth } from "@/hooks/useAuth";
 import { ONBOARDED_KEY } from "@/hooks/useOnboarding";
 import { useEffect, useState } from "react";
@@ -11,7 +12,7 @@ export const RequireOnboarding = ({ children }: { children: JSX.Element }) => {
 
   useEffect(() => {
     if (!user) return;
-    if (localStorage.getItem(ONBOARDED_KEY) === "1") {
+    if (safeGetItem(ONBOARDED_KEY) === "1") {
       setStatus("ok");
       return;
     }
@@ -22,7 +23,7 @@ export const RequireOnboarding = ({ children }: { children: JSX.Element }) => {
         .eq("user_id", user.id)
         .maybeSingle();
       if (data?.completed_at) {
-        localStorage.setItem(ONBOARDED_KEY, "1");
+        safeSetItem(ONBOARDED_KEY, "1");
         setStatus("ok");
       } else {
         setStatus("needs");
