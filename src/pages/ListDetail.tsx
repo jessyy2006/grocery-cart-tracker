@@ -366,16 +366,23 @@ export default function ListDetail() {
     if (items.length === 0) return toast.error("Add some items first");
     const { data: active } = await supabase
       .from("trips")
-      .select("id")
+      .select("id, list_id")
       .eq("status", "active")
       .order("started_at", { ascending: false })
       .limit(1);
-    if (active?.[0]) {
-      await supabase.from("trips").update({ list_id: id }).eq("id", active[0].id);
-      await snapshotListIntoTrip(active[0].id, id);
+    const unfinished = active?.[0];
+    if (unfinished && unfinished.list_id === id) {
+      // Same list — resume the in-progress run (snapshot insert is idempotent).
+      await snapshotListIntoTrip(unfinished.id, id);
       navigate("/trip");
       return;
     }
+    if (unfinished) {
+      // Came from another list (or a free trip) — discard it so progress resets.
+      await supabase.from("trips").delete().eq("id", unfinished.id);
+      sessionStorage.removeItem(`trip:${unfinished.id}:store`);
+    }
+
     const { data, error } = await supabase
       .from("trips")
       .insert({ user_id: user.id, list_id: id, status: "active" })
