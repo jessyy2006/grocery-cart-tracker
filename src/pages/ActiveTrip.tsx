@@ -36,6 +36,7 @@ import {
 import { TagPill } from "@/components/TagPill";
 import { toast } from "sonner";
 import { MarketLoader } from "@/components/MarketLoader";
+import { Spinner } from "@/components/Spinner";
 import { LedgerRow } from "@/components/LedgerRow";
 
 type TripItem = {
@@ -1205,7 +1206,7 @@ export default function ActiveTrip() {
                 <>
                   {searching && (
                     <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Searching…
+                      <Spinner /> Searching…
                     </div>
                   )}
                   {!searching && searchError && (
@@ -1219,7 +1220,7 @@ export default function ActiveTrip() {
                 <>
                   {loadingStores && (
                     <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Finding nearby stores…
+                      <Spinner /> Finding nearby stores…
                     </div>
                   )}
                   {!loadingStores && storeError && (

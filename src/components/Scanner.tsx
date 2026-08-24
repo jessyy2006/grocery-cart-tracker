@@ -53,7 +53,7 @@ export const Scanner = ({
   }, [onCode, onClose, inIframe]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black">
+    <div className="fixed inset-0 z-50 flex flex-col bg-camera">
       <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-4">
         <div className="h-40 w-72 rounded-2xl border-2 border-primary-foreground/80 shadow-elevated" />

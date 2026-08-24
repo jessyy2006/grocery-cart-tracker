@@ -27,7 +27,7 @@ export default function FeatureIntroDialog({ open, onClose }: Props) {
     <Dialog open={open} onOpenChange={(o) => !o && dismiss()}>
       <DialogContent>
         <DialogHeader>
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <ReceiptIcon className="h-6 w-6 text-primary" />
           </div>
           <DialogTitle className="text-center">See every trip as a receipt</DialogTitle>
