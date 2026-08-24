@@ -76,6 +76,7 @@ export default function ActiveTrip() {
   const [extras, setExtras] = useState<TripItem[]>([]);
   
   const [confetti, setConfetti] = useState<{ id: number; emoji: string } | null>(null);
+  const [emptyEndOpen, setEmptyEndOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [pending, setPending] = useState<{
     barcode: string | null;
@@ -514,8 +515,9 @@ export default function ActiveTrip() {
 
   const saveTrip = async () => {
     if (!tripId || !user) return;
+    // An empty trip is never saved — offer to keep shopping or bail out.
     if (items.length === 0 && extras.length === 0 && listItems.every((i) => !i.checked_at)) {
-      toast.error("Add at least one item");
+      setEmptyEndOpen(true);
       return;
     }
     const endedAt = new Date();
@@ -784,6 +786,31 @@ export default function ActiveTrip() {
                   className={cn(buttonVariants({ variant: "primaryLight", size: "lg" }), "mt-0 min-w-0 flex-1")}
                 >
                   No, go back
+                </AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* Ending a trip with nothing in the cart: keep shopping or exit. */}
+          <AlertDialog open={emptyEndOpen} onOpenChange={setEmptyEndOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Nothing in your cart yet</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Add an item to end this trip, or exit without saving.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex-row gap-2 sm:justify-stretch">
+                <AlertDialogAction
+                  onClick={exitTrip}
+                  className={cn(buttonVariants({ variant: "destructiveSoft", size: "lg" }), "min-w-0 flex-1")}
+                >
+                  Exit
+                </AlertDialogAction>
+                <AlertDialogCancel
+                  className={cn(buttonVariants({ variant: "primaryLight", size: "lg" }), "mt-0 min-w-0 flex-1")}
+                >
+                  Keep shopping
                 </AlertDialogCancel>
               </AlertDialogFooter>
             </AlertDialogContent>

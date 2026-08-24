@@ -1,23 +1,31 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { Compass } from "lucide-react";
+import { PageShell } from "@/components/PageShell";
+import { EmptyState } from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
 
 const NotFound = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    console.error("404: unknown route", location.pathname);
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
-          Return to Home
-        </a>
-      </div>
-    </div>
+    <PageShell>
+      <EmptyState
+        icon={Compass}
+        title="this page doesn't exist"
+        description="The screen you tried to open isn't part of the app."
+        action={
+          <Button variant="primaryLight" size="lg" onClick={() => navigate("/", { replace: true })}>
+            back home
+          </Button>
+        }
+      />
+    </PageShell>
   );
 };
 

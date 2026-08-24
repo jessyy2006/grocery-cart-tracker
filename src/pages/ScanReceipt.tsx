@@ -105,7 +105,8 @@ export default function ScanReceipt() {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [stage, setStage] = useState<"capture" | "preview" | "parsing" | "review">("capture");
+  const [stage, setStage] = useState<"capture" | "preview" | "parsing" | "error" | "review">("capture");
+  const [parseError, setParseError] = useState<string | null>(null);
   const [streamRef, setStreamRef] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
@@ -230,7 +231,26 @@ export default function ScanReceipt() {
 
   const retake = () => {
     setCaptured(null);
+    setParseError(null);
     setStage("capture");
+  };
+
+  /** Failure fallback: skip parsing and let the user type the receipt in. */
+  const enterManually = async () => {
+    const blank: Parsed = {
+      store_name: null,
+      purchased_at: null,
+      total_cents: null,
+      currency: null,
+      items: [],
+    };
+    setParsed(null);
+    setItems([]);
+    setStoreName("");
+    setTripDate(format(new Date(), "yyyy-MM-dd"));
+    setNewListName("Receipt Essentials");
+    await loadStoresAndLists(blank);
+    setStage("review");
   };
 
   const parse = async () => {
@@ -252,8 +272,8 @@ export default function ScanReceipt() {
       await loadStoresAndLists(p);
       setStage("review");
     } catch (e: any) {
-      toast.error(e.message ?? "Couldn't read receipt");
-      setStage("preview");
+      setParseError(e?.message ?? null);
+      setStage("error");
     }
   };
 
@@ -437,6 +457,49 @@ export default function ScanReceipt() {
   };
 
   // ----- Capture stage -----
+  // ----- Parse failure -----
+  if (stage === "error") {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-camera text-camera-foreground">
+        {captured && (
+          <img src={captured} alt="Captured receipt" className="h-full w-full object-contain bg-camera" />
+        )}
+        <div className="absolute inset-0 bg-scrim" aria-hidden />
+        <div className="absolute inset-x-0 bottom-0 z-10 px-5 pb-10 pt-6 safe-bottom">
+          <p className="font-display text-h2 font-semibold lowercase text-primary-foreground">
+            couldn't read this receipt
+          </p>
+          <p className="mt-2 text-sm text-primary-foreground/80">
+            {parseError ?? "The scan came back empty."} Try again with:
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-primary-foreground/80">
+            <li>· brighter, even lighting — no shadow across the paper</li>
+            <li>· the receipt flattened out, not curled or folded</li>
+            <li>· the whole receipt inside the frame, top to bottom</li>
+          </ul>
+          <div className="mt-6 flex items-stretch gap-2">
+            <Button
+              variant="secondaryLight"
+              size="lg"
+              onClick={enterManually}
+              className="flex-1 min-w-0 border-primary-foreground/70 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+            >
+              Enter manually
+            </Button>
+            <Button variant="primaryLight" size="lg" onClick={retake} className="flex-1 min-w-0">
+              <RefreshCw className="h-4 w-4" /> Retake
+            </Button>
+          </div>
+        </div>
+        <div className="absolute left-0 right-0 top-0 z-10 flex justify-between px-4 pb-4 pt-[max(env(safe-area-inset-top),12px)]">
+          <Button size="icon" variant="primaryDark" onClick={close} aria-label="Close">
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (stage === "capture" || stage === "preview" || stage === "parsing") {
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-camera text-camera-foreground">

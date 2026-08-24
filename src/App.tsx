@@ -7,6 +7,7 @@ import { OnboardingProvider } from "@/hooks/useOnboarding";
 import { RequireAuth } from "@/components/RequireAuth";
 import { RequireOnboarding } from "@/components/RequireOnboarding";
 import { AppLayout } from "@/components/AppLayout";
+import { RouteErrorBoundary } from "@/components/RouteErrorBoundary";
 
 import Home from "./pages/Home";
 import StartTrip from "./pages/StartTrip";
@@ -83,7 +84,9 @@ const App = () => (
                 element={
                   <RequireAuth>
                     <RequireOnboarding>
-                      <AppLayout />
+                      <RouteErrorBoundary>
+                        <AppLayout />
+                      </RouteErrorBoundary>
                     </RequireOnboarding>
                   </RequireAuth>
                 }
