@@ -27,7 +27,7 @@ export default function Home() {
   const { user } = useAuth();
   useCurrency();
   const navigate = useNavigate();
-  const { loading: profileLoading } = useProfile();
+  const { firstName, loading: profileLoading } = useProfile();
   const [searchParams, setSearchParams] = useSearchParams();
   const [introOpen, setIntroOpen] = useState(false);
   const [recent, setRecent] = useState<(Trip & { itemCount: number; title: string })[]>([]);
