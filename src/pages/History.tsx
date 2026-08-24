@@ -157,8 +157,8 @@ export default function History() {
         />
       ) : (
 
-        {/* Section rhythm: 24px above the header, 12px below it. */}
-        <div className="space-y-0">
+        {/* Section rhythm: 24px above each header, 12px below it. */}
+        <div>
           {grouped.map(([k, items]) => (
             <section key={k} className="pt-6 first:pt-0">
               <div className="sticky top-0 z-10 bg-background pb-3">
