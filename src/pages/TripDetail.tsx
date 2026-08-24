@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { BackHeader } from "@/components/BackHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { Button } from "@/components/ui/button";
 import { JaggedEdge, Row, Divider, PAPER, INK } from "@/components/trip/ReceiptPaper";
 import { guessCategory } from "@/lib/categories";
 
@@ -288,23 +289,19 @@ export default function TripDetail() {
           <JaggedEdge position="bottom" />
         </div>
 
-        {/* Bag-handle tab */}
-        <div className="relative mx-auto mt-10 flex flex-col items-center">
-          <button
+        {/* Primary follow-up action — sanctioned button variant, clear of the
+            receipt's jagged edge and drop shadow. */}
+        <div className="mt-6 flex justify-center">
+          <Button
             type="button"
+            variant="primaryLight"
+            size="lg"
             onClick={handleRevisit}
             disabled={revisiting}
-            className="relative rounded-full px-7 py-3 text-xs font-medium uppercase tracking-widest transition-opacity hover:opacity-90 disabled:opacity-60"
-            style={{ backgroundColor: INK, color: PAPER }}
+            className="w-full"
           >
-            {/* Bag-handle arch — two stacked pills create the cut-out illusion */}
-            <span
-              aria-hidden
-              className="absolute left-1/2 top-0 h-3 w-16 -translate-x-1/2 -translate-y-full rounded-t-full border-2 border-b-0"
-              style={{ borderColor: INK }}
-            />
-            {revisiting ? "Creating list…" : "Shop from this list"}
-          </button>
+            {revisiting ? "creating list…" : "shop from this list"}
+          </Button>
         </div>
       </div>
     </div>

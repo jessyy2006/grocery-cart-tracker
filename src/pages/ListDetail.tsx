@@ -537,7 +537,7 @@ export default function ListDetail() {
             </DndContext>
 
 
-            <div ref={endRef} className="h-4" />
+            <div ref={endRef} className="h-6" />
       </div>
 
       <AnimatePresence initial={false}>
