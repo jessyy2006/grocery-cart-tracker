@@ -14,9 +14,6 @@ const items: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = 
  * home-indicator safe area with icon + label tabs.
  */
 export const BottomNav = () => {
-  const { pathname } = useLocation();
-  if (pathname === "/trip" || pathname === "/trip/new" || pathname === "/scan-receipt") return null;
-
   return (
     <div
       className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-6"
@@ -24,13 +21,7 @@ export const BottomNav = () => {
     >
       <nav
         aria-label="Primary"
-        className="pointer-events-auto mx-auto grid max-w-[420px] grid-cols-4 rounded-[22px] border border-hairline bg-surface-raised/80 px-1 py-1.5 shadow-soft"
-
-
-        style={{
-          backdropFilter: "saturate(140%) blur(18px)",
-          WebkitBackdropFilter: "saturate(140%) blur(18px)",
-        }}
+        className="glass pointer-events-auto mx-auto grid max-w-[420px] grid-cols-4 rounded-sheet border border-hairline px-1 py-1.5 shadow-soft"
       >
         {items.map(({ to, label, icon: Icon, end }) => (
           <NavLink
@@ -40,8 +31,7 @@ export const BottomNav = () => {
             aria-label={label}
             className={({ isActive }) =>
               cn(
-                "flex flex-col items-center justify-center gap-1 rounded-[16px] py-1.5 transition-colors",
-                "active:scale-95 motion-reduce:active:scale-100 transition-transform",
+                "press focus-ring flex flex-col items-center justify-center gap-1 rounded-card py-1.5",
                 isActive ? "text-primary" : "text-muted-foreground",
               )
             }

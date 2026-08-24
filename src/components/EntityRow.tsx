@@ -45,7 +45,7 @@ export function EntityRow({
         onClick={onClick}
         disabled={disabled}
         className={cn(
-          "flex w-full items-center gap-3 py-5 text-left transition-opacity hover:opacity-70 disabled:opacity-50",
+          "press focus-ring flex w-full items-center gap-3 py-5 text-left hover:opacity-70 disabled:opacity-50",
           action ? "pr-10" : "pr-1",
           className,
         )}

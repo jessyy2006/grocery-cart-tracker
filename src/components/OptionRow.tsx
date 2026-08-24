@@ -21,7 +21,7 @@ export function OptionRow({ label, active, onClick, indicator = "check" }: Optio
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "flex w-full items-center justify-between gap-3 rounded-card border p-4 text-left font-medium transition",
+        "press focus-ring flex w-full items-center justify-between gap-3 rounded-card border p-4 text-left font-medium",
         active ? "border-primary bg-primary/10" : "border-border hover:border-primary/50",
       )}
     >
