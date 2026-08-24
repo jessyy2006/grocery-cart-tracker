@@ -215,7 +215,7 @@ export default function TripDetail() {
           <p className="text-eyebrow">
             {format(new Date(trip.started_at), "EEEE · MMM d, yyyy")}
           </p>
-          <h1 className="mt-1 text-h1">{trip.title}</h1>
+          <h1 className="mt-1 font-display text-[34px] leading-[1.15] text-balance break-words">{trip.title}</h1>
         </header>
 
         {/* Receipt sheet */}
