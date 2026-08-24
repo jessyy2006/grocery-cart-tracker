@@ -161,13 +161,6 @@ export default function Home() {
             const pct = monthlyBudget && monthlyBudget > 0 ? Math.round((monthSpend / monthlyBudget) * 100) : null;
             return (
               <section className="relative overflow-hidden rounded-card bg-surface-raised shadow-soft">
-                <button
-                  onClick={() => navigate("/scan-receipt")}
-                  aria-label="Scan past receipt"
-                  className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-control border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
-                >
-                  <ScanLine className="h-4 w-4" strokeWidth={1.75} />
-                </button>
                 <div className="p-6">
                   <p className="text-eyebrow">This month</p>
 <div className="mt-3 flex items-baseline gap-2">
@@ -179,14 +172,25 @@ export default function Home() {
                       {pct}% of this month's budget used
                     </p>
                   )}
-                  <Button
-                    variant="primaryLight"
-                    size="lg"
-                    className="mt-6 w-full"
-                    onClick={openSheet}
-                  >
-                    start a live trip
-                  </Button>
+                  {/* Primary takes ~2/3 of the row; the scan shortcut is labeled. */}
+                  <div className="mt-6 flex items-stretch gap-2">
+                    <Button
+                      variant="primaryLight"
+                      size="lg"
+                      className="flex-[2] min-w-0"
+                      onClick={openSheet}
+                    >
+                      start a live trip
+                    </Button>
+                    <Button
+                      variant="secondaryLight"
+                      size="lg"
+                      className="flex-1 min-w-0"
+                      onClick={() => navigate("/scan-receipt")}
+                    >
+                      <ScanLine className="h-4 w-4" strokeWidth={1.75} /> scan
+                    </Button>
+                  </div>
                 </div>
               </section>
             );
