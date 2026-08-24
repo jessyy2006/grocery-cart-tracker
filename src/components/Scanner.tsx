@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { startBarcodeScan, ScannerHandle } from "@/lib/device/scanner";
+import { startBarcodeScan, ScannerHandle, inPreviewIframe } from "@/lib/device/scanner";
 import { Button } from "@/components/ui/button";
 import { X, Keyboard } from "lucide-react";
 import { toast } from "sonner";
@@ -16,13 +16,9 @@ export const Scanner = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const handleRef = useRef<ScannerHandle | null>(null);
 
-  const inIframe = (() => {
-    try {
-      return window.self !== window.top;
-    } catch {
-      return true;
-    }
-  })();
+  // "Open in new tab" only makes sense in the web preview, never in the native shell.
+  const inIframe = inPreviewIframe();
+
 
   useEffect(() => {
     let cancelled = false;

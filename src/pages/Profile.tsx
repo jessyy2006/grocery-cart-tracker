@@ -19,6 +19,15 @@ import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { EmptyState } from "@/components/EmptyState";
 import { cn } from "@/lib/utils";
+import { invokeWithTimeout } from "@/lib/invoke";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type Store = { id: string; name: string; address: string | null };
 
@@ -38,6 +47,26 @@ export default function Profile() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  /** Apple guideline 5.1.1(v): in-app, permanent account deletion. */
+  const deleteAccount = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await invokeWithTimeout("delete-account", {}, 30_000);
+      await supabase.auth.signOut();
+      toast.success("Account deleted");
+      window.location.replace("/");
+    } catch (e) {
+      toast.error((e as Error)?.message ?? "Couldn't delete account");
+      setDeleting(false);
+    }
+  };
+
 
   const [editingCity, setEditingCity] = useState(false);
   const [cityQuery, setCityQuery] = useState("");
@@ -301,7 +330,7 @@ export default function Profile() {
           </section>
         </div>
 
-        <div className="px-5 pt-8 pb-6">
+        <div className="space-y-3 px-5 pt-8 pb-6">
           <Button
             variant="secondaryLight"
             size="lg"
@@ -310,7 +339,56 @@ export default function Profile() {
           >
             sign out
           </Button>
+          <Button
+            variant="ghost"
+            size="lg"
+            className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+            onClick={() => {
+              setDeleteConfirm("");
+              setDeleteOpen(true);
+            }}
+          >
+            delete account
+          </Button>
         </div>
+
+        <Dialog open={deleteOpen} onOpenChange={(o) => !deleting && setDeleteOpen(o)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete account</DialogTitle>
+              <DialogDescription>
+                This permanently deletes your trips, lists and stores. It can't be undone. Type
+                DELETE to confirm.
+              </DialogDescription>
+            </DialogHeader>
+            <Input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder="DELETE"
+              autoCapitalize="characters"
+              autoCorrect="off"
+            />
+            <DialogFooter className="flex-row gap-3">
+              <Button
+                variant="secondaryLight"
+                className="min-w-0 flex-1"
+                disabled={deleting}
+                onClick={() => setDeleteOpen(false)}
+              >
+                cancel
+              </Button>
+              <Button
+                variant="primaryLight"
+                className="min-w-0 flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deleting || deleteConfirm.trim().toUpperCase() !== "DELETE"}
+                onClick={deleteAccount}
+              >
+                {deleting ? "deleting…" : "delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </PageLoadGate>
   );

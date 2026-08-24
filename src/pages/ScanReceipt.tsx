@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import { formatMoney, parsePriceToCents } from "@/lib/format";
 import { guessCategory, tokens } from "@/lib/categories";
 import { format, parseISO } from "date-fns";
+import { openCameraStream, inPreviewIframe } from "@/lib/device/scanner";
+import { invokeWithTimeout } from "@/lib/invoke";
+
 
 let keySeq = 0;
 const nextKey = () => ++keySeq;
@@ -103,6 +106,8 @@ export default function ScanReceipt() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [stage, setStage] = useState<"capture" | "preview" | "parsing" | "review">("capture");
   const [streamRef, setStreamRef] = useState<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+
   const [captured, setCaptured] = useState<string | null>(null);
   const [parsed, setParsed] = useState<Parsed | null>(null);
 
@@ -133,32 +138,44 @@ export default function ScanReceipt() {
     );
   }, [storeName, stores]);
 
-  // Start camera on mount
+  // Start camera on mount — shares the barcode scanner's permission-error path
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-          audio: false,
-        });
+        const stream = await openCameraStream();
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
         }
+        setCameraError(null);
         setStreamRef(stream);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           await videoRef.current.play().catch(() => {});
         }
-      } catch {
-        // Silent — user can use the upload button instead
+      } catch (e) {
+        if (cancelled) return;
+        const msg = (e as Error)?.message ?? "Couldn't open camera";
+        setCameraError(msg);
+        if (inPreviewIframe() && /camera/i.test(msg)) {
+          toast.error(msg, {
+            action: {
+              label: "Open in new tab",
+              onClick: () => window.open(window.location.href, "_blank", "noopener"),
+            },
+            duration: 8000,
+          });
+        } else {
+          toast.error(msg);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
   }, []);
+
 
   // Stop the stream when leaving capture stage
   useEffect(() => {
@@ -181,9 +198,10 @@ export default function ScanReceipt() {
   const shoot = () => {
     const v = videoRef.current;
     if (!v || !v.videoWidth) {
-      toast.error("Camera not ready");
+      toast.error(cameraError ?? "Camera not ready");
       return;
     }
+
     const maxW = 1600;
     const scale = Math.min(1, maxW / v.videoWidth);
     const w = Math.round(v.videoWidth * scale);
@@ -218,10 +236,11 @@ export default function ScanReceipt() {
     if (!captured) return;
     setStage("parsing");
     try {
-      const { data, error } = await supabase.functions.invoke("parse-receipt", {
-        body: { image: captured },
-      });
-      if (error) throw error;
+      const data = await invokeWithTimeout<Parsed & { error?: string }>(
+        "parse-receipt",
+        { image: captured },
+        60_000,
+      );
       if (data?.error) throw new Error(data.error);
       const p: Parsed = data;
       setParsed(p);
@@ -236,6 +255,7 @@ export default function ScanReceipt() {
       setStage("preview");
     }
   };
+
 
   const loadStoresAndLists = async (p: Parsed) => {
     if (!user) return;
@@ -434,11 +454,24 @@ export default function ScanReceipt() {
               className="rounded-2xl border-2 border-primary-foreground/80 shadow-elevated"
               style={{ width: "min(78vw, 380px)", height: "min(62vh, 520px)" }}
             />
-            <p className="text-center text-sm text-primary-foreground">
-              Center your receipt in the frame
+            <p className="max-w-xs text-center text-sm text-primary-foreground">
+              {cameraError ?? "Center your receipt in the frame"}
             </p>
+            {cameraError && (
+              <div className="pointer-events-auto">
+                <Button
+                  size="sm"
+                  variant="primaryDark"
+                  onClick={() => fileRef.current?.click()}
+                  className="shadow-elevated"
+                >
+                  <ImageIcon className="mr-1 h-4 w-4" /> Upload photo
+                </Button>
+              </div>
+            )}
           </div>
         )}
+
 
         {/* Top close — iOS safe-area top offset, 16pt side margin */}
         <div className="absolute left-0 right-0 top-0 z-10 flex justify-between px-4 pb-4 pt-[max(env(safe-area-inset-top),12px)]">

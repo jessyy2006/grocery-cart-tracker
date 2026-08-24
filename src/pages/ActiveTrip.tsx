@@ -1,3 +1,4 @@
+import { invokeWithTimeout } from "@/lib/invoke";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -275,13 +276,15 @@ export default function ActiveTrip() {
     const open = listItems.filter((i) => !i.checked_at);
     if (open.length === 0) return null;
     try {
-      const { data, error } = await supabase.functions.invoke("match-list-item", {
-        body: { scannedName, listItems: open.map((i) => ({ id: i.id, name: i.name })) },
-      });
-      if (error) throw error;
+      const data = await invokeWithTimeout<{ matchId?: string }>(
+        "match-list-item",
+        { scannedName, listItems: open.map((i) => ({ id: i.id, name: i.name })) },
+        20_000,
+      );
       if (data?.matchId) return data.matchId as string;
       // fall through to local fallback if AI returned null but we want to double-check
       return null;
+
     } catch (e) {
       const fallback = findListMatch(open, { barcode: "", name: scannedName });
       return fallback?.id ?? null;

@@ -1,3 +1,4 @@
+import { safeGetItem } from "@/lib/native";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +40,7 @@ export default function Home() {
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    if (searchParams.get("intro") === "1" && localStorage.getItem(FEATURE_INTRO_KEY) !== "1") {
+    if (searchParams.get("intro") === "1" && safeGetItem(FEATURE_INTRO_KEY) !== "1") {
       setIntroOpen(true);
       searchParams.delete("intro");
       setSearchParams(searchParams, { replace: true });
