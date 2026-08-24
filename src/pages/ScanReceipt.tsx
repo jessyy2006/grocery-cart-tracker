@@ -133,32 +133,44 @@ export default function ScanReceipt() {
     );
   }, [storeName, stores]);
 
-  // Start camera on mount
+  // Start camera on mount — shares the barcode scanner's permission-error path
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-          audio: false,
-        });
+        const stream = await openCameraStream();
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
         }
+        setCameraError(null);
         setStreamRef(stream);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           await videoRef.current.play().catch(() => {});
         }
-      } catch {
-        // Silent — user can use the upload button instead
+      } catch (e) {
+        if (cancelled) return;
+        const msg = (e as Error)?.message ?? "Couldn't open camera";
+        setCameraError(msg);
+        if (inPreviewIframe() && /camera/i.test(msg)) {
+          toast.error(msg, {
+            action: {
+              label: "Open in new tab",
+              onClick: () => window.open(window.location.href, "_blank", "noopener"),
+            },
+            duration: 8000,
+          });
+        } else {
+          toast.error(msg);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
   }, []);
+
 
   // Stop the stream when leaving capture stage
   useEffect(() => {
