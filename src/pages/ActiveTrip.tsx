@@ -514,8 +514,9 @@ export default function ActiveTrip() {
 
   const saveTrip = async () => {
     if (!tripId || !user) return;
+    // An empty trip is never saved — offer to keep shopping or bail out.
     if (items.length === 0 && extras.length === 0 && listItems.every((i) => !i.checked_at)) {
-      toast.error("Add at least one item");
+      setEmptyEndOpen(true);
       return;
     }
     const endedAt = new Date();
