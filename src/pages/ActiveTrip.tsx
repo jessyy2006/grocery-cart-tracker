@@ -76,6 +76,7 @@ export default function ActiveTrip() {
   const [extras, setExtras] = useState<TripItem[]>([]);
   
   const [confetti, setConfetti] = useState<{ id: number; emoji: string } | null>(null);
+  const [emptyEndOpen, setEmptyEndOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [pending, setPending] = useState<{
     barcode: string | null;
