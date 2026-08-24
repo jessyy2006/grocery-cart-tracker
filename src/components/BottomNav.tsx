@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { Clock, Home, ListChecks, Wallet, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
