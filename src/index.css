@@ -56,6 +56,9 @@
 
     --destructive: 347 77% 50%;
     --destructive-foreground: 43 30% 95%;
+    /* Soft destructive pair — pale pink field, red ink (delete account). */
+    --destructive-soft: 356 45% 93%;
+    --destructive-soft-foreground: 353 60% 51%;
 
     --success: 163 94% 24%;
     --success-foreground: 43 30% 95%;
