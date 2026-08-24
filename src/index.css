@@ -84,7 +84,7 @@
 
     /* Single overlay scrim for every modal surface. */
     --scrim: 36 10% 6%;
-    --scrim-opacity: 0.55;
+    --scrim-opacity: 0.45;
 
     /* Radius scale — only four values are sanctioned.
        Legacy shadcn aliases below map onto them so primitives inherit. */

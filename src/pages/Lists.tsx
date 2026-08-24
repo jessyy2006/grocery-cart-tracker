@@ -78,18 +78,17 @@ export default function Lists() {
           }
         />
 
-        {/* Notebook margin rule */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute top-[5.25rem] bottom-0"
-          style={{
-            left: `${MARGIN_LEFT}px`,
-            width: "1px",
-            backgroundColor: "hsl(20 40% 18% / 0.85)",
-          }}
-        />
-
-        <div style={{ paddingLeft: `${MARGIN_LEFT + 16}px` }}>
+        {/* Notebook margin rule — spans the content only, ending with the last row. */}
+        <div className="relative" style={{ paddingLeft: `${MARGIN_LEFT + 16}px` }}>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0"
+            style={{
+              left: `${MARGIN_LEFT}px`,
+              width: "1px",
+              backgroundColor: "hsl(20 40% 18% / 0.85)",
+            }}
+          />
           {lists.length === 0 ? (
           <EmptyState
             icon={ClipboardList}
