@@ -38,7 +38,17 @@ export function PageLoadGate({
     return () => window.clearTimeout(t);
   }, [ready, delayMs]);
 
-  if (!ready) return showLoader ? <MarketLoader minHeight={minHeight} /> : null;
+  if (!ready)
+    return showLoader ? (
+      <div
+        className="flex w-full items-center justify-center"
+        style={{ minHeight }}
+        role="status"
+        aria-live="polite"
+      >
+        <Spinner size="lg" className="text-muted-foreground" />
+      </div>
+    ) : null;
 
 
   return (
