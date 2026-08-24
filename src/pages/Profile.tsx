@@ -162,7 +162,7 @@ export default function Profile() {
       <div className="flex h-full flex-col">
         <div className="flex-1 overflow-y-auto px-5 pt-3 pb-6">
           {/* HERO */}
-          <header className="mb-8">
+          <header className="mb-8 pt-2">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <h1 className="text-h1 break-words pb-1 leading-[1.25]">{displayName}</h1>

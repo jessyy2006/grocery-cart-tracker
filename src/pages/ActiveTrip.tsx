@@ -755,7 +755,7 @@ export default function ActiveTrip() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 pt-4 pb-3 safe-top">
+      <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 pt-5 pb-3 safe-top">
         {/* LEFT — spacer */}
         <div />
 

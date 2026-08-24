@@ -543,7 +543,7 @@ export default function ScanReceipt() {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-foreground/55 backdrop-blur-sm">
-      <div className="flex-1 overflow-y-auto px-4 py-6 safe-top">
+      <div className="flex-1 overflow-y-auto px-4 pt-5 pb-6 safe-top">
         <div className="mx-auto w-full max-w-md">
           <Card className="p-5">
             <div className="flex items-start justify-between gap-3">
