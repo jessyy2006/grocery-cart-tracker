@@ -187,14 +187,32 @@
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
   .safe-top { padding-top: env(safe-area-inset-top); }
   /* Standard in-app top offset: safe area + 20px (matches tabbed pages). */
-  .safe-top-page { padding-top: calc(env(safe-area-inset-top) + 20px); }
+  .safe-top-page { padding-top: calc(env(safe-area-inset-top) + var(--page-top)); }
+  /* Canonical page shell: one gutter + one top offset for every route. */
+  .page-gutter { padding-left: var(--page-gutter); padding-right: var(--page-gutter); }
+  .section-stack > * + * { margin-top: var(--section-gap); }
   .gradient-hero { background-image: var(--gradient-hero); }
   .gradient-paper { background-image: var(--gradient-paper); }
   .shadow-soft { box-shadow: var(--shadow-soft); }
   .shadow-raised { box-shadow: var(--shadow-raised); }
   .shadow-elevated { box-shadow: var(--shadow-elevated); }
   .shadow-glow { box-shadow: var(--shadow-glow); }
+  .shadow-paper { filter: var(--shadow-paper); }
   .hairline { box-shadow: inset 0 0 0 1px hsl(var(--hairline)); }
+
+  /* One press + focus recipe for every tappable surface (buttons and rows). */
+  .press {
+    transition: transform var(--motion-fast) ease-out, opacity var(--motion-base) ease-out,
+      background-color var(--motion-base) ease-out;
+  }
+  .press:active { transform: scale(var(--press-scale)); }
+  @media (prefers-reduced-motion: reduce) {
+    .press { transition: none; }
+    .press:active { transform: none; }
+  }
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
 
   .text-display { @apply font-display text-[2.25rem] leading-[1.05] tracking-tight; font-weight: 500; }
   .text-h1 { @apply font-display text-[1.75rem] leading-[1.15] tracking-tight; font-weight: 500; }
@@ -202,6 +220,8 @@
   .text-h3 { @apply text-[0.9375rem] font-semibold leading-snug; letter-spacing: -0.005em; }
   .text-body { @apply text-[0.9375rem] leading-relaxed; }
   .text-small { @apply text-[0.8125rem] leading-snug; }
+  .text-caption { @apply text-[0.75rem] leading-snug text-muted-foreground; }
+  .text-micro { @apply font-mono text-[0.5625rem] uppercase tracking-[0.16em] text-muted-foreground; }
   .text-eyebrow { @apply font-mono text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground; }
   .text-money { @apply font-mono font-medium; }
 
