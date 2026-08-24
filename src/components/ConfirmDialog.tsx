@@ -54,15 +54,17 @@ export function ConfirmDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           {description && <AlertDialogDescription>{description}</AlertDialogDescription>}
         </AlertDialogHeader>
-        <AlertDialogFooter>
+        {/* Action ranking: destructive confirm is recessive and on the left,
+            the safe cancel is solid and on the right. */}
+        <AlertDialogFooter className="flex-row gap-2 sm:justify-stretch">
           <AlertDialogAction
             onClick={onConfirm}
-            className={cn(buttonVariants({ variant: "primaryLight", size: "lg" }))}
+            className={cn(buttonVariants({ variant: "destructiveSoft", size: "lg" }), "min-w-0 flex-1")}
           >
             {confirmLabel}
           </AlertDialogAction>
           <AlertDialogCancel
-            className={cn(buttonVariants({ variant: "secondaryLight", size: "lg" }), "mt-0")}
+            className={cn(buttonVariants({ variant: "primaryLight", size: "lg" }), "mt-0 min-w-0 flex-1")}
           >
             {cancelLabel}
           </AlertDialogCancel>

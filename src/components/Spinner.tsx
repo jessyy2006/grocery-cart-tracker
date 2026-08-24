@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils";
 
 /**
  * The single in-flight indicator for work inside a surface (buttons, search,
- * capture). Route-level loading uses PageLoadGate + MarketLoader instead.
+ * capture). Route-level loading uses PageLoadGate, which renders this same
+ * spinner after its grace period.
  */
 export function Spinner({
   className,

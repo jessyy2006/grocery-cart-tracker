@@ -372,20 +372,20 @@ export default function Profile() {
             />
             <DialogFooter className="flex-row gap-3">
               <Button
-                variant="secondaryLight"
+                variant="destructiveSoft"
+                className="min-w-0 flex-1"
+                disabled={deleting || deleteConfirm.trim().toUpperCase() !== "DELETE"}
+                onClick={deleteAccount}
+              >
+                {deleting ? "deleting…" : "delete"}
+              </Button>
+              <Button
+                variant="primaryLight"
                 className="min-w-0 flex-1"
                 disabled={deleting}
                 onClick={() => setDeleteOpen(false)}
               >
                 cancel
-              </Button>
-              <Button
-                variant="primaryLight"
-                className="min-w-0 flex-1 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                disabled={deleting || deleteConfirm.trim().toUpperCase() !== "DELETE"}
-                onClick={deleteAccount}
-              >
-                {deleting ? "deleting…" : "delete"}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -100,6 +100,9 @@
     --page-gutter: 1.25rem;   /* 20px — every page's horizontal gutter */
     --page-top: 1.25rem;      /* 20px — offset below the safe area */
     --section-gap: 1.75rem;   /* 28px — gap between page sections */
+    /* Scroll clearance under the floating tab bar: bar (56px) + gap (16px)
+       + the home-indicator safe area. */
+    --nav-clearance: calc(env(safe-area-inset-bottom) + 4.5rem + 1rem);
 
     /* Motion. */
     --motion-fast: 120ms;
