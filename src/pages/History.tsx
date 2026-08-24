@@ -157,7 +157,6 @@ export default function History() {
         />
       ) : (
 
-        // Section rhythm: 24px above each header, 12px below it.
         <div>
           {grouped.map(([k, items]) => (
             <section key={k} className="pt-6 first:pt-0">
