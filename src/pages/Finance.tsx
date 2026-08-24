@@ -503,12 +503,12 @@ export default function Finance() {
   })();
 
   return (
-    <div className="px-5 pt-3">
+    <div className="page-gutter safe-top-page pb-12">
       <PageLoadGate ready={!loading}>
-        <div className="space-y-7">
-      <header className="flex items-end justify-between gap-3 pt-2">
-        <div>
-          <h1 className="text-h1">Finance</h1>
+        <div className="section-stack">
+      <header className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-display lowercase leading-[1.25] pb-1">finance</h1>
         </div>
         <div className="flex items-center gap-1">
           <ToggleGroup

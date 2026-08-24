@@ -160,12 +160,13 @@ export default function Profile() {
   return (
     <PageLoadGate ready={ready}>
       <div className="flex h-full flex-col">
-        <div className="flex-1 overflow-y-auto px-5 pt-3 pb-6">
+        <div className="flex-1 overflow-y-auto page-gutter safe-top-page pb-6">
+          <BackHeader to="/" className="-mt-1 mb-2" />
           {/* HERO */}
-          <header className="mb-8 pt-2">
+          <header className="mb-8">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <h1 className="text-h1 break-words pb-1 leading-[1.25]">{displayName}</h1>
+                <h1 className="text-display lowercase break-words pb-1 leading-[1.25]">{displayName}</h1>
                 <p className="mt-1 text-small text-muted-foreground">{user?.email}</p>
               </div>
               <button
