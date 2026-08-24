@@ -198,9 +198,10 @@ export default function ScanReceipt() {
   const shoot = () => {
     const v = videoRef.current;
     if (!v || !v.videoWidth) {
-      toast.error("Camera not ready");
+      toast.error(cameraError ?? "Camera not ready");
       return;
     }
+
     const maxW = 1600;
     const scale = Math.min(1, maxW / v.videoWidth);
     const w = Math.round(v.videoWidth * scale);
