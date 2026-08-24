@@ -78,7 +78,7 @@ export function LedgerRow({
           <p className="flex flex-wrap items-baseline gap-x-1.5 leading-snug">
             <span
               className={cn(
-                "text-[15px] lowercase break-words",
+                "line-clamp-2 text-[15px] lowercase break-words",
                 checked ? "text-muted-foreground line-through" : "text-foreground",
               )}
             >
