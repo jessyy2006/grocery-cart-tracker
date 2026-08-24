@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { SUPPORTED_CURRENCIES, useCurrency, setCurrency, Currency } from "@/lib/format";
 import { useDuplicateAlerts, setDuplicateAlerts } from "@/lib/prefs";
 import { PageLoadGate } from "@/components/PageLoadGate";
+import { BackHeader } from "@/components/BackHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { cn } from "@/lib/utils";
 import { invokeWithTimeout } from "@/lib/invoke";
