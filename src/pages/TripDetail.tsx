@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney, useCurrency } from "@/lib/format";
 import { format } from "date-fns";
-import { MarketLoader } from "@/components/MarketLoader";
+import { PageLoadGate } from "@/components/PageLoadGate";
+import { BackHeader } from "@/components/BackHeader";
+import { EmptyState } from "@/components/EmptyState";
 import { JaggedEdge, Row, Divider, PAPER, INK } from "@/components/trip/ReceiptPaper";
 import { guessCategory } from "@/lib/categories";
 
