@@ -22,9 +22,12 @@ export const AppLayout = () => {
         className={
           fullscreen
             ? "relative isolate flex-1 h-dvh overflow-hidden overscroll-contain"
-            : `relative isolate flex-1 min-h-dvh overflow-y-auto overscroll-contain ${hideNav ? "" : "pb-24"}`
+            : "relative isolate flex-1 min-h-dvh overflow-y-auto overscroll-contain"
         }
-        style={{ overflowAnchor: "none" }}
+        style={{
+          overflowAnchor: "none",
+          paddingBottom: fullscreen || hideNav ? undefined : "var(--nav-clearance)",
+        }}
       >
         <PageTransition fullscreen={fullscreen}>
           <Outlet />
