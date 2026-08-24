@@ -20,7 +20,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Scanner } from "@/components/Scanner";
-import { ScanLine, Plus, MapPin, Check, X, Search, Loader2, Camera, ShoppingCart } from "lucide-react";
+import { ScanLine, Plus, MapPin, Check, X, Search, Camera, ShoppingCart } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { formatMoney, parsePriceToCents, useCurrency, getCurrency } from "@/lib/format";
 import { lookupBarcode } from "@/lib/openFoodFacts";
