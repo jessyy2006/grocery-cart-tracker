@@ -19,12 +19,13 @@ export const BottomNav = () => {
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-30"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-6"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 8px)" }}
     >
       <nav
         aria-label="Primary"
-        className="pointer-events-auto mx-auto grid max-w-[420px] grid-cols-4 rounded-[22px] border border-hairline bg-surface-raised/80 px-1 py-1.5 shadow-soft mx-6"
+        className="pointer-events-auto mx-auto grid max-w-[420px] grid-cols-4 rounded-[22px] border border-hairline bg-surface-raised/80 px-1 py-1.5 shadow-soft"
+
 
         style={{
           backdropFilter: "saturate(140%) blur(18px)",
