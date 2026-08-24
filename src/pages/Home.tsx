@@ -140,18 +140,18 @@ export default function Home() {
   const today = format(new Date(), "EEEE");
 
   return (
-    <div className="px-5 pt-3">
+    <div className="page-gutter safe-top-page pb-12">
       <FeatureIntroDialog open={introOpen} onClose={() => setIntroOpen(false)} />
 
       <PageLoadGate ready={ready && !profileLoading}>
-        <div className="space-y-8">
+        <div className="section-stack">
           <PageHeader
             title={`${today} market run?`}
             action={
               <button
                 onClick={() => navigate("/profile")}
                 aria-label="Profile"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/40 transition-colors"
+                className="press focus-ring flex h-11 w-11 items-center justify-center rounded-full border border-hairline bg-surface text-foreground hover:border-foreground/40"
               >
                 <User className="h-4 w-4" strokeWidth={1.75} />
               </button>
