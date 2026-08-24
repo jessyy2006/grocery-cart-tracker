@@ -1,6 +1,7 @@
 // Wrapper around barcode scanning. Uses native BarcodeDetector when available
 // (Chrome/Android), falls back to ZXing (works on iOS Safari).
 import { BrowserMultiFormatReader } from "@zxing/browser";
+import { isNative } from "@/lib/native";
 
 export type ScannerHandle = { stop: () => void };
 
@@ -11,6 +12,9 @@ const isInIframe = () => {
     return true;
   }
 };
+
+/** True only for the Lovable web preview iframe — never inside the native shell. */
+export const inPreviewIframe = () => !isNative() && isInIframe();
 
 const cameraAllowedByPolicy = () => {
   // featurePolicy / permissionsPolicy is available in modern browsers
@@ -23,29 +27,34 @@ const cameraAllowedByPolicy = () => {
   return fp.allowsFeature("camera");
 };
 
-export async function startBarcodeScan(
-  videoEl: HTMLVideoElement,
-  onCode: (code: string) => void
-): Promise<ScannerHandle> {
+/**
+ * Opens the rear camera with one shared, user-readable error path.
+ * Both the barcode scanner and the receipt scanner go through this.
+ */
+export async function openCameraStream(): Promise<MediaStream> {
   if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error("Camera not supported in this browser.");
+    throw new Error("Camera not supported on this device.");
   }
-  if (isInIframe() && !cameraAllowedByPolicy()) {
+  if (inPreviewIframe() && !cameraAllowedByPolicy()) {
     throw new Error(
       "Camera blocked by the preview. Open the app in a new tab (or on your phone) to scan."
     );
   }
 
-  let stream: MediaStream;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
+    return await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: "environment" } },
       audio: false,
     });
   } catch (err) {
     const e = err as DOMException;
     if (e.name === "NotAllowedError") {
-      if (isInIframe()) {
+      if (isNative()) {
+        throw new Error(
+          "Camera access is off. Enable it in Settings › CartWise › Camera, or enter details manually."
+        );
+      }
+      if (inPreviewIframe()) {
         throw new Error(
           "Camera blocked in preview. Open the app in a new tab to allow camera access."
         );
@@ -56,6 +65,13 @@ export async function startBarcodeScan(
     if (e.name === "NotReadableError") throw new Error("Camera is in use by another app.");
     throw new Error(e.message || "Couldn't open camera.");
   }
+}
+
+export async function startBarcodeScan(
+  videoEl: HTMLVideoElement,
+  onCode: (code: string) => void
+): Promise<ScannerHandle> {
+  const stream = await openCameraStream();
   videoEl.srcObject = stream;
   await videoEl.play();
 
