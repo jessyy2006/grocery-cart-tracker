@@ -83,7 +83,9 @@ const App = () => (
                 element={
                   <RequireAuth>
                     <RequireOnboarding>
-                      <AppLayout />
+                      <RouteErrorBoundary>
+                        <AppLayout />
+                      </RouteErrorBoundary>
                     </RequireOnboarding>
                   </RequireAuth>
                 }
