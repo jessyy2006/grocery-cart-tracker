@@ -235,10 +235,11 @@ export default function ScanReceipt() {
     if (!captured) return;
     setStage("parsing");
     try {
-      const { data, error } = await supabase.functions.invoke("parse-receipt", {
-        body: { image: captured },
-      });
-      if (error) throw error;
+      const data = await invokeWithTimeout<Parsed & { error?: string }>(
+        "parse-receipt",
+        { image: captured },
+        60_000,
+      );
       if (data?.error) throw new Error(data.error);
       const p: Parsed = data;
       setParsed(p);
@@ -253,6 +254,7 @@ export default function ScanReceipt() {
       setStage("preview");
     }
   };
+
 
   const loadStoresAndLists = async (p: Parsed) => {
     if (!user) return;
