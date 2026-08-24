@@ -35,7 +35,7 @@ import {
 } from "@/lib/device/geolocation";
 import { TagPill } from "@/components/TagPill";
 import { toast } from "sonner";
-import { MarketLoader } from "@/components/MarketLoader";
+import { Spinner } from "@/components/Spinner";
 import { Spinner } from "@/components/Spinner";
 import { LedgerRow } from "@/components/LedgerRow";
 
@@ -775,16 +775,17 @@ export default function ActiveTrip() {
                 <AlertDialogDescription>Your trip won't be saved.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="flex-row gap-2 sm:justify-stretch">
-                <AlertDialogCancel
-                  className={cn(buttonVariants({ variant: "secondaryLight", size: "lg" }), "mt-0 flex-1")}
+                <AlertDialogAction
+                  onClick={exitTrip}
+                  className={cn(buttonVariants({ variant: "destructiveSoft", size: "lg" }), "min-w-0 flex-1")}
                 >
                   Exit
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  className={cn(buttonVariants({ variant: "primaryLight", size: "lg" }), "flex-1")}
+                </AlertDialogAction>
+                <AlertDialogCancel
+                  className={cn(buttonVariants({ variant: "primaryLight", size: "lg" }), "mt-0 min-w-0 flex-1")}
                 >
                   No, go back
-                </AlertDialogAction>
+                </AlertDialogCancel>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -817,7 +818,9 @@ export default function ActiveTrip() {
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 pb-8">
         {!listReady ? (
-          <MarketLoader minHeight="40vh" />
+          <div className="flex w-full items-center justify-center" style={{ minHeight: "40vh" }} role="status" aria-live="polite">
+            <Spinner size="lg" className="text-muted-foreground" />
+          </div>
         ) : (
           <>
             {listItems.length === 0 && extras.length === 0 ? (
@@ -826,7 +829,7 @@ export default function ActiveTrip() {
                 title="nothing in the cart"
                 description={
                   listHidden
-                    ? "Scan or add items as you shop — we'll sort them by category."
+                    ? "add item to cart to start tracking"
                     : "No shopping list is linked to this trip."
                 }
               />
