@@ -1207,23 +1207,34 @@ export default function ActiveTrip() {
       >
         <DrawerContent className="px-5 pb-8 pt-2 max-h-[85vh]">
           <DrawerHeader className="p-0 pb-4 text-left">
-            <DrawerTitle>{activeStore ? "Change store" : "Add store"}</DrawerTitle>
-            <DrawerDescription>
-              {isSearching
-                ? "Top matches for your search."
-                : "Grocery stores within 5 km of you."}
-            </DrawerDescription>
+            <DrawerTitle>{activeStore ? "change store" : "add store"}</DrawerTitle>
+            <DrawerDescription>Type the store name for this trip.</DrawerDescription>
           </DrawerHeader>
           <div className="space-y-3">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={storeQuery}
-                onChange={(e) => setStoreQuery(e.target.value)}
-                placeholder="Search any store name or address"
-                className="pl-9"
-                autoFocus
-              />
+            <div className="flex gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={storeQuery}
+                  onChange={(e) => setStoreQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void saveTypedStore();
+                    }
+                  }}
+                  placeholder="Store name"
+                  className="pl-9"
+                  autoFocus
+                />
+              </div>
+              <Button
+                variant="primaryLight"
+                onClick={() => void saveTypedStore()}
+                disabled={!storeQuery.trim() || savingStore}
+              >
+                {savingStore ? <Spinner /> : "Save"}
+              </Button>
             </div>
 
             {activeStore && (
@@ -1241,52 +1252,28 @@ export default function ActiveTrip() {
             )}
 
             <div className="max-h-[50vh] overflow-y-auto">
-              {isSearching ? (
-                <>
-                  {searching && (
-                    <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                      <Spinner /> Searching…
-                    </div>
-                  )}
-                  {!searching && searchError && (
-                    <p className="py-4 text-center text-sm text-muted-foreground">{searchError}</p>
-                  )}
-                  {!searching && !searchError && searchResults !== null && displayStores.length === 0 && (
-                    <p className="py-4 text-center text-sm text-muted-foreground">No matches found.</p>
-                  )}
-                </>
-              ) : (
-                <>
-                  {loadingStores && (
-                    <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                      <Spinner /> Finding nearby stores…
-                    </div>
-                  )}
-                  {!loadingStores && storeError && (
-                    <p className="py-4 text-center text-sm text-muted-foreground">{storeError}</p>
-                  )}
-                  {!loadingStores && !storeError && nearbyStores !== null && displayStores.length === 0 && (
-                    <p className="py-4 text-center text-sm text-muted-foreground">
-                      No nearby grocery stores. Try searching by name.
-                    </p>
-                  )}
-                </>
+              {loadingStores && (
+                <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                  <Spinner /> Loading your stores…
+                </div>
+              )}
+              {!loadingStores && displayStores.length === 0 && (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  {storeFilter
+                    ? "No saved store matches — hit save to add it."
+                    : "No saved stores yet — type one above."}
+                </p>
               )}
               {displayStores.length > 0 && (
                 <ul className="space-y-2">
-                  {displayStores.map((s, i) => (
-                    <li key={`${s.lat},${s.lng}:${i}`}>
+                  {displayStores.map((s) => (
+                    <li key={s.id}>
                       <button
-                        onClick={() => pickStore(s)}
+                        onClick={() => pickStore({ name: s.name })}
                         className="flex w-full items-start gap-3 rounded-card border border-border bg-card p-3 text-left transition hover:border-primary"
                       >
                         <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                        <div className="min-w-0">
-                          <p className="truncate font-medium">{s.name}</p>
-                          {s.address && (
-                            <p className="truncate text-xs text-muted-foreground">{s.address}</p>
-                          )}
-                        </div>
+                        <p className="min-w-0 truncate font-medium">{s.name}</p>
                       </button>
                     </li>
                   ))}
