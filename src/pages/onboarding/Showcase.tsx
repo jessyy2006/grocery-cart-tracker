@@ -73,8 +73,10 @@ export default function OnboardingShowcase() {
             exit={reduce ? { opacity: 0 } : { opacity: 0, x: -120, scale: 0.86 }}
             transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="mx-auto min-h-0 w-full max-w-[420px] flex-1">
-              <beat.Demo />
+            <div className="flex min-h-0 flex-1 items-center">
+              <div className="mx-auto w-full max-w-[420px]">
+                <beat.Demo />
+              </div>
             </div>
             <div className="mt-6">
               <h2 className="text-h1 lowercase">{beat.title}</h2>

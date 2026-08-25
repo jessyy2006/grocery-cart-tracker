@@ -10,7 +10,7 @@ import { Check, ScanLine, Receipt as ReceiptIcon } from "lucide-react";
 const LOOP = 4; // seconds — one full demo loop; the showcase plays two.
 
 const Frame = ({ children }: { children: React.ReactNode }) => (
-  <div className="flex h-full w-full flex-col justify-center overflow-hidden rounded-card border border-border/70 bg-card p-5">
+  <div className="w-full overflow-hidden rounded-card border border-border/70 bg-card p-5">
     {children}
   </div>
 );
