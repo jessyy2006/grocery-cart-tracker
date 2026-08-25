@@ -84,6 +84,8 @@ export default function ListDetail() {
   const [savingName, setSavingName] = useState(false);
   const [starting, setStarting] = useState(false);
   const [removing, setRemoving] = useState<Record<string, boolean>>({});
+  const [replaceTripOpen, setReplaceTripOpen] = useState(false);
+  const [unfinishedTrip, setUnfinishedTrip] = useState<{ id: string; list_id: string | null } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const padRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLButtonElement>(null);
