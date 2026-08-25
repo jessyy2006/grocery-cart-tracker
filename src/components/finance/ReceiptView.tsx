@@ -416,15 +416,17 @@ export default function ReceiptView(props: Props) {
 
           <Divider />
 
-          {/* Top summation rows */}
-          <Row label="Budget" value={budgetCents > 0 ? formatMoney(budgetCents, currency) : "—"} />
-          <Row label="Spent" value={formatMoney(monthSpend, currency)} />
+          {/* Top summation rows — till-receipt style */}
+          <div className="space-y-1">
+            <Row label="Budget" value={budgetCents > 0 ? formatMoney(budgetCents, currency) : "—"} />
+            <Row label="Spent" value={formatMoney(monthSpend, currency)} />
+          </div>
+          <div className="my-2 border-t border-current/60" />
           <Row
             label={over ? "Over Budget" : "Remaining"}
             value={budgetCents > 0 ? formatMoney(Math.abs(remaining), currency) : "—"}
             strong
           />
-          <Row label="Trips" value={String(tripCount)} />
 
           <Divider />
 
@@ -432,12 +434,14 @@ export default function ReceiptView(props: Props) {
           <div className="mt-4">
             <SectionLabel>The Numbers</SectionLabel>
             <div className="mt-2 space-y-2">
+              <HallRow label="Trips" value={String(tripCount)} />
               <HallRow label="Avg / Trip" value={formatMoney(avgTripCents, currency)} />
               <HallRow label="Impulse Spend" value={formatMoney(impulseCents, currency)} />
               <HallRow label="Impulse Rate" value={`${impulseRate}%`} />
               {streak >= 2 && <HallRow label="Streak" value={`${streak} trips`} />}
             </div>
           </div>
+
 
           {hasHighlights && (
             <>
