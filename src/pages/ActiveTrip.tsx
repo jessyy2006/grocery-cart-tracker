@@ -384,8 +384,17 @@ export default function ActiveTrip() {
       toast.success(`Added: ${productName}`);
 
     } else {
-      // Not on list — ask the user: extra or substitute
+      // Not on list — ask the user immediately: extra or substitute.
       setOffList({ tripItem, productName });
+      // AI matching runs in the background as a silent upgrade. If it finds a
+      // planned item while the prompt is still untouched, resolve it for them.
+      void (async () => {
+        const aiId = await aiMatch(productName);
+        if (!aiId) return;
+        if (offListRef.current?.tripItem.id !== tripItem.id) return;
+        setOffList(null);
+        await applyMatch(aiId, code, productName, tripItem);
+      })();
     }
   };
 
