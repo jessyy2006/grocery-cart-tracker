@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, Share2 } from "lucide-react";
 import { monthArchiveCode } from "./receiptQuotes";
+import { Metric, HallRow, SectionLabel } from "@/components/trip/ReceiptPaper";
 
 
 type Props = {
