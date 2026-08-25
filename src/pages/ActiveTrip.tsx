@@ -80,12 +80,9 @@ export default function ActiveTrip() {
   } | null>(null);
   const [storeModalOpen, setStoreModalOpen] = useState(false);
   const [storeQuery, setStoreQuery] = useState("");
-  const [nearbyStores, setNearbyStores] = useState<NearbyStore[] | null>(null);
+  const [savedStores, setSavedStores] = useState<{ id: string; name: string }[] | null>(null);
   const [loadingStores, setLoadingStores] = useState(false);
-  const [storeError, setStoreError] = useState<string | null>(null);
-  const [searchResults, setSearchResults] = useState<NearbyStore[] | null>(null);
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
+  const [savingStore, setSavingStore] = useState(false);
   const [pendingErrors, setPendingErrors] = useState<{ name?: boolean; price?: boolean; qty?: boolean }>({});
   const [manualCheck, setManualCheck] = useState<{ item: ListItem; qty: string; price: string } | null>(null);
   const [manualErrors, setManualErrors] = useState<{ qty?: boolean; price?: boolean }>({});
