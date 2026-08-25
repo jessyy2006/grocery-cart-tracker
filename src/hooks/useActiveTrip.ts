@@ -85,7 +85,7 @@ export function useActiveTrip() {
 export function useActiveTripRedirect() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { active, loading } = useActiveTrip();
+  const { active, loading, refetch } = useActiveTrip();
 
   useEffect(() => {
     if (loading) return;
@@ -97,4 +97,14 @@ export function useActiveTripRedirect() {
     if (pathname.startsWith("/onboarding")) return;
     navigate("/trip", { replace: true });
   }, [active, loading, pathname, navigate]);
+
+  // Re-check when the app returns to the foreground so a backgrounded/locked
+  // phone that missed an earlier redirect still lands on the live trip.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refetch();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [refetch]);
 }
