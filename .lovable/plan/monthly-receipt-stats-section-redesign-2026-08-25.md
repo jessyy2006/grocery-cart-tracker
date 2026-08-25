@@ -25,7 +25,7 @@ Everything is one undifferentiated stack of `Row`s: Budget / Spent → Remaining
   Biggest Category      🥬 Fruits & Veg
   vs Last Month                  -$32.10
 - - - - - - - - - - - - - - - - - - - -
-        "Plan your cart, keep your cash."
+      
         [barcode]
           2026—AUG—FINAL
 ```
@@ -50,7 +50,7 @@ Only the two contextual lines: Biggest Category and vs Last Month (signed, color
 
 ### 4. Footer
 
-Adds the shared quote (`pickQuote`) above the barcode, matching the yearly receipt — the monthly receipt currently has no quote line. Barcode and `2026—AUG—FINAL` code unchanged. Tear/share behavior untouched.
+Barcode and `2026—AUG—FINAL` code unchanged. Tear/share behavior untouched.
 
 ## Density notes
 
