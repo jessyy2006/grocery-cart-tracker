@@ -296,46 +296,56 @@ export default function ActiveTrip() {
     }
   };
 
+  // Check off a planned item against a scanned/entered trip item.
+  const applyMatch = async (
+    matchId: string,
+    code: string | null,
+    productName: string,
+    tripItem: TripItem,
+  ) => {
+    const checked_at = new Date().toISOString();
+    const newPrice = tripItem.price_cents;
+    setListItems((c) =>
+      c.map((i) =>
+        i.id === matchId
+          ? { ...i, checked_at, barcode: i.barcode ?? code, name: productName, price_cents: newPrice }
+          : i,
+      ),
+    );
+    setItems((c) =>
+      c.map((i) => (i.id === tripItem.id ? { ...i, substitutes_list_item_id: matchId } : i)),
+    );
+    toast.success(`Checked off: ${productName}`);
+    await Promise.all([
+      supabase
+        .from("trip_planned_items")
+        .update({ checked_at, barcode: code ?? undefined, name: productName, price_cents: newPrice })
+        .eq("id", matchId),
+      // Link the trip_item back to the planned row so saveTrip doesn't double-insert.
+      supabase
+        .from("trip_items")
+        .update({ substitutes_list_item_id: matchId })
+        .eq("id", tripItem.id),
+    ]);
+  };
+
   const handleMatchOrExtra = async (
     code: string | null,
     productName: string,
     tripItem: TripItem
   ) => {
-    // Try barcode-first quick match
+    // Try barcode-first quick match, then a local fuzzy match. Both are
+    // instant — the AI matcher never blocks the UI.
     const open = listItems.filter((i) => !i.checked_at);
     let matchId: string | null = null;
     if (code) {
       const byBarcode = open.find((i) => i.barcode && i.barcode === code);
       if (byBarcode) matchId = byBarcode.id;
     }
-    if (!matchId) matchId = await aiMatch(productName);
+    if (!matchId) matchId = findListMatch(open, { barcode: "", name: productName })?.id ?? null;
 
     if (matchId) {
-      const checked_at = new Date().toISOString();
-      const newName = productName;
-      const newPrice = tripItem.price_cents;
-      setListItems((c) =>
-        c.map((i) =>
-          i.id === matchId
-            ? { ...i, checked_at, barcode: i.barcode ?? code, name: newName, price_cents: newPrice }
-            : i
-        )
-      );
-      await Promise.all([
-        supabase
-          .from("trip_planned_items")
-          .update({ checked_at, barcode: code ?? undefined, name: newName, price_cents: newPrice })
-          .eq("id", matchId),
-        // Link the trip_item back to the planned row so saveTrip doesn't double-insert.
-        supabase
-          .from("trip_items")
-          .update({ substitutes_list_item_id: matchId })
-          .eq("id", tripItem.id),
-      ]);
-      setItems((c) =>
-        c.map((i) => (i.id === tripItem.id ? { ...i, substitutes_list_item_id: matchId } : i)),
-      );
-      toast.success(`Checked off: ${productName}`);
+      await applyMatch(matchId, code, productName, tripItem);
 
     } else if (listHidden && tripId) {
       // Free-shop mode: silently add as a planned (pre-checked) snapshot item,
