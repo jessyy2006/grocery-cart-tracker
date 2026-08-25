@@ -19,11 +19,13 @@ export const Row = ({
 }) => (
   <div className={`flex items-baseline gap-2 ${strong ? "font-bold" : ""}`}>
     <span className="uppercase tracking-wider whitespace-nowrap">{label}</span>
-    {leader !== false && (
+    {leader !== false ? (
       <span
         aria-hidden
         className="min-w-4 flex-1 translate-y-[-3px] border-b border-dotted border-current/50"
       />
+    ) : (
+      <span aria-hidden className="min-w-4 flex-1" />
     )}
     <span className="tabular-nums text-right whitespace-nowrap">{value}</span>
   </div>
