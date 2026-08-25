@@ -606,8 +606,8 @@ export default function ScanReceipt() {
   const matchList = lists.find((l) => l.id === matchListId);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-foreground/55 backdrop-blur-sm">
-      <div className="flex-1 overflow-y-auto px-4 pb-6 safe-top-page">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/55 backdrop-blur-sm">
+      <div className="w-full max-h-full overflow-y-auto px-4 py-6 safe-top-page">
         <div className="mx-auto w-full max-w-md">
           <Card className="p-5">
             <div className="flex items-start justify-between gap-3">
