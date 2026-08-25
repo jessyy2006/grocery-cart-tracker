@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Share2 } from "lucide-react";
-import { JaggedEdge, PAPER, Divider, Row } from "@/components/trip/ReceiptPaper";
+import { JaggedEdge, PAPER, Divider, Metric, HallRow, SectionLabel } from "@/components/trip/ReceiptPaper";
 import { useReceiptShare } from "./useReceiptShare";
 import { yearArchiveCode } from "./receiptQuotes";
 
