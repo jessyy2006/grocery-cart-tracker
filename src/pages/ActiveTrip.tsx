@@ -168,7 +168,11 @@ export default function ActiveTrip() {
         .select("*")
         .eq("trip_id", tripId)
         .order("scanned_at", { ascending: true });
-      setItems((itemRows ?? []) as TripItem[]);
+      const rows = (itemRows ?? []) as TripItem[];
+      setItems(rows);
+      // Rows not linked to a planned item are extras — rehydrate them so the
+      // ledger and running total survive a reload.
+      setExtras(rows.filter((r) => !r.substitutes_list_item_id));
 
       const stashedId = sessionStorage.getItem(`trip:${tripId}:store`);
       if (stashedId) {
