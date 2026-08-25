@@ -1,5 +1,5 @@
 import { invokeWithTimeout } from "@/lib/invoke";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -97,6 +97,12 @@ export default function ActiveTrip() {
   const [manualCheck, setManualCheck] = useState<{ item: ListItem; qty: string; price: string } | null>(null);
   const [manualErrors, setManualErrors] = useState<{ qty?: boolean; price?: boolean }>({});
   const [offList, setOffList] = useState<{ tripItem: TripItem; productName: string } | null>(null);
+  // Mirror of offList so background AI matching can tell whether the prompt is
+  // still showing the same item before auto-resolving it.
+  const offListRef = useRef<{ tripItem: TripItem; productName: string } | null>(null);
+  useEffect(() => {
+    offListRef.current = offList;
+  }, [offList]);
   const [subPickerOpen, setSubPickerOpen] = useState(false);
   const [subQuery, setSubQuery] = useState("");
   const [listReady, setListReady] = useState(false);
@@ -168,7 +174,11 @@ export default function ActiveTrip() {
         .select("*")
         .eq("trip_id", tripId)
         .order("scanned_at", { ascending: true });
-      setItems((itemRows ?? []) as TripItem[]);
+      const rows = (itemRows ?? []) as TripItem[];
+      setItems(rows);
+      // Rows not linked to a planned item are extras — rehydrate them so the
+      // ledger and running total survive a reload.
+      setExtras(rows.filter((r) => !r.substitutes_list_item_id));
 
       const stashedId = sessionStorage.getItem(`trip:${tripId}:store`);
       if (stashedId) {
@@ -292,46 +302,56 @@ export default function ActiveTrip() {
     }
   };
 
+  // Check off a planned item against a scanned/entered trip item.
+  const applyMatch = async (
+    matchId: string,
+    code: string | null,
+    productName: string,
+    tripItem: TripItem,
+  ) => {
+    const checked_at = new Date().toISOString();
+    const newPrice = tripItem.price_cents;
+    setListItems((c) =>
+      c.map((i) =>
+        i.id === matchId
+          ? { ...i, checked_at, barcode: i.barcode ?? code, name: productName, price_cents: newPrice }
+          : i,
+      ),
+    );
+    setItems((c) =>
+      c.map((i) => (i.id === tripItem.id ? { ...i, substitutes_list_item_id: matchId } : i)),
+    );
+    toast.success(`Checked off: ${productName}`);
+    await Promise.all([
+      supabase
+        .from("trip_planned_items")
+        .update({ checked_at, barcode: code ?? undefined, name: productName, price_cents: newPrice })
+        .eq("id", matchId),
+      // Link the trip_item back to the planned row so saveTrip doesn't double-insert.
+      supabase
+        .from("trip_items")
+        .update({ substitutes_list_item_id: matchId })
+        .eq("id", tripItem.id),
+    ]);
+  };
+
   const handleMatchOrExtra = async (
     code: string | null,
     productName: string,
     tripItem: TripItem
   ) => {
-    // Try barcode-first quick match
+    // Try barcode-first quick match, then a local fuzzy match. Both are
+    // instant — the AI matcher never blocks the UI.
     const open = listItems.filter((i) => !i.checked_at);
     let matchId: string | null = null;
     if (code) {
       const byBarcode = open.find((i) => i.barcode && i.barcode === code);
       if (byBarcode) matchId = byBarcode.id;
     }
-    if (!matchId) matchId = await aiMatch(productName);
+    if (!matchId) matchId = findListMatch(open, { barcode: "", name: productName })?.id ?? null;
 
     if (matchId) {
-      const checked_at = new Date().toISOString();
-      const newName = productName;
-      const newPrice = tripItem.price_cents;
-      setListItems((c) =>
-        c.map((i) =>
-          i.id === matchId
-            ? { ...i, checked_at, barcode: i.barcode ?? code, name: newName, price_cents: newPrice }
-            : i
-        )
-      );
-      await Promise.all([
-        supabase
-          .from("trip_planned_items")
-          .update({ checked_at, barcode: code ?? undefined, name: newName, price_cents: newPrice })
-          .eq("id", matchId),
-        // Link the trip_item back to the planned row so saveTrip doesn't double-insert.
-        supabase
-          .from("trip_items")
-          .update({ substitutes_list_item_id: matchId })
-          .eq("id", tripItem.id),
-      ]);
-      setItems((c) =>
-        c.map((i) => (i.id === tripItem.id ? { ...i, substitutes_list_item_id: matchId } : i)),
-      );
-      toast.success(`Checked off: ${productName}`);
+      await applyMatch(matchId, code, productName, tripItem);
 
     } else if (listHidden && tripId) {
       // Free-shop mode: silently add as a planned (pre-checked) snapshot item,
@@ -370,8 +390,17 @@ export default function ActiveTrip() {
       toast.success(`Added: ${productName}`);
 
     } else {
-      // Not on list — ask the user: extra or substitute
+      // Not on list — ask the user immediately: extra or substitute.
       setOffList({ tripItem, productName });
+      // AI matching runs in the background as a silent upgrade. If it finds a
+      // planned item while the prompt is still untouched, resolve it for them.
+      void (async () => {
+        const aiId = await aiMatch(productName);
+        if (!aiId) return;
+        if (offListRef.current?.tripItem.id !== tripItem.id) return;
+        setOffList(null);
+        await applyMatch(aiId, code, productName, tripItem);
+      })();
     }
   };
 
@@ -937,7 +966,7 @@ export default function ActiveTrip() {
                 {extras.length > 0 && (
                   <section>
                     <h3 className="mb-1 px-1 font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground">
-                      unplanned additions
+                      extras
                     </h3>
                     <ul className="divide-y divide-[hsl(20_40%_18%/0.3)] border-t border-[hsl(20_40%_18%/0.3)]">
                       {extras.map((ex) => (
@@ -1124,7 +1153,7 @@ export default function ActiveTrip() {
           <DrawerHeader className="p-0 pb-4 space-y-2 text-center">
             <DrawerTitle className="text-center">Not on your list</DrawerTitle>
             <DrawerDescription className="text-center">
-              "{offList?.productName}" isn't on your shopping list. How should we count it?
+              "{offList?.productName}" isn't on your list. How should we count it?
             </DrawerDescription>
           </DrawerHeader>
           <div className="flex w-full flex-row gap-2">
