@@ -205,9 +205,7 @@ export default function YearlyReceiptView(props: Props) {
 
           {/* Spending Behavior */}
           <div className="mt-4">
-            <div className="font-bold uppercase tracking-wider text-neutral-900">
-              Spending Behavior
-            </div>
+            <SectionLabel>Spending Behavior</SectionLabel>
             <svg
               viewBox={`0 0 ${chartW} ${chartH}`}
               className="mt-2 block w-full"
