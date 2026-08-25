@@ -434,7 +434,7 @@ export default function ReceiptView(props: Props) {
           {/* The Numbers */}
           <div className="mt-4">
             <SectionLabel>The Numbers</SectionLabel>
-            <div className="mt-2 space-y-2">
+            <div className="mt-1 space-y-1">
               <HallRow label="Trips" value={String(tripCount)} />
               <HallRow label="Avg / Trip" value={formatMoney(avgTripCents, currency)} />
               <HallRow label="Impulse Spend" value={formatMoney(impulseCents, currency)} />
