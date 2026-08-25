@@ -20,13 +20,12 @@ import ListDetail from "./pages/ListDetail";
 import Finance from "./pages/Finance";
 import ScanReceipt from "./pages/ScanReceipt";
 import NotFound from "./pages/NotFound.tsx";
-import OnboardingIntro from "./pages/onboarding/Intro";
+import OnboardingHero from "./pages/onboarding/Hero";
+import OnboardingShowcase from "./pages/onboarding/Showcase";
 import OnboardingSignup from "./pages/onboarding/Signup";
-import OnboardingProfile from "./pages/onboarding/Profile";
-import OnboardingGoals from "./pages/onboarding/Goals";
+import OnboardingVerify from "./pages/onboarding/Verify";
 import OnboardingBudget from "./pages/onboarding/Budget";
-import OnboardingBehavior from "./pages/onboarding/Behavior";
-import OnboardingFirstList from "./pages/onboarding/FirstList";
+
 
 const queryClient = new QueryClient();
 
@@ -38,24 +37,10 @@ const App = () => (
         <AuthProvider>
           <OnboardingProvider>
             <Routes>
-              <Route path="/onboarding" element={<OnboardingIntro />} />
+              <Route path="/onboarding" element={<OnboardingHero />} />
+              <Route path="/onboarding/showcase" element={<OnboardingShowcase />} />
               <Route path="/onboarding/signup" element={<OnboardingSignup />} />
-              <Route
-                path="/onboarding/profile"
-                element={
-                  <RequireAuth>
-                    <OnboardingProfile />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/onboarding/goals"
-                element={
-                  <RequireAuth>
-                    <OnboardingGoals />
-                  </RequireAuth>
-                }
-              />
+              <Route path="/onboarding/verify" element={<OnboardingVerify />} />
               <Route
                 path="/onboarding/budget"
                 element={
@@ -64,22 +49,7 @@ const App = () => (
                   </RequireAuth>
                 }
               />
-              <Route
-                path="/onboarding/behavior"
-                element={
-                  <RequireAuth>
-                    <OnboardingBehavior />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/onboarding/first-list"
-                element={
-                  <RequireAuth>
-                    <OnboardingFirstList />
-                  </RequireAuth>
-                }
-              />
+
               <Route
                 element={
                   <RequireAuth>

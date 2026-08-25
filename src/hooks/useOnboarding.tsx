@@ -1,36 +1,31 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { safeGetItem, safeSetItem, safeRemoveItem } from "@/lib/native";
 
-export type OnboardingListItem = {
-  name: string;
-  qty: number;
-  category: string;
-  notes: string | null;
-};
+export const ONBOARDED_KEY = "cartwise:onboarded";
+const DRAFT_KEY = "cartwise:onboardingDraft";
 
+/**
+ * The signup half of onboarding is resumable: if a user quits after entering
+ * their email we never ask for it again. The showcase deliberately is *not*
+ * resumable — it always replays from the hero.
+ */
 export type OnboardingDraft = {
   firstName: string;
-  lastName: string;
-  gender: string | null;
-  ageRange: string | null;
-  goals: string[];
-  budgetCents: number | null; // null = skipped (use default)
-  shoppingBehavior: string | null;
-  firstListItems: OnboardingListItem[];
+  email: string;
+  /** Set once an OTP has been dispatched, so a returning user lands on verify. */
+  codeSent: boolean;
 };
 
-const DEFAULT: OnboardingDraft = {
-  firstName: "",
-  lastName: "",
-  gender: null,
-  ageRange: null,
-  goals: [],
-  budgetCents: null,
-  shoppingBehavior: null,
-  firstListItems: [
-    { name: "Milk", qty: 1, category: "dairy", notes: null },
-    { name: "Eggs", qty: 1, category: "dairy", notes: null },
-    { name: "Bread", qty: 1, category: "bakery", notes: null },
-  ],
+const DEFAULT: OnboardingDraft = { firstName: "", email: "", codeSent: false };
+
+const readDraft = (): OnboardingDraft => {
+  try {
+    const raw = safeGetItem(DRAFT_KEY);
+    if (!raw) return DEFAULT;
+    return { ...DEFAULT, ...(JSON.parse(raw) as Partial<OnboardingDraft>) };
+  } catch {
+    return DEFAULT;
+  }
 };
 
 type Ctx = {
@@ -42,10 +37,21 @@ type Ctx = {
 const OnboardingContext = createContext<Ctx | null>(null);
 
 export const OnboardingProvider = ({ children }: { children: ReactNode }) => {
-  const [draft, setDraft] = useState<OnboardingDraft>(DEFAULT);
-  const update = (patch: Partial<OnboardingDraft>) =>
-    setDraft((d) => ({ ...d, ...patch }));
-  const reset = () => setDraft(DEFAULT);
+  const [draft, setDraft] = useState<OnboardingDraft>(readDraft);
+
+  const update = useCallback((patch: Partial<OnboardingDraft>) => {
+    setDraft((d) => {
+      const next = { ...d, ...patch };
+      safeSetItem(DRAFT_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const reset = useCallback(() => {
+    safeRemoveItem(DRAFT_KEY);
+    setDraft(DEFAULT);
+  }, []);
+
   return (
     <OnboardingContext.Provider value={{ draft, update, reset }}>
       {children}
@@ -59,5 +65,5 @@ export const useOnboarding = () => {
   return ctx;
 };
 
-export const ONBOARDED_KEY = "cartwise:onboarded";
+/** One-time "receipts live in Finance" nudge shown on the first Home visit. */
 export const FEATURE_INTRO_KEY = "cartwise:featureIntroShown";
