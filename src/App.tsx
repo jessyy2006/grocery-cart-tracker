@@ -20,13 +20,12 @@ import ListDetail from "./pages/ListDetail";
 import Finance from "./pages/Finance";
 import ScanReceipt from "./pages/ScanReceipt";
 import NotFound from "./pages/NotFound.tsx";
-import OnboardingIntro from "./pages/onboarding/Intro";
+import OnboardingHero from "./pages/onboarding/Hero";
+import OnboardingShowcase from "./pages/onboarding/Showcase";
 import OnboardingSignup from "./pages/onboarding/Signup";
-import OnboardingProfile from "./pages/onboarding/Profile";
-import OnboardingGoals from "./pages/onboarding/Goals";
+import OnboardingVerify from "./pages/onboarding/Verify";
 import OnboardingBudget from "./pages/onboarding/Budget";
-import OnboardingBehavior from "./pages/onboarding/Behavior";
-import OnboardingFirstList from "./pages/onboarding/FirstList";
+
 
 const queryClient = new QueryClient();
 
