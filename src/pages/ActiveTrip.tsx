@@ -829,11 +829,7 @@ export default function ActiveTrip() {
         </div>
 
         {/* CENTER — list name (+ store) */}
-        <button
-          onClick={openStoreModal}
-          className="min-w-0 justify-self-center text-center"
-          aria-label={activeStore ? "Change store" : "Add store"}
-        >
+        <div className="min-w-0 justify-self-center text-center">
           {activeStore ? (
             <span className="block truncate text-[22px] leading-tight lowercase">
               <span className="font-display">{(listName || "untitled").toLowerCase()}</span>
@@ -847,10 +843,22 @@ export default function ActiveTrip() {
               {(listName || "untitled").toLowerCase()}
             </span>
           )}
-        </button>
+        </div>
 
-        {/* RIGHT — spacer */}
-        <div />
+        {/* RIGHT — store */}
+        <div className="justify-self-end">
+          <button
+            type="button"
+            onClick={openStoreModal}
+            aria-label={activeStore ? "Change store" : "Add store"}
+            className={cn(
+              "press focus-ring -mr-2 flex h-11 w-11 items-center justify-center rounded-control transition-colors",
+              activeStore ? "text-primary" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <MapPin className="h-5 w-5" />
+          </button>
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 pb-8">
