@@ -26,13 +26,6 @@ import { formatMoney, parsePriceToCents, useCurrency, getCurrency } from "@/lib/
 import { lookupBarcode } from "@/lib/openFoodFacts";
 import { findListMatch, getCategory, guessCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
 import PrintedReceiptOverlay, { type TripReceiptPayload } from "@/components/trip/PrintedReceiptOverlay";
-import {
-  findNearbyStores,
-  getCachedCoords,
-  getCurrentPosition,
-  searchStoresByName,
-  NearbyStore,
-} from "@/lib/device/geolocation";
 import { TagPill } from "@/components/TagPill";
 import { toast } from "sonner";
 import { Spinner } from "@/components/Spinner";
@@ -87,12 +80,9 @@ export default function ActiveTrip() {
   } | null>(null);
   const [storeModalOpen, setStoreModalOpen] = useState(false);
   const [storeQuery, setStoreQuery] = useState("");
-  const [nearbyStores, setNearbyStores] = useState<NearbyStore[] | null>(null);
+  const [savedStores, setSavedStores] = useState<{ id: string; name: string }[] | null>(null);
   const [loadingStores, setLoadingStores] = useState(false);
-  const [storeError, setStoreError] = useState<string | null>(null);
-  const [searchResults, setSearchResults] = useState<NearbyStore[] | null>(null);
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState<string | null>(null);
+  const [savingStore, setSavingStore] = useState(false);
   const [pendingErrors, setPendingErrors] = useState<{ name?: boolean; price?: boolean; qty?: boolean }>({});
   const [manualCheck, setManualCheck] = useState<{ item: ListItem; qty: string; price: string } | null>(null);
   const [manualErrors, setManualErrors] = useState<{ qty?: boolean; price?: boolean }>({});
@@ -693,15 +683,15 @@ export default function ActiveTrip() {
 
   const openStoreModal = async () => {
     setStoreModalOpen(true);
-    if (nearbyStores !== null || loadingStores) return;
+    if (savedStores !== null || loadingStores || !user) return;
     setLoadingStores(true);
-    setStoreError(null);
     try {
-      const coords = getCachedCoords() ?? (await getCurrentPosition());
-      const result = await findNearbyStores(coords, 5000);
-      setNearbyStores(result);
-    } catch (e: any) {
-      setStoreError("Couldn't find nearby stores. Check your location permissions.");
+      const { data } = await supabase
+        .from("stores")
+        .select("id, name")
+        .eq("user_id", user.id)
+        .order("name");
+      setSavedStores(data ?? []);
     } finally {
       setLoadingStores(false);
     }
@@ -738,9 +728,25 @@ export default function ActiveTrip() {
     }
     const next = { id: storeId!, name: s.name };
     setActiveStore(next);
+    setSavedStores((prev) =>
+      prev && prev.some((p) => p.id === next.id)
+        ? prev
+        : [...(prev ?? []), next].sort((a, b) => a.name.localeCompare(b.name)),
+    );
     if (tripId) sessionStorage.setItem(`trip:${tripId}:store`, next.id);
     setStoreModalOpen(false);
     setStoreQuery("");
+  };
+
+  const saveTypedStore = async () => {
+    const name = storeQuery.trim();
+    if (!name || savingStore) return;
+    setSavingStore(true);
+    try {
+      await pickStore({ name });
+    } finally {
+      setSavingStore(false);
+    }
   };
 
   const exitTrip = async () => {
@@ -750,36 +756,12 @@ export default function ActiveTrip() {
     navigate("/", { replace: true });
   };
 
-  // Debounced global search when user types in store modal
-  useEffect(() => {
-    if (!storeModalOpen) return;
-    const q = storeQuery.trim();
-    if (q.length < 2) {
-      setSearchResults(null);
-      setSearchError(null);
-      setSearching(false);
-      return;
-    }
-    setSearching(true);
-    setSearchError(null);
-    const handle = setTimeout(async () => {
-      try {
-        const res = await searchStoresByName(q);
-        setSearchResults(res.slice(0, 5));
-      } catch {
-        setSearchError("Search failed. Try again.");
-        setSearchResults([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 350);
-    return () => clearTimeout(handle);
-  }, [storeQuery, storeModalOpen]);
-
   if (!tripId) return null;
 
-  const isSearching = storeQuery.trim().length >= 2;
-  const displayStores = isSearching ? (searchResults ?? []) : (nearbyStores ?? []);
+  const storeFilter = storeQuery.trim().toLowerCase();
+  const displayStores = (savedStores ?? []).filter((s) =>
+    storeFilter ? s.name.toLowerCase().includes(storeFilter) : true,
+  );
 
   const checkedCount = listItems.filter((i) => i.checked_at).length + extras.length;
   const totalCount = listItems.length + extras.length;
@@ -847,11 +829,7 @@ export default function ActiveTrip() {
         </div>
 
         {/* CENTER — list name (+ store) */}
-        <button
-          onClick={openStoreModal}
-          className="min-w-0 justify-self-center text-center"
-          aria-label={activeStore ? "Change store" : "Add store"}
-        >
+        <div className="min-w-0 justify-self-center text-center">
           {activeStore ? (
             <span className="block truncate text-[22px] leading-tight lowercase">
               <span className="font-display">{(listName || "untitled").toLowerCase()}</span>
@@ -865,10 +843,22 @@ export default function ActiveTrip() {
               {(listName || "untitled").toLowerCase()}
             </span>
           )}
-        </button>
+        </div>
 
-        {/* RIGHT — spacer */}
-        <div />
+        {/* RIGHT — store */}
+        <div className="justify-self-end">
+          <button
+            type="button"
+            onClick={openStoreModal}
+            aria-label={activeStore ? "Change store" : "Add store"}
+            className={cn(
+              "press focus-ring -mr-2 flex h-11 w-11 items-center justify-center rounded-control transition-colors",
+              activeStore ? "text-primary" : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <MapPin className="h-5 w-5" />
+          </button>
+        </div>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 pb-8">
@@ -1225,23 +1215,34 @@ export default function ActiveTrip() {
       >
         <DrawerContent className="px-5 pb-8 pt-2 max-h-[85vh]">
           <DrawerHeader className="p-0 pb-4 text-left">
-            <DrawerTitle>{activeStore ? "Change store" : "Add store"}</DrawerTitle>
-            <DrawerDescription>
-              {isSearching
-                ? "Top matches for your search."
-                : "Grocery stores within 5 km of you."}
-            </DrawerDescription>
+            <DrawerTitle>{activeStore ? "change store" : "add store"}</DrawerTitle>
+            <DrawerDescription>Type the store name for this trip.</DrawerDescription>
           </DrawerHeader>
           <div className="space-y-3">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={storeQuery}
-                onChange={(e) => setStoreQuery(e.target.value)}
-                placeholder="Search any store name or address"
-                className="pl-9"
-                autoFocus
-              />
+            <div className="flex gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={storeQuery}
+                  onChange={(e) => setStoreQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void saveTypedStore();
+                    }
+                  }}
+                  placeholder="Store name"
+                  className="pl-9"
+                  autoFocus
+                />
+              </div>
+              <Button
+                variant="primaryLight"
+                onClick={() => void saveTypedStore()}
+                disabled={!storeQuery.trim() || savingStore}
+              >
+                {savingStore ? <Spinner /> : "Save"}
+              </Button>
             </div>
 
             {activeStore && (
@@ -1259,52 +1260,28 @@ export default function ActiveTrip() {
             )}
 
             <div className="max-h-[50vh] overflow-y-auto">
-              {isSearching ? (
-                <>
-                  {searching && (
-                    <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                      <Spinner /> Searching…
-                    </div>
-                  )}
-                  {!searching && searchError && (
-                    <p className="py-4 text-center text-sm text-muted-foreground">{searchError}</p>
-                  )}
-                  {!searching && !searchError && searchResults !== null && displayStores.length === 0 && (
-                    <p className="py-4 text-center text-sm text-muted-foreground">No matches found.</p>
-                  )}
-                </>
-              ) : (
-                <>
-                  {loadingStores && (
-                    <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                      <Spinner /> Finding nearby stores…
-                    </div>
-                  )}
-                  {!loadingStores && storeError && (
-                    <p className="py-4 text-center text-sm text-muted-foreground">{storeError}</p>
-                  )}
-                  {!loadingStores && !storeError && nearbyStores !== null && displayStores.length === 0 && (
-                    <p className="py-4 text-center text-sm text-muted-foreground">
-                      No nearby grocery stores. Try searching by name.
-                    </p>
-                  )}
-                </>
+              {loadingStores && (
+                <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                  <Spinner /> Loading your stores…
+                </div>
+              )}
+              {!loadingStores && displayStores.length === 0 && (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  {storeFilter
+                    ? "No saved store matches — hit save to add it."
+                    : "No saved stores yet — type one above."}
+                </p>
               )}
               {displayStores.length > 0 && (
                 <ul className="space-y-2">
-                  {displayStores.map((s, i) => (
-                    <li key={`${s.lat},${s.lng}:${i}`}>
+                  {displayStores.map((s) => (
+                    <li key={s.id}>
                       <button
-                        onClick={() => pickStore(s)}
+                        onClick={() => pickStore({ name: s.name })}
                         className="flex w-full items-start gap-3 rounded-card border border-border bg-card p-3 text-left transition hover:border-primary"
                       >
                         <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-                        <div className="min-w-0">
-                          <p className="truncate font-medium">{s.name}</p>
-                          {s.address && (
-                            <p className="truncate text-xs text-muted-foreground">{s.address}</p>
-                          )}
-                        </div>
+                        <p className="min-w-0 truncate font-medium">{s.name}</p>
                       </button>
                     </li>
                   ))}
