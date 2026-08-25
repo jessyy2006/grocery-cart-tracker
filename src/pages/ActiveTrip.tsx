@@ -98,6 +98,11 @@ export default function ActiveTrip() {
   const [listReady, setListReady] = useState(false);
   const [receipt, setReceipt] = useState<TripReceiptPayload | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [endingTrip, setEndingTrip] = useState(false);
+  const [exitingTrip, setExitingTrip] = useState(false);
+  const [addingItem, setAddingItem] = useState(false);
+  const [substituting, setSubstituting] = useState(false);
+  const [checkingOff, setCheckingOff] = useState(false);
 
   // Load active trip
   useEffect(() => {
@@ -251,7 +256,7 @@ export default function ActiveTrip() {
   };
 
   const confirmManualCheck = async () => {
-    if (!manualCheck) return;
+    if (!manualCheck || checkingOff) return;
     const qtyNum = parseInt(manualCheck.qty, 10);
     const priceCents = parsePriceToCents(manualCheck.price);
     const errs: { qty?: boolean; price?: boolean } = {};
@@ -261,15 +266,21 @@ export default function ActiveTrip() {
       setManualErrors(errs);
       return;
     }
+    setCheckingOff(true);
     const it = manualCheck.item;
     const checked_at = new Date().toISOString();
     setListItems((c) =>
       c.map((i) => (i.id === it.id ? { ...i, checked_at, qty: qtyNum, price_cents: priceCents } : i))
     );
-    await supabase
+    const { error } = await supabase
       .from("trip_planned_items")
       .update({ checked_at, qty: qtyNum, price_cents: priceCents })
       .eq("id", it.id);
+    setCheckingOff(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setManualCheck(null);
   };
 
@@ -407,7 +418,8 @@ export default function ActiveTrip() {
   };
 
   const confirmAsSubstitute = async (planned: ListItem) => {
-    if (!offList) return;
+    if (!offList || substituting) return;
+    setSubstituting(true);
     const tripItemId = offList.tripItem.id;
     const checked_at = new Date().toISOString();
     const originalName = planned.name;
@@ -427,6 +439,7 @@ export default function ActiveTrip() {
         })
         .eq("id", planned.id),
     ]);
+    setSubstituting(false);
     if (e1 || e2) {
       toast.error((e1 ?? e2)!.message);
       return;
@@ -483,7 +496,7 @@ export default function ActiveTrip() {
   };
 
   const confirmAdd = async () => {
-    if (!pending || !tripId) return;
+    if (!pending || !tripId || addingItem) return;
     const price_cents = parsePriceToCents(pending.price);
     const errs: { name?: boolean; price?: boolean; qty?: boolean } = {};
     if (!pending.name.trim()) errs.name = true;
@@ -494,6 +507,7 @@ export default function ActiveTrip() {
       return;
     }
     setPendingErrors({});
+    setAddingItem(true);
     const insert = {
       trip_id: tripId,
       store_id: activeStore?.id ?? null,
@@ -505,6 +519,7 @@ export default function ActiveTrip() {
     };
     const { data, error } = await supabase.from("trip_items").insert(insert).select("*").single();
     if (error) {
+      setAddingItem(false);
       toast.error(error.message);
       return;
     }
@@ -521,6 +536,7 @@ export default function ActiveTrip() {
     const nameForMatch = pending.name.trim();
     const codeForMatch = pending.barcode;
     setPending(null);
+    setAddingItem(false);
     await handleMatchOrExtra(codeForMatch, nameForMatch, newItem);
   };
 
@@ -533,12 +549,13 @@ export default function ActiveTrip() {
   };
 
   const saveTrip = async () => {
-    if (!tripId || !user) return;
+    if (!tripId || !user || endingTrip) return;
     // An empty trip is never saved — offer to keep shopping or bail out.
     if (items.length === 0 && extras.length === 0 && listItems.every((i) => !i.checked_at)) {
       setEmptyEndOpen(true);
       return;
     }
+    setEndingTrip(true);
     const endedAt = new Date();
 
     // Persist manually checked-off planned items as trip_items so trips.total_cents
@@ -564,6 +581,7 @@ export default function ActiveTrip() {
       );
       if (insErr) {
         toast.error(insErr.message);
+        setEndingTrip(false);
         return;
       }
     }
@@ -574,6 +592,7 @@ export default function ActiveTrip() {
       .eq("id", tripId);
     if (error) {
       toast.error(error.message);
+      setEndingTrip(false);
       return;
     }
 
@@ -750,7 +769,8 @@ export default function ActiveTrip() {
   };
 
   const exitTrip = async () => {
-    if (!tripId) return;
+    if (!tripId || exitingTrip) return;
+    setExitingTrip(true);
     await supabase.from("trips").delete().eq("id", tripId);
     sessionStorage.removeItem(`trip:${tripId}:store`);
     navigate("/", { replace: true });
@@ -789,9 +809,10 @@ export default function ActiveTrip() {
               <AlertDialogFooter className="flex-row gap-2 sm:justify-stretch">
                 <AlertDialogAction
                   onClick={exitTrip}
+                  disabled={exitingTrip}
                   className={cn(buttonVariants({ variant: "destructiveSoft", size: "lg" }), "min-w-0 flex-1")}
                 >
-                  Exit
+                  {exitingTrip ? "exiting…" : "Exit"}
                 </AlertDialogAction>
                 <AlertDialogCancel
                   className={cn(buttonVariants({ variant: "primaryLight", size: "lg" }), "mt-0 min-w-0 flex-1")}
@@ -814,9 +835,10 @@ export default function ActiveTrip() {
               <AlertDialogFooter className="flex-row gap-2 sm:justify-stretch">
                 <AlertDialogAction
                   onClick={exitTrip}
+                  disabled={exitingTrip}
                   className={cn(buttonVariants({ variant: "destructiveSoft", size: "lg" }), "min-w-0 flex-1")}
                 >
-                  Exit
+                  {exitingTrip ? "exiting…" : "Exit"}
                 </AlertDialogAction>
                 <AlertDialogCancel
                   className={cn(buttonVariants({ variant: "primaryLight", size: "lg" }), "mt-0 min-w-0 flex-1")}
@@ -988,9 +1010,10 @@ export default function ActiveTrip() {
             <button
               type="button"
               onClick={saveTrip}
-              className="font-mono text-[12px] lowercase tracking-wide text-forest-foreground/80 hover:text-forest-foreground transition-colors"
+              disabled={endingTrip}
+              className="font-mono text-[12px] lowercase tracking-wide text-forest-foreground/80 hover:text-forest-foreground transition-colors disabled:opacity-50"
             >
-              [ end trip ]
+              {endingTrip ? "saving…" : "[ end trip ]"}
             </button>
           </div>
           <p className="mt-3 flex items-baseline gap-2 leading-none">
@@ -1083,8 +1106,8 @@ export default function ActiveTrip() {
               {pending.barcode && (
                 <p className="pt-0.5 text-xs text-muted-foreground">Barcode: {pending.barcode}</p>
               )}
-              <Button variant="primaryLight" size="lg" className="mt-2 w-full" onClick={confirmAdd}>
-                <Plus className="mr-1 h-4 w-4" /> add
+              <Button variant="primaryLight" size="lg" className="mt-2 w-full" onClick={confirmAdd} disabled={addingItem}>
+                {addingItem ? <Spinner size="sm" /> : <Plus className="mr-1 h-4 w-4" />} add
               </Button>
             </div>
           )}
@@ -1123,8 +1146,8 @@ export default function ActiveTrip() {
                   />
                 </FieldBox>
               </div>
-              <Button variant="primaryLight" size="lg" className="mt-2 w-full" onClick={confirmManualCheck}>
-                <Check className="mr-1 h-4 w-4" /> check off
+              <Button variant="primaryLight" size="lg" className="mt-2 w-full" onClick={confirmManualCheck} disabled={checkingOff}>
+                {checkingOff ? <Spinner size="sm" /> : <Check className="mr-1 h-4 w-4" />} check off
               </Button>
             </div>
           )}
@@ -1185,7 +1208,8 @@ export default function ActiveTrip() {
                   <li key={i.id}>
                     <button
                       onClick={() => confirmAsSubstitute(i)}
-                      className="flex w-full items-center justify-between rounded-card border border-border bg-card p-3 text-left transition hover:border-primary"
+                      disabled={substituting}
+                      className="flex w-full items-center justify-between rounded-card border border-border bg-card p-3 text-left transition hover:border-primary disabled:opacity-50"
                     >
                       <div className="min-w-0">
                         <p className="truncate font-medium">{i.name}</p>

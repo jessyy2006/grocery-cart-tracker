@@ -55,10 +55,20 @@ Deno.serve(async (req) => {
       }
     }
 
+    // If the auth user is already gone, treat deletion as satisfied.
+    const { data: existing, error: lookupErr } = await admin.auth.admin.getUserById(userId);
+    if (lookupErr) {
+      console.error("delete-account: lookup failed", lookupErr.message);
+      return json({ error: lookupErr.message }, 500);
+    }
+    if (!existing.user) {
+      return json({ ok: true, deleted: false, reason: "user_already_removed" });
+    }
+
     const { error: delErr } = await admin.auth.admin.deleteUser(userId);
     if (delErr) return json({ error: delErr.message }, 500);
 
-    return json({ ok: true });
+    return json({ ok: true, deleted: true });
   } catch (e) {
     console.error("delete-account error", e);
     return json({ error: (e as Error).message ?? "Unexpected error" }, 500);

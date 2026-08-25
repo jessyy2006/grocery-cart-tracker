@@ -13,6 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ONBOARDING_CHECK_TIMEOUT = 8_000;
+
+type OnboardingRow = { completed_at?: string | null };
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ]);
+}
 
 /**
  * Signup step 1 — first name + email. No password: we mail a 6-digit code.
@@ -31,6 +41,7 @@ export default function OnboardingSignup() {
   // Already signed in (returning user, or fresh OAuth): skip ahead.
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
     (async () => {
       const seeded = nameFromMetadata(user.user_metadata);
       if (seeded && !draft.firstName) update({ firstName: seeded });
@@ -39,18 +50,31 @@ export default function OnboardingSignup() {
         navigate("/", { replace: true });
         return;
       }
-      const { data } = await (supabase as any)
-        .from("user_onboarding")
-        .select("completed_at")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (data?.completed_at) {
-        safeSetItem(ONBOARDED_KEY, "1");
-        navigate("/", { replace: true });
-      } else {
-        navigate("/onboarding/budget", { replace: true });
+      try {
+        const { data } = await withTimeout(
+          (supabase as any)
+            .from("user_onboarding")
+            .select("completed_at")
+            .eq("user_id", user.id)
+            .maybeSingle() as Promise<{ data: OnboardingRow | null }>,
+          ONBOARDING_CHECK_TIMEOUT,
+        );
+        if (cancelled) return;
+        if (data?.completed_at) {
+          safeSetItem(ONBOARDED_KEY, "1");
+          navigate("/", { replace: true });
+        } else {
+          navigate("/onboarding/budget", { replace: true });
+        }
+      } catch {
+        if (!cancelled) {
+          toast.error("Couldn't verify your account. Please try again.");
+        }
       }
     })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 

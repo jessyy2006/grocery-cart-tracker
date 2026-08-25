@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 
 import { Plus, ShoppingBasket, Check, X, ListPlus } from "lucide-react";
+import { Spinner } from "@/components/Spinner";
 import { BackHeader } from "@/components/BackHeader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CATEGORIES, CATEGORY_ORDER, CategorySlug, getCategory, guessCategory } from "@/lib/categories";
@@ -21,6 +22,7 @@ import { getDuplicateAlerts, normalizeItemName } from "@/lib/prefs";
 import { PageLoadGate } from "@/components/PageLoadGate";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { EmptyState } from "@/components/EmptyState";
+import { ErrorState } from "@/components/ErrorState";
 import { LedgerRow } from "@/components/LedgerRow";
 import { toast } from "sonner";
 import { snapshotListIntoTrip } from "@/lib/snapshotList";
@@ -56,6 +58,7 @@ export default function ListDetail() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [listName, setListName] = useState("");
+  const [listFound, setListFound] = useState(true);
   const [items, setItems] = useState<Item[]>([]);
   const [ready, setReady] = useState(false);
   const [name, setName] = useState("");
@@ -76,6 +79,11 @@ export default function ListDetail() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [tagEditing, setTagEditing] = useState(false);
   const [tagDraft, setTagDraft] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [savingName, setSavingName] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [removing, setRemoving] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const padRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLButtonElement>(null);
@@ -129,7 +137,12 @@ export default function ListDetail() {
           .limit(1),
       ]);
       if (cancelled) return;
-      if (l) setListName(l.name);
+      if (l) {
+        setListName(l.name);
+        setListFound(true);
+      } else {
+        setListFound(false);
+      }
       setItems((data ?? []) as Item[]);
       setRunActive(!!trips?.[0]);
       setReady(true);
@@ -229,6 +242,7 @@ export default function ListDetail() {
   const total = items.length;
 
   const saveListName = async () => {
+    if (savingName) return;
     const next = nameDraft.trim();
     if (!next || !id) {
       setNameEditing(false);
@@ -239,9 +253,11 @@ export default function ListDetail() {
       setNameEditing(false);
       return;
     }
+    setSavingName(true);
     setListName(next);
     setNameEditing(false);
     const { error } = await supabase.from("shopping_lists").update({ name: next }).eq("id", id);
+    setSavingName(false);
     if (error) toast.error(error.message);
   };
 
@@ -272,7 +288,8 @@ export default function ListDetail() {
   };
 
   const performAdd = async () => {
-    if (!id || !name.trim()) return;
+    if (!id || !name.trim() || adding) return;
+    setAdding(true);
     const slug = autoCat ? guessCategory(name) : category;
     const parsedQty = Math.max(1, parseInt(qtyText, 10) || 1);
     const insert = {
@@ -284,6 +301,7 @@ export default function ListDetail() {
       tag: tag,
     };
     const { data, error } = await supabase.from("shopping_list_items").insert(insert).select("*").single();
+    setAdding(false);
     if (error) return toast.error(error.message);
     setItems((c) => [...c, data as Item]);
     closePad();
@@ -293,7 +311,7 @@ export default function ListDetail() {
   };
 
   const addItem = async () => {
-    if (!id || !name.trim()) return;
+    if (!id || !name.trim() || adding) return;
     if (getDuplicateAlerts()) {
       const target = normalizeItemName(name);
       const dup = items.some((it) => normalizeItemName(it.name) === target);
@@ -322,9 +340,10 @@ export default function ListDetail() {
   };
 
   const saveEdit = async () => {
-    if (!editing) return;
+    if (!editing || savingEdit) return;
     const newName = name.trim();
     if (!newName) return toast.error("Name can't be empty");
+    setSavingEdit(true);
     const newQty = Math.max(1, parseInt(qtyText, 10) || 1);
     const newNotes = notes.trim() ? notes.trim().slice(0, 25) : null;
     const slug = autoCat ? guessCategory(newName) : category;
@@ -338,6 +357,7 @@ export default function ListDetail() {
       .from("shopping_list_items")
       .update({ name: newName, qty: newQty, notes: newNotes, tag, category: slug })
       .eq("id", target);
+    setSavingEdit(false);
     if (error) toast.error(error.message);
     closePad();
   };
@@ -353,9 +373,15 @@ export default function ListDetail() {
   };
 
   const remove = async (itId: string) => {
+    if (removing[itId]) return;
+    setRemoving((m) => ({ ...m, [itId]: true }));
     const prev = items;
     setItems((c) => c.filter((i) => i.id !== itId));
     const { error } = await supabase.from("shopping_list_items").delete().eq("id", itId);
+    setRemoving((m) => {
+      const { [itId]: _, ...rest } = m;
+      return rest;
+    });
     if (error) {
       setItems(prev);
       toast.error("Couldn't remove the item");
@@ -363,36 +389,56 @@ export default function ListDetail() {
   };
 
   const startRun = async () => {
-    if (!user || !id) return;
+    if (!user || !id || starting) return;
     if (items.length === 0) return toast.error("Add some items first");
-    const { data: active } = await supabase
-      .from("trips")
-      .select("id, list_id")
-      .eq("status", "active")
-      .order("started_at", { ascending: false })
-      .limit(1);
-    const unfinished = active?.[0];
-    if (unfinished && unfinished.list_id === id) {
-      // Same list — resume the in-progress run (snapshot insert is idempotent).
-      await snapshotListIntoTrip(unfinished.id, id);
-      navigate("/trip");
-      return;
-    }
-    if (unfinished) {
-      // Came from another list (or a free trip) — discard it so progress resets.
-      await supabase.from("trips").delete().eq("id", unfinished.id);
-      sessionStorage.removeItem(`trip:${unfinished.id}:store`);
-    }
+    setStarting(true);
+    try {
+      const { data: active } = await supabase
+        .from("trips")
+        .select("id, list_id")
+        .eq("status", "active")
+        .order("started_at", { ascending: false })
+        .limit(1);
+      const unfinished = active?.[0];
+      if (unfinished && unfinished.list_id === id) {
+        // Same list — resume the in-progress run (snapshot insert is idempotent).
+        await snapshotListIntoTrip(unfinished.id, id);
+        navigate("/trip");
+        return;
+      }
+      if (unfinished) {
+        // Came from another list (or a free trip) — discard it so progress resets.
+        await supabase.from("trips").delete().eq("id", unfinished.id);
+        sessionStorage.removeItem(`trip:${unfinished.id}:store`);
+      }
 
-    const { data, error } = await supabase
-      .from("trips")
-      .insert({ user_id: user.id, list_id: id, status: "active" })
-      .select("id")
-      .single();
-    if (error) return toast.error(error.message);
-    await snapshotListIntoTrip(data!.id, id);
-    navigate("/trip");
+      const { data, error } = await supabase
+        .from("trips")
+        .insert({ user_id: user.id, list_id: id, status: "active" })
+        .select("id")
+        .single();
+      if (error) throw error;
+      await snapshotListIntoTrip(data!.id, id);
+      navigate("/trip");
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to start trip");
+      setStarting(false);
+    }
   };
+
+  if (!listFound) {
+    return (
+      <div className="page-gutter safe-top-page pb-6">
+        <BackHeader to="/lists" className="-mt-1" />
+        <ErrorState
+          title="list not found"
+          description="This list may have been deleted or the link is wrong."
+          retryLabel="back to lists"
+          onRetry={() => navigate("/lists")}
+        />
+      </div>
+    );
+  }
 
   return (
     <PageLoadGate ready={ready} className="h-full">
@@ -425,9 +471,10 @@ export default function ListDetail() {
                   type="button"
                   onClick={saveListName}
                   aria-label="Save name"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                  disabled={savingName}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground disabled:opacity-50"
                 >
-                  <Check className="h-5 w-5" />
+                  {savingName ? <Spinner size="sm" /> : <Check className="h-5 w-5" />}
                 </button>
               </div>
             ) : (
@@ -519,6 +566,7 @@ export default function ListDetail() {
                               }}
                               onEdit={() => openEdit(it)}
                               onDelete={() => setPendingDelete(it)}
+                              disabled={removing[it.id]}
                             />
                           </DraggableRow>
                         ))}
@@ -711,16 +759,20 @@ export default function ListDetail() {
           size="lg"
           className="w-full"
           onClick={addOpen ? (editing ? saveEdit : addItem) : startRun}
-          disabled={addOpen && !name.trim()}
+          disabled={(addOpen && !name.trim()) || starting || adding || savingEdit || savingName}
         >
-          {addOpen ? (
+          {starting ? (
+            <span className="inline-flex items-center gap-2">
+              <Spinner size="sm" /> starting…
+            </span>
+          ) : addOpen ? (
             editing ? (
               <>
-                <Check className="mr-2 h-5 w-5" /> save changes
+                {savingEdit ? <Spinner size="sm" /> : <Check className="mr-2 h-5 w-5" />} save changes
               </>
             ) : (
               <>
-                <Plus className="mr-2 h-5 w-5" /> add to list
+                {adding ? <Spinner size="sm" /> : <Plus className="mr-2 h-5 w-5" />} add to list
               </>
             )
           ) : (
