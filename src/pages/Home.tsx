@@ -117,10 +117,22 @@ export default function Home() {
   };
 
   const startTripWith = async (listId: string | null) => {
-    if (!user) return;
+    if (!user || creating) return;
     setCreating(true);
     try {
-      await supabase.from("trips").delete().eq("user_id", user.id).eq("status", "active");
+      // Never silently discard an active trip; the app-level active-trip guard
+      // routes users back to /trip. If somehow the guard hasn't fired yet, bail.
+      const { data: active } = await supabase
+        .from("trips")
+        .select("id")
+        .eq("status", "active")
+        .limit(1);
+      if (active && active.length > 0) {
+        toast.info("You already have a live trip in progress");
+        navigate("/trip", { replace: true });
+        return;
+      }
+
       if (listId) {
         await supabase
           .from("shopping_list_items")
