@@ -397,11 +397,11 @@ export default function ListDetail() {
     try {
       const { data: active } = await supabase
         .from("trips")
-        .select("id, list_id")
+        .select("id, list_id, shopping_lists:list_id(name, hidden)")
         .eq("status", "active")
         .order("started_at", { ascending: false })
         .limit(1);
-      const unfinished = active?.[0];
+      const unfinished = active?.[0] as { id: string; list_id: string | null; shopping_lists?: { name: string | null; hidden: boolean | null } | null } | undefined;
       if (unfinished && unfinished.list_id === id) {
         // Same list — resume the in-progress run (snapshot insert is idempotent).
         await snapshotListIntoTrip(unfinished.id, id);
@@ -409,11 +409,24 @@ export default function ListDetail() {
         return;
       }
       if (unfinished) {
-        // Came from another list (or a free trip) — discard it so progress resets.
-        await supabase.from("trips").delete().eq("id", unfinished.id);
-        sessionStorage.removeItem(`trip:${unfinished.id}:store`);
+        // Came from another list (or a free trip) — ask before discarding.
+        setUnfinishedTrip(unfinished);
+        setReplaceTripOpen(true);
+        setStarting(false);
+        return;
       }
 
+      await createTripAndGo();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to start trip");
+      setStarting(false);
+    }
+  };
+
+  const createTripAndGo = async () => {
+    if (!user || !id) return;
+    setStarting(true);
+    try {
       const { data, error } = await supabase
         .from("trips")
         .insert({ user_id: user.id, list_id: id, status: "active" })
@@ -424,6 +437,32 @@ export default function ListDetail() {
       navigate("/trip");
     } catch (e: any) {
       toast.error(e.message ?? "Failed to start trip");
+      setStarting(false);
+    }
+  };
+
+  const doReplaceAndStart = async () => {
+    if (!unfinishedTrip || !user || !id) return;
+    setReplaceTripOpen(false);
+    setStarting(true);
+    try {
+      // If the old trip was backed by a hidden free-trip list, clean it up too.
+      if (unfinishedTrip.list_id) {
+        const { data: list } = await supabase
+          .from("shopping_lists")
+          .select("hidden")
+          .eq("id", unfinishedTrip.list_id)
+          .maybeSingle();
+        if (list?.hidden) {
+          await supabase.from("shopping_lists").delete().eq("id", unfinishedTrip.list_id);
+        }
+      }
+      await supabase.from("trips").delete().eq("id", unfinishedTrip.id);
+      sessionStorage.removeItem(`trip:${unfinishedTrip.id}:store`);
+      setUnfinishedTrip(null);
+      await createTripAndGo();
+    } catch (e: any) {
+      toast.error(e.message ?? "Failed to replace trip");
       setStarting(false);
     }
   };
