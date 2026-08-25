@@ -683,15 +683,15 @@ export default function ActiveTrip() {
 
   const openStoreModal = async () => {
     setStoreModalOpen(true);
-    if (nearbyStores !== null || loadingStores) return;
+    if (savedStores !== null || loadingStores || !user) return;
     setLoadingStores(true);
-    setStoreError(null);
     try {
-      const coords = getCachedCoords() ?? (await getCurrentPosition());
-      const result = await findNearbyStores(coords, 5000);
-      setNearbyStores(result);
-    } catch (e: any) {
-      setStoreError("Couldn't find nearby stores. Check your location permissions.");
+      const { data } = await supabase
+        .from("stores")
+        .select("id, name")
+        .eq("user_id", user.id)
+        .order("name");
+      setSavedStores(data ?? []);
     } finally {
       setLoadingStores(false);
     }
