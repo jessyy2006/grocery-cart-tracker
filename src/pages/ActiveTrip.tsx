@@ -830,17 +830,12 @@ export default function ActiveTrip() {
 
         {/* CENTER — list name (+ store) */}
         <div className="min-w-0 justify-self-center text-center">
-          {activeStore ? (
-            <span className="block truncate text-[22px] leading-tight lowercase">
-              <span className="font-display">{(listName || "untitled").toLowerCase()}</span>
-              <span className="mx-1.5 text-muted-foreground">·</span>
-              <span className="font-mono text-[14px] text-muted-foreground">
-                {activeStore.name.toLowerCase()}
-              </span>
-            </span>
-          ) : (
-            <span className="block truncate font-display text-[24px] leading-tight lowercase">
-              {(listName || "untitled").toLowerCase()}
+          <span className="block truncate font-display text-[24px] leading-tight lowercase">
+            {(listName || "untitled").toLowerCase()}
+          </span>
+          {activeStore && (
+            <span className="block truncate font-mono text-[13px] leading-tight text-muted-foreground lowercase">
+              {activeStore.name.toLowerCase()}
             </span>
           )}
         </div>
