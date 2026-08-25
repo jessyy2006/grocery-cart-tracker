@@ -414,39 +414,60 @@ export default function ReceiptView(props: Props) {
             <div className="text-base font-bold uppercase tracking-widest">
               Monthly Grocery Summary
             </div>
-            <div className="mt-1 text-xs text-neutral-600">{fmtRange(monthStart, monthEnd)}</div>
+            <div className="mt-1 mb-1 text-xs text-neutral-600">{fmtRange(monthStart, monthEnd)}</div>
           </div>
 
           <Divider />
-          <Row label="Budget" value={budgetCents > 0 ? formatMoney(budgetCents, currency) : "—"} />
-          <Row label="Spent" value={formatMoney(monthSpend, currency)} />
-          <Divider />
-          {budgetCents > 0 ? (
-            over ? (
-              <Row label="Over Budget" value={formatMoney(-remaining, currency)} strong />
-            ) : (
-              <Row label="Remaining" value={formatMoney(remaining, currency)} strong />
-            )
-          ) : (
-            <Row label="Remaining" value="—" strong />
-          )}
-          <Divider />
-          <Row label="Trips" value={String(tripCount)} />
-          <Row label="Avg / Trip" value={formatMoney(avgTripCents, currency)} />
-          <Row label="Impulse Spend" value={formatMoney(impulseCents, currency)} />
-          <Row label="Impulse Rate" value={`${impulseRate}%`} />
-          <div className="h-4" aria-hidden />
-          {biggestCategory && biggestCategory.delta !== 0 && (
-            <Row label="Biggest Category" value={biggestCategory.label} />
-          )}
-          {streak >= 2 && (
-            <Row label="Streak" value={`${streak} trips`} />
-          )}
-          {momDelta !== null && (
-            <Row
-              label="VS Last Month"
-              value={`${momDelta < 0 ? "-" : "+"}${formatMoney(Math.abs(momDelta), currency)}`}
+
+          {/* Three metric columns */}
+          <div className="my-3 grid grid-cols-3 gap-2">
+            <Metric label="Spent" value={formatMoney(monthSpend, currency, 0)} />
+            <Metric
+              label={over ? "Over" : "Left"}
+              value={
+                budgetCents > 0
+                  ? formatMoney(Math.abs(remaining), currency, 0)
+                  : "—"
+              }
+              caption={budgetCents > 0 ? `of ${formatMoney(budgetCents, currency, 0)}` : undefined}
+              bordered
             />
+            <Metric label="Trips" value={String(tripCount)} bordered />
+          </div>
+
+          <Divider />
+
+          {/* The Numbers */}
+          <div className="mt-4">
+            <SectionLabel>The Numbers</SectionLabel>
+            <div className="mt-2 space-y-2">
+              <HallRow label="Avg / Trip" value={formatMoney(avgTripCents, currency)} />
+              <HallRow label="Impulse Spend" value={formatMoney(impulseCents, currency)} />
+              <HallRow label="Impulse Rate" value={`${impulseRate}%`} />
+              {streak >= 2 && <HallRow label="Streak" value={`${streak} trips`} />}
+            </div>
+          </div>
+
+          {hasHighlights && (
+            <>
+              <Divider />
+
+              {/* The Highlights */}
+              <div className="mt-4">
+                <SectionLabel>The Highlights</SectionLabel>
+                <div className="mt-2 space-y-2">
+                  {biggestCategory && biggestCategory.delta !== 0 && (
+                    <HallRow label="Biggest Category" value={biggestCategory.label} />
+                  )}
+                  {momDelta !== null && (
+                    <HallRow
+                      label="vs Last Month"
+                      value={`${momDelta < 0 ? "-" : "+"}${formatMoney(Math.abs(momDelta), currency)}`}
+                    />
+                  )}
+                </div>
+              </div>
+            </>
           )}
         </div>
 
