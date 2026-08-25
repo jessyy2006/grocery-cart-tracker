@@ -966,7 +966,7 @@ export default function ActiveTrip() {
                 {extras.length > 0 && (
                   <section>
                     <h3 className="mb-1 px-1 font-mono text-[11px] lowercase tracking-[0.14em] text-muted-foreground">
-                      unplanned additions
+                      extras
                     </h3>
                     <ul className="divide-y divide-[hsl(20_40%_18%/0.3)] border-t border-[hsl(20_40%_18%/0.3)]">
                       {extras.map((ex) => (
