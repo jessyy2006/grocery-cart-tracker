@@ -431,7 +431,7 @@ function SettingRow({
 }) {
   return (
     <div
-      className="flex items-center justify-between gap-4 py-3"
+      className="flex items-center justify-between gap-4 py-2"
     >
       <div className="min-w-0">
         <p className="font-sans text-[15px] text-foreground">{label}</p>
