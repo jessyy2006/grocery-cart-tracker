@@ -46,16 +46,6 @@ Implement the full Phase 1 critical protection and recovery set from the UX audi
 - Reuse the existing loading treatment instead of raw “Loading…” text where practical.
 - Harden the onboarding signup redirect check the same way, so returning users are not trapped by a failed status query.
 
-### 6. Trip exit safety
-
-- Update the live-trip exit confirmation copy to state the actual consequence.
-- For non-empty trips, offer:
-  - “save & exit” as the safe path.
-  - “discard trip” as the destructive path.
-  - “keep shopping” as cancel.
-- For empty trips, keep the existing “keep shopping” path and make the destructive action read “discard trip”.
-- Include current item count and total in the destructive copy when available.
-- Preserve the existing block that prevents ending/saving an empty trip as a receipt.
 
 ### 7. Pending-write guard for critical mutations
 
