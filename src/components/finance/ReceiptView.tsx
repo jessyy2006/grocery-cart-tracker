@@ -40,12 +40,6 @@ const fmtRange = (a: Date, b: Date) => {
   return `${m} ${a.getDate()} – ${m} ${b.getDate()}`;
 };
 
-const Row = ({ label, value, strong }: { label: string; value: string; strong?: boolean }) => (
-  <div className={`flex justify-between gap-4 ${strong ? "font-bold" : ""}`}>
-    <span className="uppercase tracking-wider">{label}</span>
-    <span className="tabular-nums text-right">{value}</span>
-  </div>
-);
 
 const Divider = () => <div className="my-2 border-t border-dashed border-neutral-500/60" />;
 
