@@ -382,20 +382,3 @@ export default function YearlyReceiptView(props: Props) {
   );
 }
 
-function Metric({ label, value, bordered }: { label: string; value: string; bordered?: boolean }) {
-  return (
-    <div className={`flex flex-col gap-1 px-2 ${bordered ? "border-l border-neutral-400/50" : ""}`}>
-      <div className="uppercase tracking-wider text-neutral-900">{label}</div>
-      <div className="text-[20px] font-bold leading-tight tabular-nums">{value}</div>
-    </div>
-  );
-}
-
-function HallRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4">
-      <span className="uppercase tracking-wider text-neutral-900">{label}</span>
-      <span className="tabular-nums text-right font-bold">{value}</span>
-    </div>
-  );
-}
