@@ -873,6 +873,23 @@ export default function ListDetail() {
         </DialogContent>
       </Dialog>
 
+      <ConfirmDialog
+        open={replaceTripOpen}
+        onOpenChange={(open) => {
+          setReplaceTripOpen(open);
+          if (!open) setStarting(false);
+        }}
+        title="replace active trip?"
+        description={
+          unfinishedTrip?.shopping_lists?.name && !unfinishedTrip.shopping_lists.hidden
+            ? `You have an active run for "${unfinishedTrip.shopping_lists.name}". Starting here will discard it.`
+            : "You already have a live grocery run in progress. Starting here will discard it."
+        }
+        confirmLabel="discard & start"
+        cancelLabel="cancel"
+        onConfirm={doReplaceAndStart}
+      />
+
     </div>
     </PageLoadGate>
   );
