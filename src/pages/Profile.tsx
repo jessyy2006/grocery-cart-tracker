@@ -291,31 +291,6 @@ export default function Profile() {
             </div>
           </section>
 
-          {/* ACCOUNT ACTIONS */}
-          <section className="mb-8 pt-2">
-            <div className="space-y-3">
-              <Button
-                variant="secondaryLight"
-                size="lg"
-                className="w-full"
-                onClick={() => supabase.auth.signOut()}
-              >
-                sign out
-              </Button>
-              <Button
-                variant="destructiveSoft"
-                size="lg"
-                className="w-full"
-                onClick={() => {
-                  setDeleteConfirm("");
-                  setDeleteOpen(true);
-                }}
-              >
-                delete account
-              </Button>
-            </div>
-          </section>
-
           {/* MY STORES */}
           <section className="mb-8">
             <h2 className={sectionLabel}>My stores</h2>
@@ -353,6 +328,31 @@ export default function Profile() {
                   ))}
                 </ul>
               )}
+            </div>
+          </section>
+
+          {/* ACCOUNT ACTIONS */}
+          <section className="mb-8 pt-2">
+            <div className="space-y-3">
+              <Button
+                variant="secondaryLight"
+                size="lg"
+                className="w-full"
+                onClick={() => supabase.auth.signOut()}
+              >
+                sign out
+              </Button>
+              <Button
+                variant="destructiveSoft"
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  setDeleteConfirm("");
+                  setDeleteOpen(true);
+                }}
+              >
+                delete account
+              </Button>
             </div>
           </section>
         </div>
