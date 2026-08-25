@@ -1153,7 +1153,7 @@ export default function ActiveTrip() {
           <DrawerHeader className="p-0 pb-4 space-y-2 text-center">
             <DrawerTitle className="text-center">Not on your list</DrawerTitle>
             <DrawerDescription className="text-center">
-              "{offList?.productName}" isn't on your shopping list. How should we count it?
+              "{offList?.productName}" isn't on your list. How should we count it?
             </DrawerDescription>
           </DrawerHeader>
           <div className="flex w-full flex-row gap-2">
