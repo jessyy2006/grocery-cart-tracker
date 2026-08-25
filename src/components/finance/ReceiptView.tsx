@@ -416,21 +416,15 @@ export default function ReceiptView(props: Props) {
 
           <Divider />
 
-          {/* Three metric columns */}
-          <div className="my-3 grid grid-cols-3 gap-2">
-            <Metric label="Spent" value={formatMoney(monthSpend, currency, 0)} />
-            <Metric
-              label={over ? "Over" : "Left"}
-              value={
-                budgetCents > 0
-                  ? formatMoney(Math.abs(remaining), currency, 0)
-                  : "—"
-              }
-              caption={budgetCents > 0 ? `of ${formatMoney(budgetCents, currency, 0)}` : undefined}
-              bordered
-            />
-            <Metric label="Trips" value={String(tripCount)} bordered />
-          </div>
+          {/* Top summation rows */}
+          <Row label="Budget" value={budgetCents > 0 ? formatMoney(budgetCents, currency) : "—"} />
+          <Row label="Spent" value={formatMoney(monthSpend, currency)} />
+          <Row
+            label={over ? "Over Budget" : "Remaining"}
+            value={budgetCents > 0 ? formatMoney(Math.abs(remaining), currency) : "—"}
+            strong
+          />
+          <Row label="Trips" value={String(tripCount)} />
 
           <Divider />
 
