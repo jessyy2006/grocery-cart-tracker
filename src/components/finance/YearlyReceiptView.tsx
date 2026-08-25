@@ -243,9 +243,7 @@ export default function YearlyReceiptView(props: Props) {
 
           {/* Hall of Fame */}
           <div className="mt-4">
-            <div className="font-bold uppercase tracking-wider text-neutral-900">
-              The Hall of Fame
-            </div>
+            <SectionLabel>The Hall of Fame</SectionLabel>
             <div className="mt-2 space-y-2">
               {mostLoyalStore && (
                 <HallRow label="Most Loyal Store" value={mostLoyalStore.toUpperCase()} />
