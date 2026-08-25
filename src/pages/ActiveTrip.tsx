@@ -829,7 +829,7 @@ export default function ActiveTrip() {
         </div>
 
         {/* CENTER — list name (+ store) */}
-        <div className="min-w-0 justify-self-center text-center">
+        <div className="min-w-0 self-start justify-self-center text-center">
           <span className="block truncate font-display text-[24px] leading-tight lowercase">
             {(listName || "untitled").toLowerCase()}
           </span>
