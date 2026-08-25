@@ -165,6 +165,8 @@ export default function ReceiptView(props: Props) {
 
   const barcodeSeed = `${monthStart.getFullYear()}-${monthStart.getMonth()}-${monthSpend}-${tripCount}`;
   const archiveCode = monthArchiveCode(monthStart);
+  const hasHighlights =
+    Boolean(biggestCategory && biggestCategory.delta !== 0) || momDelta !== null;
 
 
   const generatePng = async (): Promise<{ dataUrl: string; blob: Blob; file: File } | null> => {
