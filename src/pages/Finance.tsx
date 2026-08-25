@@ -530,10 +530,11 @@ export default function Finance() {
             type="button"
             onClick={openEditBudget}
             aria-label="Edit budget"
-            className="press focus-ring inline-flex h-9 w-9 items-center justify-center rounded-card border border-input bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground"
+            className="press focus-ring inline-flex h-9 w-9 items-center justify-center rounded-card bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground"
           >
             <DollarSign className="h-4 w-4" />
           </button>
+
         </div>
       </header>
 
