@@ -40,9 +40,10 @@ Implement the full Phase 1 critical protection and recovery set from the UX audi
 
 ### 4. Stop mutating list rows when starting a trip
 
-- Remove the start-trip reset that clears `shopping_list_items.checked_at` and `price_cents`.
-- Treat the per-run source of truth as `trip_planned_items` and `trip_items`.
-- If any remaining code still relies on list-level check/price fields for live-run state, migrate that usage to trip-scoped rows instead of preserving the destructive reset.
+- **Current issue:** when you start a trip from a list, `Home.tsx` (and previously `ListDetail.tsx`) silently runs `update shopping_list_items set checked_at = null, price_cents = null where list_id = X`. This wipes any checkmarks or prices you had recorded on the list itself, with no warning.
+- **Fix:** remove that reset entirely.
+- **Why it is safe:** the live grocery run now uses `trip_planned_items` (the snapshot created at trip start) and `trip_items` (scanned/substituted/extra rows) as its source of truth. The list-level `checked_at`/`price_cents` columns are no longer needed for run state.
+- **Migration check:** before deleting the reset, verify that no code still reads `shopping_list_items.checked_at` or `price_cents` to decide live-trip state. If anything does, move that logic to read from `trip_planned_items`/`trip_items` instead of keeping the destructive reset.
 
 ### 5. Guard routes must never hang forever
 
