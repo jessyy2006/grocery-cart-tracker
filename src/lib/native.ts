@@ -35,3 +35,13 @@ export const safeSetItem = (key: string, value: string): void => {
     /* noop */
   }
 };
+
+/** Safe localStorage delete — mirrors the guards above. */
+export const safeRemoveItem = (key: string): void => {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* noop */
+  }
+};
+
