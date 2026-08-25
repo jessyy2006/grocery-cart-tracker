@@ -264,9 +264,15 @@ export default function ScanReceipt() {
       );
       if (data?.error) throw new Error(data.error);
       const p: Parsed = data;
+      const parsedItems = p?.items ?? [];
+      // No line items and no total => this almost certainly wasn't a receipt.
+      if (parsedItems.length === 0 && !p?.total_cents) {
+        throw new Error("We couldn't find any receipt text in this photo.");
+      }
       setParsed(p);
       setStoreName(p.store_name ?? "");
-      setItems((p.items ?? []).map((i) => ({ ...i, _k: nextKey() })));
+      setItems(parsedItems.map((i) => ({ ...i, _k: nextKey() })));
+
       setTripDate(p.purchased_at || format(new Date(), "yyyy-MM-dd"));
       setNewListName(p.store_name ? `${p.store_name} Essentials` : "Receipt Essentials");
       await loadStoresAndLists(p);
