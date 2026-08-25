@@ -61,9 +61,11 @@ export default function Lists() {
     }
   };
 
-  // Margin rule positioned ~48px from page left edge. Page has px-5 (20px),
-  // so within our container offset is 48 - 20 = 28px.
-  const MARGIN_LEFT = 28;
+  // Notebook margin rule: centered in the gap between the left screen edge
+  // (page gutter = 20px) and the left edge of each list row (content offset = 44px).
+  // 20 + (44 / 2) = 42px from screen left; inside the container that's 42 - 20 = 22px.
+  const RULE_LEFT = 22;
+  const CONTENT_OFFSET = 44;
 
   return (
     <div className="relative min-h-[calc(100dvh-6rem)] page-gutter safe-top-page pb-12">
@@ -79,12 +81,12 @@ export default function Lists() {
         />
 
         {/* Notebook margin rule — spans the content only, ending with the last row. */}
-        <div className="relative" style={{ paddingLeft: `${MARGIN_LEFT + 16}px` }}>
+        <div className="relative" style={{ paddingLeft: `${CONTENT_OFFSET}px` }}>
           <div
             aria-hidden
             className="pointer-events-none absolute inset-y-0"
             style={{
-              left: `${MARGIN_LEFT}px`,
+              left: `${RULE_LEFT}px`,
               width: "1px",
               backgroundColor: "hsl(20 40% 18% / 0.85)",
             }}
