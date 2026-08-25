@@ -37,24 +37,10 @@ const App = () => (
         <AuthProvider>
           <OnboardingProvider>
             <Routes>
-              <Route path="/onboarding" element={<OnboardingIntro />} />
+              <Route path="/onboarding" element={<OnboardingHero />} />
+              <Route path="/onboarding/showcase" element={<OnboardingShowcase />} />
               <Route path="/onboarding/signup" element={<OnboardingSignup />} />
-              <Route
-                path="/onboarding/profile"
-                element={
-                  <RequireAuth>
-                    <OnboardingProfile />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/onboarding/goals"
-                element={
-                  <RequireAuth>
-                    <OnboardingGoals />
-                  </RequireAuth>
-                }
-              />
+              <Route path="/onboarding/verify" element={<OnboardingVerify />} />
               <Route
                 path="/onboarding/budget"
                 element={
@@ -63,22 +49,7 @@ const App = () => (
                   </RequireAuth>
                 }
               />
-              <Route
-                path="/onboarding/behavior"
-                element={
-                  <RequireAuth>
-                    <OnboardingBehavior />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/onboarding/first-list"
-                element={
-                  <RequireAuth>
-                    <OnboardingFirstList />
-                  </RequireAuth>
-                }
-              />
+
               <Route
                 element={
                   <RequireAuth>
