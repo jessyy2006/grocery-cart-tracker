@@ -26,13 +26,6 @@ import { formatMoney, parsePriceToCents, useCurrency, getCurrency } from "@/lib/
 import { lookupBarcode } from "@/lib/openFoodFacts";
 import { findListMatch, getCategory, guessCategory, CATEGORY_ORDER, CategorySlug } from "@/lib/categories";
 import PrintedReceiptOverlay, { type TripReceiptPayload } from "@/components/trip/PrintedReceiptOverlay";
-import {
-  findNearbyStores,
-  getCachedCoords,
-  getCurrentPosition,
-  searchStoresByName,
-  NearbyStore,
-} from "@/lib/device/geolocation";
 import { TagPill } from "@/components/TagPill";
 import { toast } from "sonner";
 import { Spinner } from "@/components/Spinner";
