@@ -728,9 +728,25 @@ export default function ActiveTrip() {
     }
     const next = { id: storeId!, name: s.name };
     setActiveStore(next);
+    setSavedStores((prev) =>
+      prev && prev.some((p) => p.id === next.id)
+        ? prev
+        : [...(prev ?? []), next].sort((a, b) => a.name.localeCompare(b.name)),
+    );
     if (tripId) sessionStorage.setItem(`trip:${tripId}:store`, next.id);
     setStoreModalOpen(false);
     setStoreQuery("");
+  };
+
+  const saveTypedStore = async () => {
+    const name = storeQuery.trim();
+    if (!name || savingStore) return;
+    setSavingStore(true);
+    try {
+      await pickStore({ name });
+    } finally {
+      setSavingStore(false);
+    }
   };
 
   const exitTrip = async () => {
@@ -740,36 +756,12 @@ export default function ActiveTrip() {
     navigate("/", { replace: true });
   };
 
-  // Debounced global search when user types in store modal
-  useEffect(() => {
-    if (!storeModalOpen) return;
-    const q = storeQuery.trim();
-    if (q.length < 2) {
-      setSearchResults(null);
-      setSearchError(null);
-      setSearching(false);
-      return;
-    }
-    setSearching(true);
-    setSearchError(null);
-    const handle = setTimeout(async () => {
-      try {
-        const res = await searchStoresByName(q);
-        setSearchResults(res.slice(0, 5));
-      } catch {
-        setSearchError("Search failed. Try again.");
-        setSearchResults([]);
-      } finally {
-        setSearching(false);
-      }
-    }, 350);
-    return () => clearTimeout(handle);
-  }, [storeQuery, storeModalOpen]);
-
   if (!tripId) return null;
 
-  const isSearching = storeQuery.trim().length >= 2;
-  const displayStores = isSearching ? (searchResults ?? []) : (nearbyStores ?? []);
+  const storeFilter = storeQuery.trim().toLowerCase();
+  const displayStores = (savedStores ?? []).filter((s) =>
+    storeFilter ? s.name.toLowerCase().includes(storeFilter) : true,
+  );
 
   const checkedCount = listItems.filter((i) => i.checked_at).length + extras.length;
   const totalCount = listItems.length + extras.length;
