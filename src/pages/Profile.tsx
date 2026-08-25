@@ -52,6 +52,7 @@ export default function Profile() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   /** Apple guideline 5.1.1(v): in-app, permanent account deletion. */
   const deleteAccount = async () => {
@@ -338,9 +339,18 @@ export default function Profile() {
                 variant="secondaryLight"
                 size="lg"
                 className="w-full"
-                onClick={() => supabase.auth.signOut()}
+                disabled={signingOut}
+                onClick={async () => {
+                  if (signingOut) return;
+                  setSigningOut(true);
+                  const { error } = await supabase.auth.signOut();
+                  if (error) {
+                    setSigningOut(false);
+                    toast.error(error.message);
+                  }
+                }}
               >
-                sign out
+                {signingOut ? "signing out…" : "sign out"}
               </Button>
               <Button
                 variant="destructiveSoft"

@@ -45,14 +45,10 @@ export default function History() {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const cutoff = new Date();
-      cutoff.setFullYear(cutoff.getFullYear() - 1);
-      await supabase.from("trips").delete().lt("started_at", cutoff.toISOString());
       const { data } = await supabase
         .from("trips")
         .select("id, started_at, total_cents, trip_items(store_name_snapshot), shopping_lists:list_id(name, hidden)")
         .eq("status", "saved")
-        .gte("started_at", cutoff.toISOString())
         .order("started_at", { ascending: false });
       if (cancelled) return;
       setRows(

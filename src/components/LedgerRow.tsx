@@ -31,6 +31,7 @@ export interface LedgerRowProps {
   onQtyChange?: (next: number) => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  disabled?: boolean;
 }
 
 export function LedgerRow({
@@ -46,6 +47,7 @@ export function LedgerRow({
   onQtyChange,
   onEdit,
   onDelete,
+  disabled,
 }: LedgerRowProps) {
   const hasSecondLine = !!multiplierLine || !!note || !!tag;
 
@@ -131,8 +133,9 @@ export function LedgerRow({
                 <button
                   type="button"
                   onClick={onEdit}
+                  disabled={disabled}
                   aria-label="Edit item"
-                  className="p-1 text-muted-foreground hover:text-foreground"
+                  className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
@@ -141,8 +144,9 @@ export function LedgerRow({
                 <button
                   type="button"
                   onClick={onDelete}
+                  disabled={disabled}
                   aria-label="Delete item"
-                  className="p-1 text-muted-foreground hover:text-destructive"
+                  className="p-1 text-muted-foreground hover:text-destructive disabled:opacity-50"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
