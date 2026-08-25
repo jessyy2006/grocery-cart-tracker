@@ -955,7 +955,7 @@ export default function ActiveTrip() {
                     </h3>
                     <ul className="divide-y divide-[hsl(20_40%_18%/0.3)] border-t border-[hsl(20_40%_18%/0.3)]">
                       {extras.map((ex) => (
-                        <LedgerRow
+                      <LedgerRow
                           key={ex.id}
                           name={ex.name_snapshot}
                           qty={ex.qty}
@@ -964,7 +964,6 @@ export default function ActiveTrip() {
                           showCheckbox
                           checked
                           onToggle={() => removeExtra(ex.id)}
-                          onDelete={() => removeExtra(ex.id)}
                         />
                       ))}
                     </ul>
