@@ -64,3 +64,6 @@ export const useOnboarding = () => {
   if (!ctx) throw new Error("useOnboarding must be used within OnboardingProvider");
   return ctx;
 };
+
+/** One-time "receipts live in Finance" nudge shown on the first Home visit. */
+export const FEATURE_INTRO_KEY = "cartwise:featureIntroShown";
