@@ -291,6 +291,31 @@ export default function Profile() {
             </div>
           </section>
 
+          {/* ACCOUNT ACTIONS */}
+          <section className="mb-8 pt-2">
+            <div className="space-y-3">
+              <Button
+                variant="secondaryLight"
+                size="lg"
+                className="w-full"
+                onClick={() => supabase.auth.signOut()}
+              >
+                sign out
+              </Button>
+              <Button
+                variant="destructiveSoft"
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  setDeleteConfirm("");
+                  setDeleteOpen(true);
+                }}
+              >
+                delete account
+              </Button>
+            </div>
+          </section>
+
           {/* MY STORES */}
           <section className="mb-8">
             <h2 className={sectionLabel}>My stores</h2>
@@ -307,7 +332,7 @@ export default function Profile() {
                   {stores.map((s) => (
                     <li
                       key={s.id}
-                      className="flex items-center justify-between gap-3 py-3"
+                      className="flex items-center justify-between gap-3 py-2"
                     >
                       <div className="min-w-0">
                         <p className="truncate font-sans text-[15px] text-foreground">{s.name}</p>
@@ -330,28 +355,6 @@ export default function Profile() {
               )}
             </div>
           </section>
-        </div>
-
-        <div className="space-y-3 px-5 pt-8 pb-6">
-          <Button
-            variant="secondaryLight"
-            size="lg"
-            className="w-full"
-            onClick={() => supabase.auth.signOut()}
-          >
-            sign out
-          </Button>
-          <Button
-            variant="destructiveSoft"
-            size="lg"
-            className="w-full"
-            onClick={() => {
-              setDeleteConfirm("");
-              setDeleteOpen(true);
-            }}
-          >
-            delete account
-          </Button>
         </div>
 
         <Dialog open={deleteOpen} onOpenChange={(o) => !deleting && setDeleteOpen(o)}>
@@ -428,7 +431,7 @@ function SettingRow({
 }) {
   return (
     <div
-      className="flex items-center justify-between gap-4 py-3"
+      className="flex items-center justify-between gap-4 py-2"
     >
       <div className="min-w-0">
         <p className="font-sans text-[15px] text-foreground">{label}</p>
