@@ -14,10 +14,10 @@ const ICONS = [ListChecks, Coins, ScanLine, Receipt, LineChart];
 
 // Ring positions (percentage of the stage), clockwise from top-left.
 const RING = [
-  { x: 4, y: 2, rot: -7 },
-  { x: 56, y: 0, rot: 6 },
-  { x: 66, y: 34, rot: 9 },
-  { x: 40, y: 66, rot: -4 },
+  { x: 2, y: 4, rot: -7 },
+  { x: 54, y: 0, rot: 6 },
+  { x: 54, y: 36, rot: 9 },
+  { x: 28, y: 70, rot: -4 },
   { x: 0, y: 38, rot: -10 },
 ];
 
@@ -43,7 +43,7 @@ export default function OnboardingHero() {
           return (
             <motion.div
               key={beat.id}
-              className="absolute w-[46%] rounded-card border border-border bg-card p-3 shadow-soft"
+              className="absolute w-[44%] rounded-card border border-border bg-card p-3 shadow-soft"
               style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
               initial={reduce ? false : { opacity: 0, scale: 0.85, rotate: 0 }}
               animate={{ opacity: 1, scale: 1, rotate: pos.rot }}
