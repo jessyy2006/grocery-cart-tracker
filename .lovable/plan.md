@@ -47,17 +47,13 @@ Implement the full Phase 1 critical protection and recovery set from the UX audi
 - Harden the onboarding signup redirect check the same way, so returning users are not trapped by a failed status query.
 
 
-### 7. Pending-write guard for critical mutations
+### 6. Pending-write guard for critical mutations
 
-- Add local pending locks to high-value write flows touched in Phase 1:
-  - Start trip from Home/list.
-  - Save/end live trip.
-  - Discard live trip.
-  - Add/edit list item where the add pad writes rows.
-  - Save scanned receipt if the existing save button has no lock.
-  - Delete account/profile destructive action path.
-- Pending buttons should disable, avoid duplicate submits, and show a clear busy label or spinner state using existing components.
-- Keep the first pass minimal: local `useState` pending flags are acceptable unless repeated patterns justify a tiny shared helper.
+- **Current issue:** primary buttons that trigger destructive or high-value writes (start trip, save trip, discard trip, add/edit list item, save receipt, delete account) currently remain enabled while the async request is in flight. A double-tap can create duplicate trips, duplicate items, double-save a receipt, or fire a second account deletion attempt.
+- **Fix:** add local pending locks to each of those flows.
+- **Affected flows:** start trip from Home/list, save/end live trip, discard live trip, add/edit list item via the add pad, save scanned receipt, and delete account.
+- **Behavior:** pending buttons disable themselves, ignore duplicate submits, and show a clear busy label or spinner using existing components.
+- **Approach:** keep the first pass minimal with local `useState` pending flags. Only introduce a shared helper if the same pattern repeats enough to justify it.
 
 ### 8. Account-deletion integrity
 
