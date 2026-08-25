@@ -97,6 +97,12 @@ export default function ActiveTrip() {
   const [manualCheck, setManualCheck] = useState<{ item: ListItem; qty: string; price: string } | null>(null);
   const [manualErrors, setManualErrors] = useState<{ qty?: boolean; price?: boolean }>({});
   const [offList, setOffList] = useState<{ tripItem: TripItem; productName: string } | null>(null);
+  // Mirror of offList so background AI matching can tell whether the prompt is
+  // still showing the same item before auto-resolving it.
+  const offListRef = useRef<{ tripItem: TripItem; productName: string } | null>(null);
+  useEffect(() => {
+    offListRef.current = offList;
+  }, [offList]);
   const [subPickerOpen, setSubPickerOpen] = useState(false);
   const [subQuery, setSubQuery] = useState("");
   const [listReady, setListReady] = useState(false);
