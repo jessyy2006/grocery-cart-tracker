@@ -80,8 +80,9 @@ export default function OnboardingVerify() {
 
   return (
     <SignupShell
-      caption="step 2 of 3"
-      title="check your email."
+      caption="almost there…"
+      title="confirm the 6 digit code."
+      step={2}
       onBack={() => navigate("/onboarding/signup")}
       footer={
         <>

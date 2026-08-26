@@ -41,8 +41,9 @@ export default function OnboardingBudget() {
 
   return (
     <SignupShell
-      caption="step 3 of 3"
-      title="set a monthly budget."
+      caption="one last step"
+      title="set your budget."
+      step={3}
       footer={
         <>
           <Button

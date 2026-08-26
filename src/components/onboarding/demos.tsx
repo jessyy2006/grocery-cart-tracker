@@ -7,7 +7,10 @@ import { Check, ScanLine, Receipt as ReceiptIcon } from "lucide-react";
  * always match the current design tokens.
  */
 
-const LOOP = 4; // seconds — one full demo loop; the showcase plays two.
+// Seconds for one full demo pass. The showcase plays each demo exactly once
+// before advancing, so every beat has to read inside this window — if a demo
+// needs a second loop to be legible, tighten the demo rather than the timer.
+const LOOP = 3.5;
 
 const Frame = ({ children }: { children: React.ReactNode }) => (
   <div className="w-full overflow-hidden rounded-card border border-border/70 bg-card p-5">
@@ -37,7 +40,7 @@ export const BuildListDemo = () => {
             key={r.label}
             initial={reduce ? false : { opacity: 0, y: 10 }}
             animate={reduce ? {} : { opacity: [0, 1, 1, 1], y: [10, 0, 0, 0] }}
-            transition={{ duration: LOOP, times: [0, 0.18, 0.9, 1], delay: i * 0.35, repeat: Infinity }}
+            transition={{ duration: LOOP, times: [0, 0.18, 0.9, 1], delay: i * 0.22, repeat: Infinity }}
             className="flex items-baseline justify-between border-b border-border/60 pb-2"
           >
             <span className="text-body">{r.label}</span>
@@ -69,7 +72,7 @@ export const LiveTotalDemo = () => {
             }
             transition={{
               duration: LOOP,
-              times: [0, 0.08, 0.22, 0.3],
+              times: [0, 0.04, 0.25, 0.29],
               delay: (i * LOOP) / steps.length,
               repeat: Infinity,
             }}

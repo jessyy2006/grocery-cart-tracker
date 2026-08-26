@@ -6,13 +6,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { SHOWCASE_BEATS } from "@/components/onboarding/demos";
 import { cn } from "@/lib/utils";
 
-/** Two loops of the 4s demo before we advance on our own. */
-const BEAT_MS = 8000;
+/** One pass of the demo before we advance on our own. */
+const BEAT_MS = 3500;
 
 /**
- * Beats 1-5 — forward-only feature carousel. Each beat auto-advances after two
- * loops of its demo; a left swipe (or tap on the CTA) accelerates it. Exiting
+ * Beats 1-5 — forward-only feature carousel. Each beat auto-advances after one
+ * pass of its demo; a left swipe (or tap on the CTA) accelerates it. Exiting
  * cards recede to the left like frames sliding past in a gallery.
+ *
+ * With reduced motion the demos don't animate, so there is nothing to time the
+ * advance against and no reason to take the screen away while it is still being
+ * read — the carousel waits for a tap instead.
  */
 export default function OnboardingShowcase() {
   const navigate = useNavigate();
@@ -38,7 +42,8 @@ export default function OnboardingShowcase() {
 
   useEffect(() => {
     window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(advance, reduce ? BEAT_MS / 2 : BEAT_MS);
+    if (reduce) return;
+    timer.current = window.setTimeout(advance, BEAT_MS);
     return () => window.clearTimeout(timer.current);
   }, [index, advance, reduce]);
 

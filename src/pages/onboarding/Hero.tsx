@@ -63,16 +63,20 @@ export default function OnboardingHero() {
           className="w-full"
           onClick={() => navigate("/onboarding/showcase")}
         >
-          See how it works
+          show me how
         </Button>
-        <Button
-          variant="ghost"
-          size="lg"
-          className="w-full text-muted-foreground"
+        {/*
+          A text link, not a second full-width button: the returning-user path
+          shouldn't carry the same visual weight as the primary CTA on the one
+          screen where a new user's intent matters most.
+        */}
+        <button
+          type="button"
           onClick={() => navigate(user ? "/onboarding/budget" : "/onboarding/signup")}
+          className="press focus-ring mx-auto block rounded-control px-3 py-1.5 text-small text-muted-foreground"
         >
-          {user ? "Continue" : "I already have an account"}
-        </Button>
+          {user ? "continue where you left off" : "already have an account? log in"}
+        </button>
       </div>
     </div>
   );
