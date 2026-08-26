@@ -107,11 +107,11 @@ export default function OnboardingSignup() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: cleanEmail,
-        options: {
-          shouldCreateUser: true,
-          data: { first_name: cleanName },
-          emailRedirectTo: window.location.origin + "/onboarding/verify",
-        },
+        // No emailRedirectTo: this flow verifies with the 6-digit code. Passing
+        // a redirect makes Supabase mint a confirmation link, which is what the
+        // email was leading with — and inside the native shell the origin is
+        // capacitor://localhost, so that link dead-ends anyway.
+        options: { shouldCreateUser: true, data: { first_name: cleanName } },
       });
       if (error) throw error;
       update({ firstName: cleanName, email: cleanEmail, codeSent: true });
