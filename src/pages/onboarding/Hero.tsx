@@ -2,88 +2,113 @@ import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { SHOWCASE_BEATS } from "@/components/onboarding/demos";
-import { ListChecks, Coins, ScanLine, Receipt, LineChart } from "lucide-react";
+import { HERO_SURFACES } from "@/components/onboarding/surfaces";
 
 /**
- * Beat 0 — the hero. Per the frame: artwork fills the upper stage, the brand
- * name and its line sit centred beneath it, and the action is an auto-width
- * pill with a quiet text link under it. Nothing else.
+ * Beat 0 — the hero.
  *
- * The five cards ring the title rather than sitting in a row, so the frame's
- * "key features circle the hero CTA" reads at a glance before the showcase
- * explains any of them.
+ * Five real Cartwise surfaces orbit the centred name and CTA on a slow circle:
+ * a trip receipt, the monthly summary, the lists index, a list mid-trip and the
+ * finance chart. The product shows itself before a single feature is named.
+ *
+ * Mechanics: one wrapper carries the whole ring around, and each surface
+ * counter-rotates at the same rate so it travels the circle without tumbling.
+ * Each keeps a fixed tilt on top of that, so the ring reads as a scatter of
+ * paper rather than a carousel. A radial wash of the page colour sits between
+ * the ring and the lockup, so surfaces passing behind the wordmark fade out
+ * instead of colliding with it.
  */
-const ICONS = [ListChecks, Coins, ScanLine, Receipt, LineChart];
+const ORBIT_SECONDS = 36;
 
-// Ring positions (percentage of the stage), clockwise from top-left.
-const RING = [
-  { x: 2, y: 4, rot: -7 },
-  { x: 54, y: 0, rot: 6 },
-  { x: 54, y: 36, rot: 9 },
-  { x: 28, y: 70, rot: -4 },
-  { x: 0, y: 38, rot: -10 },
-];
+/** Fixed per-surface tilt, degrees. Kept small — paper, not confetti. */
+const TILT = [-7, 6, -4, 9, -10];
 
 export default function OnboardingHero() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const reduce = useReducedMotion();
 
+  const spin = { duration: ORBIT_SECONDS, repeat: Infinity, ease: "linear" as const };
+
   return (
     <div className="flex min-h-full flex-col bg-background px-5 pb-6 safe-top-page safe-bottom">
-      <div className="relative mt-4 flex-1">
-        {SHOWCASE_BEATS.map((beat, i) => {
-          const Icon = ICONS[i];
-          const pos = RING[i];
-          return (
-            <motion.div
-              key={beat.id}
-              className="absolute w-[42%] rounded-card border border-border bg-card p-3 shadow-soft"
-              style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
-              initial={reduce ? false : { opacity: 0, scale: 0.85, rotate: 0 }}
-              animate={{ opacity: 1, scale: 1, rotate: pos.rot }}
-              transition={{ duration: 0.5, delay: 0.08 * i, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <Icon className="h-4 w-4 text-primary" />
-              <p className="mt-2 text-small lowercase leading-snug">{beat.title.replace(".", "")}</p>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      <motion.div
-        className="text-center"
-        initial={reduce ? false : { opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      <div
+        className="relative flex-1 overflow-hidden"
+        style={{ "--orbit-r": "clamp(118px, 40vw, 172px)" } as React.CSSProperties}
       >
-        <h1 className="text-display">Cartwise</h1>
-        <p className="mt-1.5 text-body text-muted-foreground">your grocery shopping hero</p>
-      </motion.div>
+        <motion.div
+          className="absolute inset-0 will-change-transform"
+          animate={reduce ? undefined : { rotate: 360 }}
+          transition={spin}
+        >
+          {HERO_SURFACES.map((Surface, i) => {
+            const angle = (360 / HERO_SURFACES.length) * i;
+            const tilt = TILT[i];
+            return (
+              <div
+                key={i}
+                aria-hidden
+                className="absolute left-1/2 top-1/2"
+                style={{
+                  transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(calc(var(--orbit-r) * -1)) rotate(${-angle}deg)`,
+                }}
+              >
+                <motion.div
+                  animate={reduce ? { rotate: tilt } : { rotate: [tilt, tilt - 360] }}
+                  transition={spin}
+                >
+                  <Surface />
+                </motion.div>
+              </div>
+            );
+          })}
+        </motion.div>
 
-      <div className="mt-10 flex flex-col items-center gap-3">
-        <Button
-          variant="primaryLight"
-          size="lg"
-          className="px-10"
-          onClick={() => navigate("/onboarding/showcase")}
+        {/* Clears a pool of page colour for the lockup to sit in. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              // closest-side keys the stops to half the stage's short edge, so the
+              // wash covers the lockup and is gone before the ring. Against the
+              // default farthest-corner it stayed ~45% opaque at the orbit radius
+              // and greyed the surfaces out.
+              "radial-gradient(circle closest-side at center, hsl(var(--background)) 0%, hsl(var(--background)) 22%, transparent 52%)",
+          }}
+        />
+
+        <motion.div
+          className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center"
+          initial={reduce ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
         >
-          show me how
-        </Button>
-        {/*
-          A text link, not a second full-width button: the returning-user path
-          shouldn't carry the same visual weight as the primary CTA on the one
-          screen where a new user's intent matters most.
-        */}
-        <button
-          type="button"
-          onClick={() => navigate(user ? "/onboarding/budget" : "/onboarding/signup")}
-          className="press focus-ring rounded-control px-3 py-1.5 text-small text-muted-foreground"
-        >
-          {user ? "continue where you left off" : "already have an account? log in"}
-        </button>
+          <h1 className="text-display">Cartwise</h1>
+          <p className="mt-1.5 text-body text-muted-foreground">your grocery shopping hero</p>
+          <Button
+            variant="primaryLight"
+            size="lg"
+            className="mt-6 px-10"
+            onClick={() => navigate("/onboarding/showcase")}
+          >
+            show me how
+          </Button>
+        </motion.div>
       </div>
+
+      {/*
+        A text link, not a second full-width button: the returning-user path
+        shouldn't carry the same visual weight as the primary CTA on the one
+        screen where a new user's intent matters most.
+      */}
+      <button
+        type="button"
+        onClick={() => navigate(user ? "/onboarding/budget" : "/onboarding/signup")}
+        className="press focus-ring mx-auto mt-4 rounded-control px-3 py-1.5 text-small text-muted-foreground"
+      >
+        {user ? "continue where you left off" : "already have an account? log in"}
+      </button>
     </div>
   );
 }
