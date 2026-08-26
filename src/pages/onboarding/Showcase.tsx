@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
@@ -7,28 +7,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { SHOWCASE_BEATS } from "@/components/onboarding/demos";
 import { cn } from "@/lib/utils";
 
-/** One pass of the demo before we advance on our own. */
-const BEAT_MS = 3500;
-
 const LAST = SHOWCASE_BEATS.length - 1;
 
 /**
- * Beats 1-5 — the feature carousel. Each beat auto-advances after one pass of
- * its demo; a left swipe (or tap on the CTA) accelerates it.
+ * Beats 1-5 — the feature carousel. Entirely self-paced: each demo loops until
+ * the user moves on, via the CTA, a swipe, the dots or the back chevron. There
+ * is no auto-advance, so a beat is never taken away mid-read.
  *
  * Motion follows the gesture: going forward, the outgoing card recedes left and
  * the next arrives from the right, like frames sliding past in a gallery. Going
  * back runs the same choreography mirrored, so the direction you swipe is
  * always the direction the content travels.
- *
- * Auto-advance stops for good once the user navigates *backwards* — that is an
- * explicit signal they want to re-read something, and pulling the screen away
- * 3.5s later would undo the gesture they just made. Forward taps leave it
- * running, since those agree with where the carousel was already heading.
- *
- * With reduced motion the demos don't animate, so there is nothing to time the
- * advance against and no reason to take the screen away while it is still being
- * read — the carousel waits for a tap instead.
  */
 export default function OnboardingShowcase() {
   const navigate = useNavigate();
@@ -36,8 +25,6 @@ export default function OnboardingShowcase() {
   const reduce = useReducedMotion();
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
-  const [paused, setPaused] = useState(false);
-  const timer = useRef<number>();
   // Mirrors `index` synchronously so two navigations inside one frame can't
   // both read the same stale value off state.
   const indexRef = useRef(0);
@@ -53,7 +40,6 @@ export default function OnboardingShowcase() {
     if (clamped === cur) return;
     indexRef.current = clamped;
     setDir(clamped > cur ? 1 : -1);
-    if (clamped < cur) setPaused(true);
     setIndex(clamped);
   }, []);
 
@@ -66,13 +52,6 @@ export default function OnboardingShowcase() {
   }, [goTo, toSignup]);
 
   const goBack = useCallback(() => goTo(indexRef.current - 1), [goTo]);
-
-  useEffect(() => {
-    window.clearTimeout(timer.current);
-    if (reduce || paused) return;
-    timer.current = window.setTimeout(advance, BEAT_MS);
-    return () => window.clearTimeout(timer.current);
-  }, [index, advance, reduce, paused]);
 
   const beat = SHOWCASE_BEATS[index];
   const isLast = index === LAST;

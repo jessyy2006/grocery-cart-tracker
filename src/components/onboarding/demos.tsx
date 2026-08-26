@@ -7,9 +7,9 @@ import { Check, ScanLine, Receipt as ReceiptIcon } from "lucide-react";
  * always match the current design tokens.
  */
 
-// Seconds for one full demo pass. The showcase plays each demo exactly once
-// before advancing, so every beat has to read inside this window — if a demo
-// needs a second loop to be legible, tighten the demo rather than the timer.
+// Seconds for one full demo pass. The showcase is self-paced, so each demo
+// loops here until the user moves on — but the first pass still has to land the
+// idea on its own, since that is all a fast reader will wait for.
 const LOOP = 3.5;
 
 const Frame = ({ children }: { children: React.ReactNode }) => (
