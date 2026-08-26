@@ -8,7 +8,7 @@ import { HERO_SURFACES } from "@/components/onboarding/surfaces";
  * Beat 0 — the hero.
  *
  * Five real Cartwise surfaces orbit the centred name and CTA on a slow circle:
- * a trip receipt, the monthly summary, the lists index, a list mid-trip and the
+ * the yearly receipt, a trip receipt, the lists index, a list mid-trip and the
  * finance chart. The product shows itself before a single feature is named.
  *
  * Mechanics: one wrapper carries the whole ring around, and each surface
