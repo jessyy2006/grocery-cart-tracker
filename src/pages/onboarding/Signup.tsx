@@ -6,7 +6,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding, ONBOARDED_KEY } from "@/hooks/useOnboarding";
 import { nameFromMetadata } from "@/lib/onboarding";
-import { safeGetItem, safeSetItem } from "@/lib/native";
+import { isNative, safeGetItem, safeSetItem } from "@/lib/native";
 import { SignupShell } from "@/components/onboarding/SignupShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -161,15 +161,25 @@ export default function OnboardingSignup() {
           >
             Send my code
           </Button>
-          <Button
-            variant="secondaryLight"
-            size="lg"
-            className="w-full"
-            onClick={google}
-            disabled={googleBusy}
-          >
-            Continue with Google
-          </Button>
+          {/*
+            Google OAuth is web-only for now. Inside the native shell
+            `window.location.origin` is `capacitor://localhost`, and Google
+            rejects non-HTTPS redirect URIs — the round trip cannot complete.
+            Re-enable once the Universal Link redirect is live (see MOBILE.md).
+            Email OTP works natively and also satisfies Guideline 4.8 as the
+            privacy-preserving sign-in option.
+          */}
+          {!isNative() && (
+            <Button
+              variant="secondaryLight"
+              size="lg"
+              className="w-full"
+              onClick={google}
+              disabled={googleBusy}
+            >
+              Continue with Google
+            </Button>
+          )}
         </>
       }
     >

@@ -39,20 +39,32 @@ Deno.serve(async (req) => {
 
     // Delete owned rows first. Child rows cascade from their parents.
     const ownedTables = [
-      "trip_items",
-      "trips",
-      "shopping_list_items",
-      "shopping_lists",
-      "stores",
-      "user_onboarding",
-      "profiles",
-    ];
-    for (const table of ownedTables) {
-      const { error } = await admin.from(table).delete().eq("user_id", userId);
-      // Tables without a user_id column (child rows cascading) are skipped silently.
-      if (error && !/column .*user_id.* does not exist/i.test(error.message)) {
+      // [table, owner column]. `profiles` is keyed on `id`, not `user_id`.
+      ["trip_items", "user_id"],
+      ["trips", "user_id"],
+      ["shopping_list_items", "user_id"],
+      ["shopping_lists", "user_id"],
+      ["stores", "user_id"],
+      ["user_onboarding", "user_id"],
+      ["user_budgets", "user_id"],
+      ["user_budget_history", "user_id"],
+      ["profiles", "id"],
+    ] as const;
+
+    // A failure here must not report success — the user was promised erasure.
+    const failures: string[] = [];
+    for (const [table, ownerColumn] of ownedTables) {
+      const { error } = await admin.from(table).delete().eq(ownerColumn, userId);
+      if (error) {
         console.error(`delete-account: failed clearing ${table}`, error.message);
+        failures.push(table);
       }
+    }
+    if (failures.length > 0) {
+      return json(
+        { error: `Could not fully delete account data (${failures.join(", ")})` },
+        500,
+      );
     }
 
     // If the auth user is already gone, treat deletion as satisfied.
