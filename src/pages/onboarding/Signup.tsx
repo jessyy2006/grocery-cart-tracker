@@ -10,7 +10,6 @@ import { isNative, safeGetItem, safeSetItem } from "@/lib/native";
 import { SignupShell } from "@/components/onboarding/SignupShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ONBOARDING_CHECK_TIMEOUT = 8_000;
@@ -149,18 +148,16 @@ export default function OnboardingSignup() {
     <SignupShell
       caption="ready to start saving?"
       title="first, tell us who you are."
-      step={1}
-      onBack={() => navigate("/onboarding")}
       footer={
         <>
           <Button
             variant="primaryLight"
             size="lg"
-            className="w-full"
+            className="px-10"
             disabled={!valid || busy}
             onClick={submit}
           >
-            Send my code
+            send my code
           </Button>
           {/*
             Google OAuth is web-only for now. Inside the native shell
@@ -174,40 +171,35 @@ export default function OnboardingSignup() {
             <Button
               variant="secondaryLight"
               size="lg"
-              className="w-full"
+              className="px-10"
               onClick={google}
               disabled={googleBusy}
             >
-              Continue with Google
+              continue with google
             </Button>
           )}
         </>
       }
     >
-      <form onSubmit={submit} className="space-y-5">
-        <div className="space-y-1.5">
-          <Label htmlFor="first">First name</Label>
-          <Input
-            id="first"
-            autoComplete="given-name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <p className="text-small text-muted-foreground">
-            We'll send a 6-digit code — no password to remember.
-          </p>
-        </div>
+      <form onSubmit={submit} className="mx-auto w-full max-w-[280px] space-y-7">
+        <Input
+          variant="underline"
+          aria-label="First name"
+          placeholder="first name"
+          autoComplete="given-name"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+        />
+        <Input
+          variant="underline"
+          aria-label="Email"
+          placeholder="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
         <button type="submit" className="hidden" aria-hidden />
       </form>
     </SignupShell>

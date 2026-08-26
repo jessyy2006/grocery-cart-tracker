@@ -10,9 +10,13 @@ import { cn } from "@/lib/utils";
 const LAST = SHOWCASE_BEATS.length - 1;
 
 /**
- * Beats 1-5 — the feature carousel. Entirely self-paced: each demo loops until
- * the user moves on, via the CTA, a swipe, the dots or the back chevron. There
- * is no auto-advance, so a beat is never taken away mid-read.
+ * Beats 1-5 — the feature carousel. Per the frames: title at the top, the demo
+ * in the middle, the line underneath it, and nothing else competing.
+ *
+ * Entirely self-paced — each demo loops until the user moves on, via the CTA, a
+ * swipe, the dots or the back chevron. There is no auto-advance, so a beat is
+ * never taken away mid-read, and no skip control: the dots jump straight to the
+ * last beat, which makes a separate skip redundant.
  *
  * Motion follows the gesture: going forward, the outgoing card recedes left and
  * the next arrives from the right, like frames sliding past in a gallery. Going
@@ -66,13 +70,13 @@ export default function OnboardingShowcase() {
 
   return (
     <div className="flex min-h-full flex-col overflow-hidden bg-background px-5 pb-6 safe-top-page safe-bottom">
-      <div className="flex h-10 items-center justify-between">
+      <div className="h-10">
         <button
           type="button"
           onClick={goBack}
           aria-label="Previous feature"
-          // Held in the layout rather than unmounted, so the skip link and the
-          // card below it don't shift when the first beat has no back target.
+          // Held in the layout rather than unmounted, so the card below doesn't
+          // shift when the first beat has no back target.
           className={cn(
             "press focus-ring -ml-2 flex h-10 w-10 items-center justify-center rounded-control text-muted-foreground",
             index === 0 && "pointer-events-none opacity-0",
@@ -81,16 +85,9 @@ export default function OnboardingShowcase() {
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <button
-          type="button"
-          onClick={toSignup}
-          className="press focus-ring -mr-2 rounded-control px-2 py-1 text-small text-muted-foreground"
-        >
-          Skip
-        </button>
       </div>
 
-      <div className="relative mt-2 flex-1">
+      <div className="relative flex-1">
         <AnimatePresence initial={false} mode="popLayout" custom={dir}>
           <motion.div
             key={beat.id}
@@ -109,15 +106,15 @@ export default function OnboardingShowcase() {
             }}
             transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
           >
+            <h2 className="text-h1 text-center lowercase">{beat.title}</h2>
+
             <div className="flex min-h-0 flex-1 items-center">
               <div className="mx-auto w-full max-w-[420px]">
                 <beat.Demo />
               </div>
             </div>
-            <div className="mt-6">
-              <h2 className="text-h1 lowercase">{beat.title}</h2>
-              <p className="mt-1.5 text-body text-muted-foreground">{beat.caption}</p>
-            </div>
+
+            <p className="text-center text-body text-muted-foreground">{beat.caption}</p>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -144,9 +141,11 @@ export default function OnboardingShowcase() {
         ))}
       </div>
 
-      <Button variant="primaryLight" size="lg" className="mt-5 w-full" onClick={advance}>
-        {isLast ? "Get started" : "Next"}
-      </Button>
+      <div className="mt-5 flex justify-center">
+        <Button variant="primaryLight" size="lg" className="px-10" onClick={advance}>
+          {isLast ? "get started" : "next"}
+        </Button>
+      </div>
     </div>
   );
 }

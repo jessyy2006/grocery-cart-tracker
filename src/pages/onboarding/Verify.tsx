@@ -5,14 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { SignupShell } from "@/components/onboarding/SignupShell";
-import { Button } from "@/components/ui/button";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 
-const RESEND_SECONDS = 45;
+const RESEND_SECONDS = 30;
 
 /**
  * Signup step 2 — the 6-digit code. Auto-submits on the sixth digit. If the
@@ -24,7 +23,6 @@ export default function OnboardingVerify() {
   const { user } = useAuth();
   const { draft } = useOnboarding();
   const [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(RESEND_SECONDS);
   const submitted = useRef(false);
 
@@ -46,7 +44,6 @@ export default function OnboardingVerify() {
   const verify = async (value: string) => {
     if (submitted.current) return;
     submitted.current = true;
-    setBusy(true);
     try {
       const { error } = await supabase.auth.verifyOtp({
         email: draft.email,
@@ -59,8 +56,6 @@ export default function OnboardingVerify() {
       submitted.current = false;
       setCode("");
       toast.error(err instanceof Error ? err.message : "That code didn't work");
-    } finally {
-      setBusy(false);
     }
   };
 
@@ -82,36 +77,12 @@ export default function OnboardingVerify() {
     <SignupShell
       caption="almost there…"
       title="confirm the 6 digit code."
-      step={2}
+      // Kept: mistyping your email on the previous screen leaves this as the
+      // only way out. Everything else on the frame is chrome; this is recovery.
       onBack={() => navigate("/onboarding/signup")}
-      footer={
-        <>
-          <Button
-            variant="primaryLight"
-            size="lg"
-            className="w-full"
-            disabled={code.length !== 6 || busy}
-            onClick={() => verify(code)}
-          >
-            Verify
-          </Button>
-          <Button
-            variant="ghost"
-            size="lg"
-            className="w-full text-muted-foreground"
-            disabled={cooldown > 0}
-            onClick={resend}
-          >
-            {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
-          </Button>
-        </>
-      }
+      footer={null}
     >
-      <div className="space-y-5">
-        <p className="text-body text-muted-foreground">
-          We sent a 6-digit code to{" "}
-          <span className="font-medium text-foreground">{draft.email}</span>.
-        </p>
+      <div className="mx-auto w-full max-w-[300px] space-y-8">
         <InputOTP
           maxLength={6}
           value={code}
@@ -121,7 +92,7 @@ export default function OnboardingVerify() {
             if (v.length === 6) verify(v);
           }}
         >
-          <InputOTPGroup className="w-full justify-between gap-2">
+          <InputOTPGroup className="w-full justify-center gap-2">
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <InputOTPSlot
                 key={i}
@@ -131,6 +102,15 @@ export default function OnboardingVerify() {
             ))}
           </InputOTPGroup>
         </InputOTP>
+        {cooldown <= 0 && (
+          <button
+            type="button"
+            onClick={resend}
+            className="press focus-ring mx-auto block rounded-control px-3 py-1.5 text-small text-muted-foreground"
+          >
+            didn't get it? click here to resend
+          </button>
+        )}
       </div>
     </SignupShell>
   );
