@@ -63,6 +63,13 @@ export function SignupShell({ caption, title, onBack, children, footer, classNam
         )}
       </div>
 
+      {/*
+        Caption, headline and fields are centred as one block in the space
+        between the back row and the action, rather than stacking from the top.
+        The group keeps its natural height — `justify-center` on the parent is
+        what centres it, so nothing here may grow.
+      */}
+      <div className="flex flex-1 flex-col justify-center">
       <motion.p
         className="text-eyebrow text-center"
         initial={playIntro.current ? { opacity: 0, y: 72, scale: 1.35 } : false}
@@ -94,7 +101,7 @@ export function SignupShell({ caption, title, onBack, children, footer, classNam
       </motion.h1>
 
       <motion.div
-        className={cn("mt-12 flex-1", className)}
+        className={cn("mt-12", className)}
         initial={reduce ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{
@@ -105,6 +112,7 @@ export function SignupShell({ caption, title, onBack, children, footer, classNam
       >
         {children}
       </motion.div>
+      </div>
 
       <div className="mt-6 flex flex-col items-center gap-3">{footer}</div>
     </div>
