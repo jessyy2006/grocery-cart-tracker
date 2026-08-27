@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.0";
+import { AIError, chatCompletion, GEMINI_MODELS } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,22 +38,11 @@ Deno.serve(async (req) => {
       return json({ matchId: null });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY not configured");
-      return json({ matchId: null, error: "Service unavailable" }, 500);
-    }
-
     const ids = listItems.map((i) => i.id);
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+    const data = await chatCompletion(
+      {
+        model: GEMINI_MODELS.FLASH_PREVIEW,
         messages: [
           {
             role: "system",
@@ -84,20 +74,10 @@ Deno.serve(async (req) => {
           },
         ],
         tool_choice: { type: "function", function: { name: "pick_match" } },
-      }),
-    });
+      },
+      { label: "match-list-item" },
+    );
 
-    if (!resp.ok) {
-      const status = resp.status;
-      const text = await resp.text();
-      console.error("AI gateway error", status, text);
-      if (status === 429 || status === 402) {
-        return json({ matchId: null, error: status === 429 ? "Rate limited" : "Out of credits" }, status);
-      }
-      return json({ matchId: null });
-    }
-
-    const data = await resp.json();
     const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     let matchId: string | null = null;
     if (args) {
@@ -109,6 +89,13 @@ Deno.serve(async (req) => {
 
     return json({ matchId });
   } catch (e) {
+    // A missing match must never break the scan flow, so an AI failure degrades
+    // to "no match" rather than an error — except rate limiting, which the
+    // client backs off on.
+    if (e instanceof AIError) {
+      if (e.status === 429) return json({ matchId: null, error: "Rate limited" }, 429);
+      return json({ matchId: null });
+    }
     console.error("match-list-item error", e);
     return json({ matchId: null, error: "Internal error" }, 500);
   }
