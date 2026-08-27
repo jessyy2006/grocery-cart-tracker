@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft } from "lucide-react";
@@ -32,6 +32,14 @@ export default function OnboardingShowcase() {
   // Mirrors `index` synchronously so two navigations inside one frame can't
   // both read the same stale value off state.
   const indexRef = useRef(0);
+  // The very first beat blooms out of the middle, picking up where the hero's
+  // swirl collapsed, instead of sliding in from the right like every later
+  // beat. Only true for the first render of this screen.
+  const bloomRef = useRef(true);
+  const bloom = bloomRef.current && !reduce;
+  useEffect(() => {
+    bloomRef.current = false;
+  }, []);
 
   const toSignup = useCallback(
     () => navigate(user ? "/onboarding/budget" : "/onboarding/signup", { replace: true }),
@@ -88,12 +96,12 @@ export default function OnboardingShowcase() {
       </div>
 
       <div className="relative flex-1">
-        <AnimatePresence initial={false} mode="popLayout" custom={dir}>
+        <AnimatePresence initial={bloom} mode="popLayout" custom={dir}>
           <motion.div
             key={beat.id}
             custom={dir}
             variants={variants}
-            initial="enter"
+            initial={bloom ? { opacity: 0, scale: 0.62, x: 0 } : "enter"}
             animate="center"
             exit="exit"
             className="absolute inset-0 flex flex-col"
