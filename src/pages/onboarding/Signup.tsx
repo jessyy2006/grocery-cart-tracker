@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding, ONBOARDED_KEY } from "@/hooks/useOnboarding";
 import { nameFromMetadata } from "@/lib/onboarding";
@@ -10,7 +9,6 @@ import { isNative, safeGetItem, safeSetItem } from "@/lib/native";
 import { SignupShell } from "@/components/onboarding/SignupShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ONBOARDING_CHECK_TIMEOUT = 8_000;
@@ -108,11 +106,11 @@ export default function OnboardingSignup() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: cleanEmail,
-        options: {
-          shouldCreateUser: true,
-          data: { first_name: cleanName },
-          emailRedirectTo: window.location.origin + "/onboarding/verify",
-        },
+        // No emailRedirectTo: this flow verifies with the 6-digit code. Passing
+        // a redirect makes Supabase mint a confirmation link, which is what the
+        // email was leading with — and inside the native shell the origin is
+        // capacitor://localhost, so that link dead-ends anyway.
+        options: { shouldCreateUser: true, data: { first_name: cleanName } },
       });
       if (error) throw error;
       update({ firstName: cleanName, email: cleanEmail, codeSent: true });
@@ -124,20 +122,36 @@ export default function OnboardingSignup() {
     }
   };
 
+  /**
+   * Google goes straight to Supabase, not through Lovable.
+   *
+   * The Lovable SDK sent the browser to `/~oauth/initiate`, a route that only
+   * exists on Lovable's own servers — so the round trip 404'd on localhost and
+   * could never complete inside the native shell, where there is no server at
+   * all. Supabase's `/auth/v1/authorize` works from any origin, which is the
+   * only version of this that survives a TestFlight build.
+   *
+   * Requires the Google provider to be configured in Supabase (Authentication →
+   * Providers → Google) with a client ID and secret from the Google Cloud
+   * console, and this origin present in the redirect allow-list. Without that
+   * Supabase answers "Unsupported provider: missing OAuth secret", which is
+   * surfaced below rather than swallowed.
+   */
   const google = async () => {
     googleBusyRef.current = true;
     setGoogleBusy(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/onboarding/signup",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin + "/onboarding/signup" },
       });
-      if (result.error) {
-        toast.error(result.error.message ?? "Google sign-in failed");
+      if (error) {
+        toast.error(error.message ?? "Google sign-in failed");
         googleBusyRef.current = false;
         setGoogleBusy(false);
         return;
       }
-      // Redirected, or tokens set — the effect above routes onward.
+      // Redirected — the effect above routes onward once the session lands.
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
       googleBusyRef.current = false;
@@ -147,66 +161,65 @@ export default function OnboardingSignup() {
 
   return (
     <SignupShell
-      caption="step 1 of 3"
-      title="what should we call you?"
-      onBack={() => navigate("/onboarding")}
+      caption="ready to start saving?"
+      title="first, tell us who you are."
       footer={
         <>
           <Button
             variant="primaryLight"
             size="lg"
-            className="w-full"
+            className="px-10"
             disabled={!valid || busy}
             onClick={submit}
           >
-            Send my code
+            send my code
           </Button>
           {/*
-            Google OAuth is web-only for now. Inside the native shell
-            `window.location.origin` is `capacitor://localhost`, and Google
-            rejects non-HTTPS redirect URIs — the round trip cannot complete.
-            Re-enable once the Universal Link redirect is live (see MOBILE.md).
-            Email OTP works natively and also satisfies Guideline 4.8 as the
-            privacy-preserving sign-in option.
+            Still web-only, but the blocker has moved. Going through Supabase
+            rather than Lovable removes the server-route problem; what remains
+            is that `window.location.origin` is `capacitor://localhost` in the
+            shell, so the callback has nowhere to land. Enabling this natively
+            needs a custom-scheme redirect registered three places — the iOS
+            Info.plist, Supabase's redirect allow-list, and the Google console —
+            plus a Capacitor `appUrlOpen` listener to catch the callback and
+            hand its tokens to `setSession`. See MOBILE.md.
+
+            Email OTP works natively today and satisfies Guideline 4.8 as the
+            privacy-preserving sign-in option, so nothing is blocked on this.
           */}
           {!isNative() && (
             <Button
               variant="secondaryLight"
               size="lg"
-              className="w-full"
+              className="px-10"
               onClick={google}
               disabled={googleBusy}
             >
-              Continue with Google
+              continue with google
             </Button>
           )}
         </>
       }
     >
-      <form onSubmit={submit} className="space-y-5">
-        <div className="space-y-1.5">
-          <Label htmlFor="first">First name</Label>
-          <Input
-            id="first"
-            autoComplete="given-name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <p className="text-small text-muted-foreground">
-            We'll send a 6-digit code — no password to remember.
-          </p>
-        </div>
+      <form onSubmit={submit} className="mx-auto w-full max-w-[280px] space-y-7">
+        <Input
+          variant="underline"
+          aria-label="First name"
+          placeholder="first name"
+          autoComplete="given-name"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+        />
+        <Input
+          variant="underline"
+          aria-label="Email"
+          placeholder="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
         <button type="submit" className="hidden" aria-hidden />
       </form>
     </SignupShell>

@@ -47,22 +47,47 @@ no deep link is involved. It also satisfies Guideline 4.8 as the privacy-preserv
 option.
 
 **Google OAuth is hidden on native** (`pages/onboarding/Signup.tsx`, gated on
-`isNative()`). Inside the shell `window.location.origin` is `capacitor://localhost`,
-and Google rejects non-HTTPS redirect URIs, so the round trip cannot complete.
+`isNative()`). Google now goes through Supabase's `/auth/v1/authorize` rather than
+Lovable's `/~oauth/initiate`, which removed one blocker — that route only existed on
+Lovable's servers. What remains is that `redirectTo` is built from
+`window.location.origin`, which is `capacitor://localhost` in the shell, so the
+callback has nowhere to land.
 
-To re-enable it later you need an HTTPS redirect that hands control back to the app:
+**This does not need a domain.** Because Supabase brokers the flow, Google's redirect
+URI is always `https://<project>.supabase.co/auth/v1/callback` — Google never sees the
+app's scheme, so its https-only rule is satisfied by Supabase, not by us. Only the
+final Supabase → app hop has to reach the shell, and Supabase's redirect allow-list
+accepts custom schemes. A Universal Link would also work but is strictly more work
+(domain, AASA file, hosting) for no gain here.
 
-1. Serve `/.well-known/apple-app-site-association` from a domain you control, listing
-   `<TEAM_ID>.com.cartwise.app`. No file extension, `Content-Type: application/json`,
-   HTTPS, no redirects.
-2. Add the Associated Domains capability in Xcode: `applinks:yourdomain.com`.
-3. Set the OAuth `redirect_uri` to `https://yourdomain.com/auth/callback` and register
-   that exact URL in both Google Cloud Console and Supabase's allowed redirect list.
-4. Handle the inbound URL with Capacitor's `App.addListener('appUrlOpen', …)` and pass
-   the code to `supabase.auth.exchangeCodeForSession()`.
+To re-enable it, register one custom scheme in three places:
 
-Step 1 is the real work — the rest is wiring. Sign in with Apple is the cheaper path
-if the goal is just "a second sign-in button", since it needs no domain.
+1. **Info.plist** — add a `CFBundleURLTypes` entry for `com.cartwise.app`.
+2. **Supabase** — Authentication → URL Configuration → add `com.cartwise.app://callback`
+   to the redirect allow-list.
+3. **`Signup.tsx`** — use that URL as `redirectTo` when `isNative()`, keeping
+   `window.location.origin` for web.
+
+Then catch the callback:
+
+```ts
+App.addListener("appUrlOpen", async ({ url }) => {
+  const params = new URLSearchParams(new URL(url).hash.slice(1));
+  const access_token = params.get("access_token");
+  const refresh_token = params.get("refresh_token");
+  if (access_token && refresh_token) {
+    await supabase.auth.setSession({ access_token, refresh_token });
+  }
+});
+```
+
+Tokens arrive in the URL **fragment**, not as a code: the client in
+`src/integrations/supabase/client.ts` does not set `flowType`, and auth-js defaults to
+`'implicit'`. Hence `setSession`, not `exchangeCodeForSession` — the latter only
+applies if the client is switched to `flowType: 'pkce'`.
+
+Google also still requires a client ID and secret configured under Authentication →
+Providers → Google, or Supabase answers "Unsupported provider: missing OAuth secret".
 
 ### Required Supabase configuration for email OTP
 
@@ -94,8 +119,10 @@ Worth doing as a **second** build, after the first archive is confirmed working 
 adds a native dependency, and bundling it with the first `cap add ios` means debugging
 two unknowns at once.
 
-It avoids the Universal Link problem entirely: the native flow returns a signed JWT
-in-process, with no redirect URI and no domain.
+It is still the simplest of the two: the native flow returns a signed JWT in-process,
+with no redirect hop at all — nothing to register, nothing to catch. Note that Google
+is no longer meaningfully harder now that it routes through Supabase (see above); both
+are an afternoon. Pick on merit, not on setup cost.
 
 - Cost: none beyond the $99/yr Apple Developer Program that TestFlight already requires.
 - Compatibility (verified 2026-08-26): `@capacitor-community/apple-sign-in@7.1.0` has
