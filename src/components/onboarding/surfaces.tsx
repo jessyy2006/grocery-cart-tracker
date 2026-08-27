@@ -14,14 +14,14 @@ import { smoothPath } from "@/lib/smoothPath";
  */
 
 const Card = ({ children }: { children: React.ReactNode }) => (
-  <div className="w-[136px] overflow-hidden rounded-card border border-border bg-card shadow-soft">
+  <div className="w-[100px] overflow-hidden rounded-card border border-border bg-card shadow-soft">
     {children}
   </div>
 );
 
 /** Receipt-paper surfaces share this shell. */
 const Paper = ({ children }: { children: React.ReactNode }) => (
-  <div className="w-[136px] overflow-hidden rounded-card border border-receipt-rule bg-receipt-paper text-receipt-ink shadow-soft">
+  <div className="w-[100px] overflow-hidden rounded-card border border-receipt-rule bg-receipt-paper text-receipt-ink shadow-soft">
     {children}
   </div>
 );
@@ -87,16 +87,23 @@ const MiniMetric = ({
   value: string;
   bordered?: boolean;
 }) => (
+  // min-w-0 lets the column shrink inside the grid; without it the values
+  // overflowed their tracks and ran into each other. The padding and size are
+  // then set by the widest value the card carries: "$4,916" needs about 21.6px
+  // of mono, and a 27.3px track at px-[3px] left only 21.3px, which clipped it
+  // to "$4,9…".
   <div
-    className={`flex flex-col gap-[1px] px-1 ${bordered ? "border-l border-neutral-400/50" : ""}`}
+    className={`flex min-w-0 flex-col gap-[1px] px-[2px] ${
+      bordered ? "border-l border-neutral-400/50" : ""
+    }`}
   >
-    <div className="text-[4px] uppercase tracking-wider">{label}</div>
-    <div className="text-[8px] font-bold leading-none tabular-nums">{value}</div>
+    <div className="truncate text-[3.5px] uppercase tracking-wider">{label}</div>
+    <div className="truncate text-[5.5px] font-bold leading-none tabular-nums">{value}</div>
   </div>
 );
 
 export const YearlySummarySurface = () => (
-  <div className="w-[136px] overflow-hidden rounded-card border border-receipt-rule shadow-soft">
+  <div className="w-[100px] overflow-hidden rounded-card border border-receipt-rule shadow-soft">
     <JaggedEdge position="top" />
     <div
       className="px-2 pb-2 font-mono text-[5px] leading-snug text-neutral-900"
@@ -111,10 +118,10 @@ export const YearlySummarySurface = () => (
 
       <MiniDivider />
 
-      <div className="my-1 grid grid-cols-3 gap-1">
+      <div className="my-1 grid grid-cols-3 gap-0">
         <MiniMetric label="Total" value="$4,916" />
         <MiniMetric label="Items" value="1,284" bordered />
-        <MiniMetric label="Avg Cart" value="21.4" bordered />
+        <MiniMetric label="Avg" value="21.4" bordered />
       </div>
 
       <MiniDivider />
@@ -181,7 +188,6 @@ export const TripReceiptSurface = () => (
       </p>
       <Row k="ice cream" v="$21.35" />
       <Row k="salt" v="$1.99" />
-      <Row k="potatoes" v="$4.20" />
       <Row k="chicken breast" v="$23.55" />
       <div className="mt-1 border-t border-dashed border-receipt-rule pt-1">
         <Row k="TOTAL SPENT" v="$51.09" bold />
@@ -205,7 +211,6 @@ export const ListsSurface = () => (
           ["walmart essentials", "21 items"],
           ["my first list", "3 items"],
           ["may 20 run", "8 items"],
-          ["shrimp coconut curry", "3 items"],
         ].map(([name, count]) => (
           <div key={name} className="py-[3px]">
             <p className="truncate text-[7px] lowercase leading-tight">{name}</p>
@@ -224,7 +229,6 @@ export const LiveListSurface = () => {
     ["1% milk", "$5.49", true],
     ["sourdough", "$4.25", true],
     ["greek yogurt", "$6.49", false],
-    ["chicken breast", "$12.80", false],
   ];
   return (
     <Card>

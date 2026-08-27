@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding, ONBOARDED_KEY } from "@/hooks/useOnboarding";
 import { nameFromMetadata } from "@/lib/onboarding";
@@ -123,20 +122,36 @@ export default function OnboardingSignup() {
     }
   };
 
+  /**
+   * Google goes straight to Supabase, not through Lovable.
+   *
+   * The Lovable SDK sent the browser to `/~oauth/initiate`, a route that only
+   * exists on Lovable's own servers — so the round trip 404'd on localhost and
+   * could never complete inside the native shell, where there is no server at
+   * all. Supabase's `/auth/v1/authorize` works from any origin, which is the
+   * only version of this that survives a TestFlight build.
+   *
+   * Requires the Google provider to be configured in Supabase (Authentication →
+   * Providers → Google) with a client ID and secret from the Google Cloud
+   * console, and this origin present in the redirect allow-list. Without that
+   * Supabase answers "Unsupported provider: missing OAuth secret", which is
+   * surfaced below rather than swallowed.
+   */
   const google = async () => {
     googleBusyRef.current = true;
     setGoogleBusy(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin + "/onboarding/signup",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin + "/onboarding/signup" },
       });
-      if (result.error) {
-        toast.error(result.error.message ?? "Google sign-in failed");
+      if (error) {
+        toast.error(error.message ?? "Google sign-in failed");
         googleBusyRef.current = false;
         setGoogleBusy(false);
         return;
       }
-      // Redirected, or tokens set — the effect above routes onward.
+      // Redirected — the effect above routes onward once the session lands.
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
       googleBusyRef.current = false;
@@ -160,12 +175,17 @@ export default function OnboardingSignup() {
             send my code
           </Button>
           {/*
-            Google OAuth is web-only for now. Inside the native shell
-            `window.location.origin` is `capacitor://localhost`, and Google
-            rejects non-HTTPS redirect URIs — the round trip cannot complete.
-            Re-enable once the Universal Link redirect is live (see MOBILE.md).
-            Email OTP works natively and also satisfies Guideline 4.8 as the
-            privacy-preserving sign-in option.
+            Still web-only, but the blocker has moved. Going through Supabase
+            rather than Lovable removes the server-route problem; what remains
+            is that `window.location.origin` is `capacitor://localhost` in the
+            shell, so the callback has nowhere to land. Enabling this natively
+            needs a custom-scheme redirect registered three places — the iOS
+            Info.plist, Supabase's redirect allow-list, and the Google console —
+            plus a Capacitor `appUrlOpen` listener to catch the callback and
+            hand its tokens to `setSession`. See MOBILE.md.
+
+            Email OTP works natively today and satisfies Guideline 4.8 as the
+            privacy-preserving sign-in option, so nothing is blocked on this.
           */}
           {!isNative() && (
             <Button

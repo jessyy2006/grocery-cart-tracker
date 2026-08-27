@@ -34,7 +34,7 @@ export default function OnboardingHero() {
     <div className="flex min-h-full flex-col bg-background pb-6 safe-top-page safe-bottom">
       <div
         className="relative flex-1 overflow-hidden"
-        style={{ "--orbit-r": "clamp(148px, 47vw, 205px)" } as React.CSSProperties}
+        style={{ "--orbit-r": "clamp(124px, 37vw, 158px)" } as React.CSSProperties}
       >
         <motion.div
           className="absolute inset-0 z-0 will-change-transform"
@@ -72,7 +72,13 @@ export default function OnboardingHero() {
               // Sized to the lockup rather than to the stage: the stage is far
               // taller than it is wide, so a circle keyed to closest-side left a
               // pool too small to clear the wordmark.
-              "radial-gradient(ellipse 135px 85px at center, hsl(var(--background)) 0%, hsl(var(--background)) 70%, transparent 100%)",
+              // Sized to the widest thing in the lockup — the subtitle, at
+              // 200px — and no wider. On a 390px screen there is no radius that
+              // both clears that subtitle and keeps a 100px card fully on
+              // screen; the two constraints cross. So the surfaces are allowed
+              // to graze the type and this wash resolves the few pixels where
+              // they meet. Any wider and it starts greying whole cards.
+              "radial-gradient(ellipse 110px 60px at center, hsl(var(--background)) 0%, hsl(var(--background)) 72%, transparent 100%)",
           }}
         />
 
