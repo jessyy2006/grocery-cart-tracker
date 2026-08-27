@@ -1,0 +1,37 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "Option A — Even rail" },
+    { "file": "OptionB.dc.html", "x": 490, "y": 0, "w": 390, "h": 844, "title": "Option B — Deck" },
+    { "file": "OptionC.dc.html", "x": 980, "y": 0, "w": 390, "h": 844, "title": "Option C — Perspective" },
+    { "file": "OptionD.dc.html", "x": 1470, "y": 0, "w": 390, "h": 844, "title": "Option D — Two then stack" },
+    { "file": "Transition.dc.html", "x": 0, "y": 1010, "w": 1100, "h": 620, "title": "The transition" }
+  ],
+  "annotations": [
+    {
+      "id": "opt-a",
+      "x": 0, "y": -150, "w": 390,
+      "text": "OPTION A — EVEN RAIL\n\nEqual gaps, each step smaller and softer.\n\nReads most clearly as \"a line of things to come\". Most literal to your frame note.\n\nTradeoff: the even spacing eats width fast — only about two and a half cards fit before the edge, so it undersells how much is left."
+    },
+    {
+      "id": "opt-b",
+      "x": 490, "y": -150, "w": 390,
+      "text": "OPTION B — DECK\n\nHeavy overlap; you see four slivers in the space one spaced card would take.\n\nBiggest live card of the four, and it genuinely communicates \"four more\".\n\nTradeoff: slivers carry no information — you can tell there are more, not what they are."
+    },
+    {
+      "id": "opt-c",
+      "x": 980, "y": -150, "w": 390,
+      "text": "OPTION C — PERSPECTIVE\n\nTrailing cards turned away on a receding plane, cover-flow style.\n\nThe most physical read of \"art gallery\" — depth does the work, so less blur is needed.\n\nTradeoff: the most dated of the four, and 3D transforms plus blur are the combination most likely to stutter on older iPhones."
+    },
+    {
+      "id": "opt-d",
+      "x": 1470, "y": -150, "w": 390,
+      "text": "OPTION D — TWO THEN STACK\n\nThe next card stays readable with real room; the last three collapse into a sliver stack.\n\nOnly option that answers both \"what's next\" and \"how much is left\".\n\nTradeoff: two rhythms in one row — it can read as a mistake rather than a decision if the spacing isn't right."
+    },
+    {
+      "id": "motion-note",
+      "x": 0, "y": 1680, "w": 620,
+      "text": "The one thing worth getting right regardless of which option you pick: the demo starts looping as the card begins growing, not when it lands. Apple Tips does this — the motion never pauses. Starting the loop on arrival puts a dead beat right where the user is looking."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

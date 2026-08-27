@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=JetBrains+Mono:wght@400;500;700&family=Inter+Tight:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: hsl(155 56% 15%); } a:hover { color: hsl(155 40% 28%); }
+    .board {
+      width: 1100px; height: 620px; box-sizing: border-box;
+      background: hsl(43 30% 95%); color: hsl(36 10% 10%);
+      font-family: "Inter Tight", system-ui, sans-serif; padding: 36px 40px;
+      display: flex; flex-direction: column; gap: 26px;
+    }
+    .head { display: flex; flex-direction: column; gap: 6px; }
+    .kicker {
+      font-family: "JetBrains Mono", monospace; font-size: 10px; font-weight: 500;
+      letter-spacing: 0.16em; text-transform: uppercase; color: hsl(35 7% 45%);
+    }
+    .h { font-family: Fraunces, Georgia, serif; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
+    .beats { display: flex; gap: 34px; align-items: flex-start; }
+    .beat { display: flex; flex-direction: column; gap: 12px; width: 296px; }
+    .frame {
+      width: 296px; height: 380px; background: hsl(43 35% 97%);
+      border: 1px solid hsl(40 26% 86%); border-radius: 10px;
+      position: relative; overflow: hidden;
+    }
+    .meta { display: flex; flex-direction: column; gap: 5px; }
+    .t { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: hsl(155 56% 15%); }
+    .d { font-size: 13.5px; color: hsl(35 7% 45%); line-height: 1.5; }
+    .mini {
+      position: absolute; background: hsl(43 30% 95%);
+      border: 1px solid hsl(40 26% 86%); border-radius: 4px; box-sizing: border-box;
+    }
+    .word {
+      position: absolute; left: 0; right: 0; text-align: center;
+      font-family: Fraunces, Georgia, serif; font-weight: 600;
+    }
+    .lines { display: flex; flex-direction: column; gap: 4px; padding: 7px; }
+    .ln { height: 4px; background: hsl(40 26% 90%); border-radius: 1px; }
+  </style>
+</helmet>
+
+<div class="board">
+  <div class="head">
+    <div class="kicker">Cartwise onboarding · hero → feature one</div>
+    <div class="h">Three beats, about 620ms end to end.</div>
+  </div>
+
+  <div class="beats">
+
+    <div class="beat">
+      <div class="frame">
+        <!-- Beat 1: the ring, as it sits now -->
+        <div class="mini" style="width: 62px; height: 46px; left: 118px; top: 40px;"><div class="lines"><div class="ln" style="width:80%"></div><div class="ln" style="width:60%"></div></div></div>
+        <div class="mini" style="width: 62px; height: 46px; left: 196px; top: 132px;"><div class="lines"><div class="ln" style="width:70%"></div><div class="ln" style="width:85%"></div></div></div>
+        <div class="mini" style="width: 62px; height: 46px; left: 166px; top: 246px;"><div class="lines"><div class="ln" style="width:60%"></div><div class="ln" style="width:75%"></div></div></div>
+        <div class="mini" style="width: 62px; height: 46px; left: 68px; top: 246px;"><div class="lines"><div class="ln" style="width:82%"></div><div class="ln" style="width:55%"></div></div></div>
+        <div class="mini" style="width: 62px; height: 46px; left: 38px; top: 132px;"><div class="lines"><div class="ln" style="width:66%"></div><div class="ln" style="width:78%"></div></div></div>
+        <div class="word" style="top: 172px; font-size: 22px;">Cartwise</div>
+      </div>
+      <div class="meta">
+        <div class="t">0 ms · tap</div>
+        <div class="d">The ring is mid-orbit. Wherever each surface happens to be is where it starts from — no snap to a home position first.</div>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="frame">
+        <!-- Beat 2: one grows toward centre, the rest break for the right -->
+        <div class="mini" style="width: 116px; height: 92px; left: 40px; top: 138px; box-shadow: 0 14px 26px -18px hsl(36 10% 10% / 0.5);">
+          <div class="lines"><div class="ln" style="width:78%"></div><div class="ln" style="width:58%"></div><div class="ln" style="width:88%"></div></div>
+        </div>
+        <div class="mini" style="width: 58px; height: 44px; left: 176px; top: 150px; opacity: 0.6; filter: blur(1.4px);"></div>
+        <div class="mini" style="width: 50px; height: 38px; left: 218px; top: 154px; opacity: 0.42; filter: blur(2.2px);"></div>
+        <div class="mini" style="width: 44px; height: 34px; left: 252px; top: 157px; opacity: 0.26; filter: blur(3px);"></div>
+        <div class="mini" style="width: 38px; height: 30px; left: 278px; top: 160px; opacity: 0.14; filter: blur(3.8px);"></div>
+        <div class="word" style="top: 62px; font-size: 15px; opacity: 0.25;">Cartwise</div>
+      </div>
+      <div class="meta">
+        <div class="t">~120–420 ms</div>
+        <div class="d">Feature one scales up and moves to its resting spot. The other four flatten onto one baseline, fading and softening as they go. The wordmark drops out early so nothing competes.</div>
+      </div>
+    </div>
+
+    <div class="beat">
+      <div class="frame">
+        <!-- Beat 3: settled, demo already looping -->
+        <div style="position:absolute; left:0; right:0; top:26px; text-align:center; font-family:Fraunces,Georgia,serif; font-size:19px; font-weight:600;">build the list.</div>
+        <div class="mini" style="width: 150px; height: 152px; left: 20px; top: 92px; background: hsl(43 35% 97%); box-shadow: 0 14px 28px -18px hsl(36 10% 10% / 0.45);">
+          <div class="lines" style="gap:7px; padding:11px;">
+            <div class="ln" style="width:84%; height:5px;"></div>
+            <div class="ln" style="width:64%; height:5px;"></div>
+            <div class="ln" style="width:90%; height:5px;"></div>
+            <div class="ln" style="width:72%; height:5px;"></div>
+          </div>
+        </div>
+        <div class="mini" style="width: 96px; height: 126px; left: 188px; top: 105px; opacity: 0.55; filter: blur(1.2px);"></div>
+        <div class="mini" style="width: 78px; height: 104px; left: 246px; top: 116px; opacity: 0.34; filter: blur(2.4px);"></div>
+        <div class="mini" style="width: 64px; height: 86px; left: 290px; top: 125px; opacity: 0.18; filter: blur(3.4px);"></div>
+        <div style="position:absolute; left:0; right:0; top:274px; text-align:center; font-size:11.5px; color:hsl(35 7% 45%); padding:0 26px; line-height:1.4;">Add items in seconds — we sort them into aisles for you.</div>
+        <div style="position:absolute; left:0; right:0; bottom:22px; display:flex; gap:3px; justify-content:center;">
+          <div style="width:14px;height:4px;border-radius:99px;background:hsl(155 56% 15%);"></div>
+          <div style="width:4px;height:4px;border-radius:99px;background:hsl(40 26% 86%);"></div>
+          <div style="width:4px;height:4px;border-radius:99px;background:hsl(40 26% 86%);"></div>
+          <div style="width:4px;height:4px;border-radius:99px;background:hsl(40 26% 86%);"></div>
+          <div style="width:4px;height:4px;border-radius:99px;background:hsl(40 26% 86%);"></div>
+        </div>
+      </div>
+      <div class="meta">
+        <div class="t">~420 ms · settled</div>
+        <div class="d">The demo is already looping — it starts the moment the card begins growing, not when it lands, so the screen is never still. Title and caption fade in last.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

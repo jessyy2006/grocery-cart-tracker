@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=JetBrains+Mono:wght@400;500;700&family=Inter+Tight:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: hsl(155 56% 15%); } a:hover { color: hsl(155 40% 28%); }
+    .screen {
+      width: 390px; height: 844px; box-sizing: border-box;
+      background: hsl(43 30% 95%); color: hsl(36 10% 10%);
+      font-family: "Inter Tight", system-ui, sans-serif;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .chrome { height: 44px; display: flex; align-items: center; padding: 0 12px; flex: 0 0 auto; }
+    .title {
+      font-family: Fraunces, Georgia, serif; font-size: 30px; font-weight: 600;
+      letter-spacing: -0.02em; text-align: center; margin: 4px 20px 0;
+    }
+    .stage { flex: 1 1 auto; position: relative; overflow: hidden; display: flex; align-items: center; }
+    .rail { display: flex; align-items: center; padding-left: 16px; }
+    .caption { font-size: 15px; color: hsl(35 7% 45%); text-align: center; margin: 0 24px; line-height: 1.45; }
+    .dots { display: flex; gap: 4px; justify-content: center; margin-top: 22px; }
+    .dot { width: 6px; height: 6px; border-radius: 999px; background: hsl(40 26% 86%); }
+    .dot.on { width: 20px; background: hsl(155 56% 15%); }
+    .cta {
+      margin: 20px auto 24px; background: hsl(155 56% 15%); color: hsl(43 30% 95%);
+      font-family: "JetBrains Mono", monospace; font-size: 14px;
+      padding: 14px 40px; border-radius: 4px; text-align: center;
+    }
+    .live {
+      width: 206px; flex: 0 0 auto; background: hsl(43 35% 97%);
+      border: 1px solid hsl(40 26% 86%); border-radius: 6px; padding: 15px;
+      box-shadow: 0 1px 0 hsl(36 10% 10% / 0.04), 0 18px 34px -22px hsl(36 10% 10% / 0.45);
+      position: relative; z-index: 5;
+    }
+    .eyebrow {
+      font-family: "JetBrains Mono", monospace; font-size: 9px; font-weight: 500;
+      letter-spacing: 0.13em; text-transform: uppercase; color: hsl(35 7% 45%);
+    }
+    .row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 7px 0; border-bottom: 1px solid hsl(40 26% 86% / 0.7);
+    }
+    .row span:first-child { font-size: 12.5px; }
+    .row span:last-child {
+      font-family: "JetBrains Mono", monospace; font-size: 7.5px;
+      letter-spacing: 0.1em; text-transform: uppercase; color: hsl(35 7% 45%);
+    }
+    .card {
+      flex: 0 0 auto; background: hsl(43 35% 97%); border: 1px solid hsl(40 26% 86%);
+      border-radius: 6px; padding: 12px; box-sizing: border-box;
+      box-shadow: -6px 0 14px -8px hsl(36 10% 10% / 0.3);
+    }
+    .cap {
+      font-family: "JetBrains Mono", monospace; letter-spacing: 0.12em;
+      text-transform: uppercase; color: hsl(35 7% 45%); white-space: nowrap;
+    }
+    .bar { background: hsl(40 26% 90%); border-radius: 2px; }
+  </style>
+</helmet>
+
+<div class="screen">
+  <div class="chrome">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="hsl(35 7% 45%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+  </div>
+
+  <div class="title">build the list.</div>
+
+  <div class="stage">
+    <div class="rail">
+      <div class="live">
+        <div class="eyebrow" style="margin-bottom: 10px;">today's list</div>
+        <div class="row"><span>bananas</span><span>produce</span></div>
+        <div class="row"><span>1% milk</span><span>dairy</span></div>
+        <div class="row"><span>sourdough</span><span>bakery</span></div>
+        <div class="row" style="border-bottom: none;"><span>chicken breast</span><span>meat</span></div>
+      </div>
+
+      <!-- Next card gets real room and stays readable ... -->
+      <div class="card" style="width: 132px; height: 186px; margin-left: 18px; z-index: 4; opacity: 0.72; filter: blur(0.7px);">
+        <div class="cap" style="font-size: 7px;">running total</div>
+        <div style="font-family: Fraunces, serif; font-size: 20px; margin-top: 7px;">$24.75</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+          <div class="bar" style="height: 8px; width: 84%;"></div>
+          <div class="bar" style="height: 8px; width: 66%;"></div>
+          <div class="bar" style="height: 8px; width: 90%;"></div>
+        </div>
+      </div>
+
+      <!-- ... then the remaining three collapse into a sliver stack, so the
+           screen says "three more" without spending width on them. -->
+      <div class="card" style="width: 110px; height: 162px; margin-left: 14px; z-index: 3; opacity: 0.34; filter: blur(2.6px);">
+        <div class="cap" style="font-size: 6px;">scan</div>
+      </div>
+      <div class="card" style="width: 106px; height: 152px; margin-left: -96px; z-index: 2; opacity: 0.22; filter: blur(3.4px);"></div>
+      <div class="card" style="width: 102px; height: 142px; margin-left: -94px; z-index: 1; opacity: 0.13; filter: blur(4.2px);"></div>
+    </div>
+  </div>
+
+  <div class="caption">Add items in seconds — we sort them into aisles for you.</div>
+
+  <div class="dots">
+    <div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+
+  <div class="cta">next</div>
+</div>
+</x-dc>
+</body>
+</html>
