@@ -91,22 +91,56 @@ Providers → Google, or Supabase answers "Unsupported provider: missing OAuth s
 
 ### Required Supabase configuration for email OTP
 
-The client code is correct and expects a 6-digit code, but **it will not work until the
-email template is changed.** Verify both of these in the Supabase dashboard before
-inviting any tester:
+The client code is correct and expects a 6-digit code, but **it does not work until the
+server sends one.** Supabase's stock Magic Link template contains only
+`{{ .ConfirmationURL }}` — a link and no code — so a tester receives an email with
+nothing to type into the six boxes, and in the native shell that link resolves to
+`capacitor://localhost` and dead-ends. Signup is fully broken in that state.
 
-1. **Auth → Email Templates → Magic Link must contain `{{ .Token }}`.**
-   Supabase's default template only contains `{{ .ConfirmationURL }}`, which sends a
-   *link* and no code. With the default template a tester receives an email with
-   nothing to type, and — on native — a link that resolves to `capacitor://localhost`
-   and does nothing. Signup is completely broken in that state. The template needs a
-   line such as `<p>Your code is {{ .Token }}</p>`.
+The settings live in version control:
 
-2. **Auth → SMTP Settings — configure a custom SMTP provider.**
-   Supabase's built-in email sender is rate-limited to a handful of messages per hour
-   and is explicitly not intended for production. A TestFlight round with several
-   testers signing in will silently hit that ceiling, and the failure looks like "the
-   code never arrived." Resend, Postmark or SendGrid all work.
+- `supabase/templates/magic_link.html` — the email, built around `{{ .Token }}`
+- `supabase/config.toml` — `otp_length = 6`, `otp_expiry = 900`, `max_frequency = "60s"`,
+  and the pointer to that template
+
+Applying them takes one of two routes.
+
+**Route A — dashboard (recommended for this project).** Two minutes, no blast radius:
+
+1. Authentication → Emails → **Magic Link**: paste the contents of
+   `supabase/templates/magic_link.html`, set the subject to `your cartwise code`.
+2. Authentication → Sign In / Providers → Email: set **OTP expiry** to `900` and
+   **max frequency** to `60s`.
+3. Authentication → Emails → **SMTP Settings**: see below.
+
+**Route B — `supabase config push`.** Reproducible, but read this first:
+
+```bash
+supabase login
+supabase link --project-ref ajtmlttnljbcztivbphh
+supabase config push
+```
+
+`config push` applies the *entire* `config.toml`, and keys absent from the file may be
+reset to CLI defaults rather than left alone. This project is Lovable-managed, so its
+remote auth settings were not all set by us and are not all represented in that file.
+The committed config is deliberately narrow to limit this, but the risk is real —
+diff the dashboard's auth settings before and after if you take this route. For a
+single template change, Route A is the better trade.
+
+**SMTP is required before inviting testers**, either way. Supabase's built-in sender is
+rate-limited to a handful of messages per hour and is explicitly not for production. A
+TestFlight round will hit that ceiling, and the failure is indistinguishable from a bug:
+the code simply never arrives. Resend's free tier (3k/month) is ample; Postmark and
+SendGrid are equivalent. Sending from a subdomain you control needs SPF and DKIM records
+or the codes land in spam. The `[auth.email.smtp]` block in `config.toml` is filled in
+and commented out, ready for the credentials.
+
+**Verify end to end before inviting anyone**, on a device and not just the simulator:
+request a code, confirm it arrives within a few seconds and reads as six digits, type it,
+and confirm you land on `/onboarding/budget`. Then delete the account from Profile and
+confirm a clean success — that path had two bugs in it and it is the one App Review
+actively tests.
 
 ### Follow-up: Sign in with Apple
 
