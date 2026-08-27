@@ -1,4 +1,5 @@
 import { invokeWithTimeout } from "@/lib/invoke";
+import { clearFinanceInsightsCache } from "@/hooks/useFinanceInsights";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -595,6 +596,10 @@ export default function ActiveTrip() {
       setEndingTrip(false);
       return;
     }
+
+    // Finance insights are cached per session; a saved trip changes the data they
+    // describe, so drop the cache and let the next Finance visit re-read.
+    clearFinanceInsightsCache();
 
     sessionStorage.removeItem(`trip:${tripId}:store`);
 

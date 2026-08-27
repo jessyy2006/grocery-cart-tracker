@@ -88,8 +88,23 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content:
-              "You are a personal finance coach focused on grocery spending. Generate 1-2 short, specific, data-driven insights from the user's last two months of grocery data. Each insight: a punchy title (<=8 words) and a single-sentence body (<=24 words) referencing concrete numbers from the data. No generic advice. If data is insufficient, return an empty array.",
+            content: [
+              "You report facts about grocery spending. Nothing else.",
+              "",
+              "Return 1-2 observations from the data. Each has a title (max 5 words) and a body (one sentence, max 18 words).",
+              "",
+              "Rules:",
+              "- State what the numbers show. Do not advise, suggest, encourage, warn, or reassure.",
+              "- Every observation cites at least one concrete number from the data.",
+              "- No opener phrases. Never begin with \"It looks like\", \"You might\", \"Consider\", \"Remember\", or \"Great job\".",
+              "- No praise, no judgement, no exclamation marks.",
+              "- Compare against last month or the budget where the data allows it. Comparisons are more useful than totals.",
+              "- Prefer the two most surprising facts. Skip anything the user could read off the screen unaided.",
+              "- Return fewer rather than padding. One sharp observation beats two weak ones, and an empty array is correct when the data supports nothing specific.",
+              "",
+              "Good: {\"title\":\"Produce up 34%\",\"body\":\"Produce spend rose $47 to $185 while total spend fell $12.\"}",
+              "Bad: {\"title\":\"Great progress this month\",\"body\":\"It looks like you might want to consider watching your produce spending!\"}",
+            ].join("\n"),
           },
           { role: "user", content: JSON.stringify(summary) },
         ],
@@ -98,7 +113,8 @@ Deno.serve(async (req) => {
             type: "function",
             function: {
               name: "emit_insights",
-              description: "Return up to 2 insights",
+              description:
+                "Return 0-2 factual observations. Fewer is better than padded.",
               parameters: {
                 type: "object",
                 properties: {
@@ -108,8 +124,17 @@ Deno.serve(async (req) => {
                     items: {
                       type: "object",
                       properties: {
-                        title: { type: "string" },
-                        body: { type: "string" },
+                        title: {
+                          type: "string",
+                          maxLength: 32,
+                          description: "Max 5 words. No punctuation at the end.",
+                        },
+                        body: {
+                          type: "string",
+                          maxLength: 110,
+                          description:
+                            "One sentence, max 18 words, citing a concrete number.",
+                        },
                       },
                       required: ["title", "body"],
                       additionalProperties: false,
@@ -135,7 +160,26 @@ Deno.serve(async (req) => {
     } catch {
       return json({ insights: [] });
     }
-    return json({ insights: parsed.insights ?? [] });
+
+    // maxLength in the schema is a hint, not a guarantee. Clamp here so a verbose
+    // reply cannot overflow the insight footnote, and drop anything that arrives
+    // without both fields rather than rendering a half-empty card.
+    const insights = (Array.isArray(parsed.insights) ? parsed.insights : [])
+      .filter(
+        (i) =>
+          i &&
+          typeof i.title === "string" &&
+          typeof i.body === "string" &&
+          i.title.trim() &&
+          i.body.trim(),
+      )
+      .slice(0, 2)
+      .map((i) => ({
+        title: i.title.trim().replace(/[.!]+$/, "").slice(0, 32),
+        body: i.body.trim().slice(0, 110),
+      }));
+
+    return json({ insights });
   } catch (e) {
     // Insights are supplementary to the Finance screen, so an AI failure returns
     // an empty list rather than an error — except rate limiting, which the

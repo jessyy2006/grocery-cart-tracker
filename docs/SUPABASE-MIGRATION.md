@@ -140,23 +140,13 @@ In order, on a real device:
 1. Sign up with a new email → code arrives, six digits, lands on `/onboarding/budget`
 2. Create a list, run a trip, scan a receipt (exercises `parse-receipt` + `GEMINI_API_KEY`)
 3. Scan a barcode against an open list item (exercises `match-list-item`)
-4. Upload a profile photo (exercises the `avatars` bucket — the gap above)
-5. Delete the account from Profile → clean success
-6. Re-run 1 with the same email → proves deletion actually released it
+4. Open Finance with spending this month (exercises `finance-insights`)
+5. Upload a profile photo (exercises the `avatars` bucket — the gap above)
+6. Delete the account from Profile → clean success
+7. Re-run 1 with the same email → proves deletion actually released it
 
-Step 5 is the one App Review tests, and step 4 is the one most likely to fail on a
+Step 6 is the one App Review tests, and step 5 is the one most likely to fail on a
 fresh project.
-
-`finance-insights` is deliberately not in this list: nothing in the app calls it (see
-below), so there is no UI path that would exercise it.
-
-### finance-insights has no caller
-
-The function is deployed and reachable by any authenticated user, but no client code
-invokes it — `Finance.tsx` renders its insights section from local computation. Either
-wire it up or stop deploying it; a reachable function that no one watches is the kind
-of thing that gets abused quietly, which is why it is rate limited despite being
-unused.
 
 ### 8. Decommission
 
