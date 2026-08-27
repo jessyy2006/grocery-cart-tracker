@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
 
     const aiData = await chatCompletion(
       {
-        model: GEMINI_MODELS.FLASH_PREVIEW,
+        model: GEMINI_MODELS.FLASH,
         messages: [
           {
             role: "system",

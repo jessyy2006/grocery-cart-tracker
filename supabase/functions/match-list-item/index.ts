@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
 
     const data = await chatCompletion(
       {
-        model: GEMINI_MODELS.FLASH_PREVIEW,
+        model: GEMINI_MODELS.FLASH,
         messages: [
           {
             role: "system",

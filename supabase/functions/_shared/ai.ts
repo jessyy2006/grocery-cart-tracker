@@ -14,20 +14,20 @@ const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai";
 /**
  * Model IDs, in one place so a bump is a single edit.
  *
- * NOTE: FLASH_PREVIEW is a *preview* model. Google can withdraw preview models
- * without notice, which would take receipt matching and finance insights down
- * in a shipped build. `gemini-3.7-flash` is the current stable Flash and
- * supersedes it. These are kept as-is here only so this migration changes the
- * provider without also changing model behaviour — moving both to
- * GEMINI_MODELS.FLASH is a one-line follow-up worth doing before wide release.
+ * Only stable models — no previews. Google can withdraw a preview model without
+ * notice, which in a shipped build means a feature simply stops working with no
+ * code change on our side to explain it.
  */
 export const GEMINI_MODELS = {
-  /** Current stable Flash. */
+  /** Current stable Flash. Item matching and finance insights. */
   FLASH: "gemini-3.7-flash",
-  /** Previous-generation stable Flash, used for receipt vision. */
+  /**
+   * Previous-generation stable Flash, used for receipt vision.
+   * Still supported. Worth re-testing against FLASH on real receipts before
+   * moving it — OCR accuracy is the one place here where a model change is
+   * visible to users, so it deserves a comparison rather than an assumption.
+   */
   FLASH_2_5: "gemini-2.5-flash",
-  /** Preview — see the note above. */
-  FLASH_PREVIEW: "gemini-3-flash-preview",
 } as const;
 
 export class AIError extends Error {
