@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Seeded design canvases are 2MB+ generated bundles; the .dc.html sources are the real input.
+design/*-canvas.html
+design/cartwise-feature-rail.html

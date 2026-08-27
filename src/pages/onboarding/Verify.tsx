@@ -5,14 +5,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import { SignupShell } from "@/components/onboarding/SignupShell";
-import { Button } from "@/components/ui/button";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 
-const RESEND_SECONDS = 45;
+/**
+ * Supabase's default minimum gap between auth emails. Matching it here means
+ * our countdown agrees with the server's instead of inviting a request the
+ * server will refuse.
+ */
+const RESEND_SECONDS = 60;
+
+/**
+ * Supabase phrases its rate limit as "For security purposes, you can only
+ * request this after N seconds." Pulling N out lets the UI resynchronise with
+ * the server rather than insisting on a countdown the server disagrees with.
+ */
+const secondsFromRateLimit = (message: string): number | null => {
+  const m = message.match(/after (\d+) seconds?/i);
+  return m ? Number(m[1]) : null;
+};
 
 /**
  * Signup step 2 — the 6-digit code. Auto-submits on the sixth digit. If the
@@ -24,8 +38,8 @@ export default function OnboardingVerify() {
   const { user } = useAuth();
   const { draft } = useOnboarding();
   const [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(RESEND_SECONDS);
+  const [sending, setSending] = useState(false);
   const submitted = useRef(false);
 
   // No email in the draft means this screen was reached out of order.
@@ -46,7 +60,6 @@ export default function OnboardingVerify() {
   const verify = async (value: string) => {
     if (submitted.current) return;
     submitted.current = true;
-    setBusy(true);
     try {
       const { error } = await supabase.auth.verifyOtp({
         email: draft.email,
@@ -59,58 +72,57 @@ export default function OnboardingVerify() {
       submitted.current = false;
       setCode("");
       toast.error(err instanceof Error ? err.message : "That code didn't work");
-    } finally {
-      setBusy(false);
     }
   };
 
+  /**
+   * Always available, never hidden. Asking too early answers with a message
+   * rather than a dead control — a link that vanishes for a minute reads as the
+   * screen breaking, and a disabled countdown makes the loudest element on the
+   * screen an apology.
+   */
   const resend = async () => {
-    setCooldown(RESEND_SECONDS);
-    const { error } = await supabase.auth.signInWithOtp({
-      email: draft.email,
-      options: {
-        shouldCreateUser: true,
-        data: { first_name: draft.firstName },
-        emailRedirectTo: window.location.origin + "/onboarding/verify",
-      },
-    });
-    if (error) toast.error(error.message);
-    else toast.success("New code sent");
+    if (sending) return;
+    if (cooldown > 0) {
+      toast(`you can ask for a new code in ${cooldown}s`);
+      return;
+    }
+    setSending(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: draft.email,
+        // No emailRedirectTo: this flow verifies with the 6-digit code, and
+        // supplying a redirect only produces a link that dead-ends inside the
+        // native shell, where the origin is capacitor://localhost.
+        options: { shouldCreateUser: true, data: { first_name: draft.firstName } },
+      });
+      if (error) {
+        const wait = secondsFromRateLimit(error.message);
+        if (wait !== null) {
+          setCooldown(wait);
+          toast(`you can ask for a new code in ${wait}s`);
+        } else {
+          toast.error(error.message);
+        }
+        return;
+      }
+      setCooldown(RESEND_SECONDS);
+      toast.success("new code sent");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <SignupShell
-      caption="step 2 of 3"
-      title="check your email."
+      caption="almost there…"
+      title="confirm the 6 digit code."
+      // Kept: mistyping your email on the previous screen leaves this as the
+      // only way out. Everything else on the frame is chrome; this is recovery.
       onBack={() => navigate("/onboarding/signup")}
-      footer={
-        <>
-          <Button
-            variant="primaryLight"
-            size="lg"
-            className="w-full"
-            disabled={code.length !== 6 || busy}
-            onClick={() => verify(code)}
-          >
-            Verify
-          </Button>
-          <Button
-            variant="ghost"
-            size="lg"
-            className="w-full text-muted-foreground"
-            disabled={cooldown > 0}
-            onClick={resend}
-          >
-            {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
-          </Button>
-        </>
-      }
+      footer={null}
     >
-      <div className="space-y-5">
-        <p className="text-body text-muted-foreground">
-          We sent a 6-digit code to{" "}
-          <span className="font-medium text-foreground">{draft.email}</span>.
-        </p>
+      <div className="mx-auto w-full max-w-[300px] space-y-8">
         <InputOTP
           maxLength={6}
           value={code}
@@ -120,7 +132,7 @@ export default function OnboardingVerify() {
             if (v.length === 6) verify(v);
           }}
         >
-          <InputOTPGroup className="w-full justify-between gap-2">
+          <InputOTPGroup className="w-full justify-center gap-2">
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <InputOTPSlot
                 key={i}
@@ -130,6 +142,13 @@ export default function OnboardingVerify() {
             ))}
           </InputOTPGroup>
         </InputOTP>
+        <button
+          type="button"
+          onClick={resend}
+          className="press focus-ring mx-auto block rounded-control px-3 py-1.5 text-small text-muted-foreground"
+        >
+          didn't get it? click here to resend
+        </button>
       </div>
     </SignupShell>
   );

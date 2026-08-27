@@ -1,0 +1,42 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 390, "h": 844, "title": "Option A — Even rail" },
+    { "file": "OptionB.dc.html", "x": 490, "y": 0, "w": 390, "h": 844, "title": "Option B — Deck" },
+    { "file": "OptionC.dc.html", "x": 980, "y": 0, "w": 390, "h": 844, "title": "Option C — Perspective" },
+    { "file": "OptionD.dc.html", "x": 1470, "y": 0, "w": 390, "h": 844, "title": "Option D — Two then stack" },
+    { "file": "Transition.dc.html", "x": 0, "y": 1010, "w": 1100, "h": 700, "title": "The transition" }
+  ],
+  "annotations": [
+    {
+      "id": "opt-a",
+      "x": 0, "y": -320, "w": 390,
+      "text": "OPTION A — EVEN RAIL\n\nEqual gaps, each step smaller and softer. The most literal reading of your frame note.\n\nTradeoff, and it is a big one: equal spacing eats width so fast that only the first trailing card fits, plus a 14px sliver of the second. Cards three and four never reach the screen. The screen cannot tell the user how much is left."
+    },
+    {
+      "id": "opt-b",
+      "x": 490, "y": -320, "w": 390,
+      "text": "OPTION B — DECK\n\nEach card sits behind the last and peeks 14px past it, so all four fit in the 164px of rail the phone actually has.\n\nLargest live card of the four, and the only one that states the full count.\n\nTradeoff: a 14px sliver carries no information. You learn how many are left, never what they are."
+    },
+    {
+      "id": "opt-c",
+      "x": 980, "y": -320, "w": 390,
+      "text": "OPTION C — PERSPECTIVE\n\nTrailing cards turned away on a receding plane, cover-flow style. Depth does the work, so less blur is needed.\n\nTradeoff: the most dated of the four, and 3D transforms plus blur is the exact combination that stutters on older iPhones. Rotation also shrinks each card's visual width without shrinking its layout box, so the spacing is fiddly to maintain."
+    },
+    {
+      "id": "opt-d",
+      "x": 1470, "y": -320, "w": 390,
+      "text": "OPTION D — TWO THEN STACK\n\nThe next card keeps real room and stays readable; the last three collapse to slivers peeking 14px each.\n\nThe only option that answers both questions at once — what is next, and how much is left.\n\nTradeoff: two rhythms in one row. If the spacing is even slightly off it reads as a mistake rather than a decision."
+    },
+    {
+      "id": "motion-note",
+      "x": 0, "y": 1770, "w": 620,
+      "text": "Whichever option wins, the thing to get right is that the demo starts looping as the card begins growing, not when it lands. Apple Tips does this — the motion never pauses. Starting the loop on arrival puts a dead beat exactly where the user is looking."
+    },
+    {
+      "id": "width-note",
+      "x": 700, "y": 1770, "w": 400,
+      "text": "All four are drawn to the pixel at 390px, the narrowest common iPhone width. The rail arithmetic is in a comment at the top of each file, so the numbers can be checked rather than trusted."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}
