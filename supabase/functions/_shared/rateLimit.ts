@@ -8,34 +8,16 @@
 import { AIError } from "./ai.ts";
 
 /**
- * Limits per bucket, as [calls, window seconds].
+ * Buckets must match the CASE arms in consume_rate_limit; an unknown bucket is
+ * rejected there rather than allowed through.
  *
- * Sized against how the app actually calls each one, not a uniform number:
- *
- * - MATCH is called once per scanned barcode during a live trip, so a large shop
- *   legitimately makes a lot of calls. It is also the cheapest of the three.
- * - RECEIPT sends a full image and is by far the most expensive per call. A user
- *   scans a receipt or two per shop; 30/hour is well clear of real use.
- * - INSIGHTS fires on the Finance screen, so the ceiling mostly catches a render
- *   loop rather than deliberate abuse.
- *
- * Each can be raised without a migration via the matching env var, so a tester
- * hitting a wall is a config change and not a deploy.
+ * The limits themselves deliberately live in SQL, not here. The function is
+ * callable by any signed-in client over RPC, so a caller-supplied window would be
+ * a complete bypass — passing 0 makes every window read as expired and resets the
+ * counter forever. Changing a limit is a migration, which is the right amount of
+ * friction for a spending control.
  */
-const LIMITS = {
-  match: envLimit("RATE_LIMIT_MATCH", 300, 3600),
-  receipt: envLimit("RATE_LIMIT_RECEIPT", 30, 3600),
-  insights: envLimit("RATE_LIMIT_INSIGHTS", 60, 3600),
-} as const;
-
-export type RateBucket = keyof typeof LIMITS;
-
-function envLimit(name: string, fallback: number, windowSeconds: number) {
-  const raw = Deno.env.get(name);
-  const parsed = raw ? Number(raw) : NaN;
-  const limit = Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
-  return { limit, windowSeconds };
-}
+export type RateBucket = "match" | "receipt" | "insights";
 
 type MinimalClient = {
   rpc: (
@@ -56,12 +38,8 @@ export async function enforceRateLimit(
   bucket: RateBucket,
   label: string,
 ): Promise<void> {
-  const { limit, windowSeconds } = LIMITS[bucket];
-
   const { data, error } = await supabase.rpc("consume_rate_limit", {
     p_bucket: bucket,
-    p_limit: limit,
-    p_window_seconds: windowSeconds,
   });
 
   if (error) {
@@ -72,7 +50,7 @@ export async function enforceRateLimit(
   }
 
   if (data !== true) {
-    console.warn(`${label}: rate limit hit (${limit}/${windowSeconds}s)`);
+    console.warn(`${label}: rate limit hit for bucket "${bucket}"`);
     throw new AIError(429, "You've hit the limit for now. Try again later.");
   }
 }

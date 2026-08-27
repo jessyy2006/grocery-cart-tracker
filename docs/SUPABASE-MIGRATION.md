@@ -93,12 +93,10 @@ supabase functions deploy match-list-item
 supabase secrets set GEMINI_API_KEY=...
 ```
 
-Optionally, to override the AI rate limits without a deploy (defaults in
-`supabase/functions/_shared/rateLimit.ts`):
-
-```bash
-supabase secrets set RATE_LIMIT_RECEIPT=30 RATE_LIMIT_MATCH=300 RATE_LIMIT_INSIGHTS=60
-```
+The AI rate limits are not configurable by env var. They live in
+`consume_rate_limit` (migration `20260826200000`) because that function is callable
+by any signed-in client over RPC, so a caller-supplied window would be a complete
+bypass. Changing a limit is a migration.
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected
 automatically. `LOVABLE_API_KEY` is no longer read by anything.

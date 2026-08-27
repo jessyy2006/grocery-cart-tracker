@@ -30,21 +30,31 @@ alter table public.ai_rate_limits enable row level security;
  * The user is taken from auth.uid() inside the function rather than passed in,
  * so a caller cannot consume or bypass someone else's quota.
  *
- * Returns true when the call is allowed, false when the limit is already spent.
+ * Limits and the window are hard-coded here, NOT taken as parameters. This
+ * function is granted to `authenticated`, so any signed-in client can call it
+ * directly over RPC — and a caller-supplied window is a complete bypass: passing
+ * p_window_seconds = 0 makes the existing window read as expired on every call,
+ * resetting the counter to 1 forever. Changing a limit is a migration, which is
+ * the correct amount of friction for a spending control.
+ *
+ * Calling this directly is still possible; it just cannot help. The only effect
+ * available to a client is spending its own quota faster.
+ *
+ * Returns true when the call is allowed, false when the limit is already spent,
+ * and false for an unknown bucket so a typo fails closed rather than open.
  * Concurrency is handled by ON CONFLICT DO UPDATE, which takes a row lock, so
  * simultaneous calls serialise instead of racing past the ceiling.
  */
-create or replace function public.consume_rate_limit(
-  p_bucket text,
-  p_limit int,
-  p_window_seconds int
-) returns boolean
+create or replace function public.consume_rate_limit(p_bucket text)
+returns boolean
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
   v_user uuid := auth.uid();
+  v_limit int;
+  v_window_seconds int;
   v_count int;
 begin
   -- No identity, no quota. The edge functions verify the JWT before calling
@@ -53,6 +63,17 @@ begin
     return false;
   end if;
 
+  -- Sized to how each function is actually called: `match` runs once per scanned
+  -- barcode so a large shop is legitimately chatty and is the cheapest call;
+  -- `receipt` sends a full image and is the most expensive; `insights` fires on
+  -- the Finance screen, so its ceiling mostly catches a render loop.
+  case p_bucket
+    when 'match'    then v_limit := 300; v_window_seconds := 3600;
+    when 'receipt'  then v_limit := 30;  v_window_seconds := 3600;
+    when 'insights' then v_limit := 60;  v_window_seconds := 3600;
+    else return false;
+  end case;
+
   insert into public.ai_rate_limits as arl (user_id, bucket, window_start, count)
   values (v_user, p_bucket, now(), 1)
   on conflict (user_id, bucket) do update
@@ -60,26 +81,26 @@ begin
       -- Both CASE expressions read the pre-update row, so they agree on whether
       -- the existing window has expired.
       window_start = case
-        when arl.window_start < now() - make_interval(secs => p_window_seconds)
+        when arl.window_start < now() - make_interval(secs => v_window_seconds)
           then now()
         else arl.window_start
       end,
       count = case
-        when arl.window_start < now() - make_interval(secs => p_window_seconds)
+        when arl.window_start < now() - make_interval(secs => v_window_seconds)
           then 1
         else arl.count + 1
       end
   returning arl.count into v_count;
 
-  return v_count <= p_limit;
+  return v_count <= v_limit;
 end;
 $$;
 
 -- Callable by signed-in users only. anon has no quota to consume.
-revoke all on function public.consume_rate_limit(text, int, int) from public, anon;
-grant execute on function public.consume_rate_limit(text, int, int) to authenticated;
+revoke all on function public.consume_rate_limit(text) from public, anon;
+grant execute on function public.consume_rate_limit(text) to authenticated;
 
 -- DOWN
 --
--- drop function if exists public.consume_rate_limit(text, int, int);
+-- drop function if exists public.consume_rate_limit(text);
 -- drop table if exists public.ai_rate_limits;

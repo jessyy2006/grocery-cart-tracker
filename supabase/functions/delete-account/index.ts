@@ -37,12 +37,13 @@ Deno.serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // Delete owned rows first. Child rows cascade from their parents.
+    // Only tables the user directly owns. `trip_items` and `shopping_list_items`
+    // are deliberately absent: they carry no owner column (`trip_id` and `list_id`
+    // respectively) and cascade from `trips` / `shopping_lists`, both of which are
+    // below. Filtering them on a column they do not have errors every time.
     const ownedTables = [
       // [table, owner column]. `profiles` is keyed on `id`, not `user_id`.
-      ["trip_items", "user_id"],
       ["trips", "user_id"],
-      ["shopping_list_items", "user_id"],
       ["shopping_lists", "user_id"],
       ["stores", "user_id"],
       ["user_onboarding", "user_id"],
@@ -60,6 +61,24 @@ Deno.serve(async (req) => {
         failures.push(table);
       }
     }
+    // Avatars live in storage, not in a table, so nothing above touches them.
+    // Objects are keyed `<user_id>/<file>` (see the avatars RLS policies), so the
+    // user's prefix is the whole of their upload history.
+    const { data: avatarFiles, error: listErr } = await admin.storage
+      .from("avatars")
+      .list(userId);
+    if (listErr) {
+      console.error("delete-account: failed listing avatars", listErr.message);
+      failures.push("avatars");
+    } else if (avatarFiles && avatarFiles.length > 0) {
+      const paths = avatarFiles.map((f) => `${userId}/${f.name}`);
+      const { error: rmErr } = await admin.storage.from("avatars").remove(paths);
+      if (rmErr) {
+        console.error("delete-account: failed removing avatars", rmErr.message);
+        failures.push("avatars");
+      }
+    }
+
     if (failures.length > 0) {
       return json(
         { error: `Could not fully delete account data (${failures.join(", ")})` },
