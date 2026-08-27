@@ -1,16 +1,14 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "app.lovable.p6b5394a6a7dc4ca5a38383f61b5ff35a",
-  appName: "cartwise-by-jess",
+  appId: "com.cartwise.app",
+  appName: "CartWise",
   webDir: "dist",
-  // Dev-only hot reload against the Lovable sandbox.
-  // REMOVE this `server` block before producing a TestFlight / App Store build
-  // so the app ships the bundled `dist/` output instead of remote content.
-  server: {
-    url: "https://6b5394a6-a7dc-4ca5-a383-83f61b5ff35a.lovableproject.com?forceHideBadge=true",
-    cleartext: true,
-  },
+  // NOTE: there is deliberately no `server` block. The app ships the bundled
+  // `dist/` output. Adding a `server.url` here points the shell at remote content,
+  // which breaks offline use and fails App Store review — never commit one.
+  // For hot reload during development, run `npx cap run ios --live-reload` instead,
+  // which injects the dev server at run time without touching this file.
   ios: {
     contentInset: "always",
   },

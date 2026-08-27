@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.0";
+import { AIError, chatCompletion, GEMINI_MODELS } from "../_shared/ai.ts";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,8 +39,7 @@ Deno.serve(async (req) => {
     // Soft size cap (~8MB base64)
     if (imageDataUrl.length > 12_000_000) return json({ error: "Image too large" }, 413);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) return json({ error: "Service unavailable" }, 500);
+    await enforceRateLimit(supabase, "receipt", "parse-receipt");
 
     const systemPrompt = `You are an OCR parser for grocery store paper receipts. Extract structured JSON.
 
@@ -61,14 +62,9 @@ Rules:
 - Clean item names: remove SKU codes, leading/trailing dashes, weight prefixes like "0.42kg".
 - If a field is unreadable, use null (or empty array for items). Do not guess.`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+    const data = await chatCompletion(
+      {
+        model: GEMINI_MODELS.FLASH_2_5,
         messages: [
           { role: "system", content: systemPrompt },
           {
@@ -80,18 +76,10 @@ Rules:
           },
         ],
         response_format: { type: "json_object" },
-      }),
-    });
+      },
+      { label: "parse-receipt" },
+    );
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      console.error("AI gateway error", resp.status, text);
-      if (resp.status === 429) return json({ error: "Rate limited, try again shortly." }, 429);
-      if (resp.status === 402) return json({ error: "AI credits exhausted." }, 402);
-      return json({ error: "Could not read receipt." }, 502);
-    }
-
-    const data = await resp.json();
     const raw = data?.choices?.[0]?.message?.content ?? "{}";
     let parsed: any;
     try {
@@ -125,7 +113,8 @@ Rules:
       currency: typeof parsed?.currency === "string" ? parsed.currency.toUpperCase().slice(0, 3) : null,
       items: safeItems,
     });
-  } catch (e: any) {
+  } catch (e) {
+    if (e instanceof AIError) return json({ error: e.userMessage }, e.status);
     console.error("parse-receipt error", e);
     return json({ error: "Server error" }, 500);
   }

@@ -1,1 +1,74 @@
 project_id = "ajtmlttnljbcztivbphh"
+
+# ---------------------------------------------------------------------------
+# Email OTP (6-digit code) — the only sign-in path in the native shell.
+#
+# READ BEFORE RUNNING `supabase config push`.
+#
+# `config push` applies this whole file to the linked project, and keys that are
+# absent here may be reset to CLI defaults rather than left alone. This project
+# is Lovable-managed, so its remote auth settings were not all set by us. Pushing
+# is therefore not obviously safe, and the values below are deliberately limited
+# to the ones this app actually depends on.
+#
+# If you would rather not risk it — and for a single template change that is a
+# reasonable call — set the same three things by hand in the dashboard and treat
+# this file as documentation. Both routes are written up in MOBILE.md.
+# ---------------------------------------------------------------------------
+
+[auth]
+# `capacitor://localhost` is the native shell's origin; 8080 is the dev server
+# (pinned in vite.config.ts), 8081 is where Vite lands if 8080 is taken. Add the
+# deployed web origin here too once there is one.
+#
+# The 6-digit code path does not itself redirect, so it does not depend on this
+# list — but Google OAuth does, and this is where its native custom scheme goes
+# when it is re-enabled (see MOBILE.md).
+additional_redirect_urls = [
+  "capacitor://localhost",
+  "http://localhost:8080",
+  "http://localhost:8081",
+]
+
+[auth.email]
+# Six digits, matching the six-slot input in pages/onboarding/Verify.tsx.
+otp_length = 6
+
+# 15 minutes. The default is 3600 (one hour), which is a long window in which a
+# six-digit code stays brute-forceable. Fifteen minutes is the usual compromise
+# and matches the copy in templates/magic_link.html — change both together.
+otp_expiry = 900
+
+# Server-side resend throttle. The app already blocks resends for 60s
+# (RESEND_SECONDS in Verify.tsx), but that is only a client guard: without this,
+# a scripted caller can trigger unlimited sends against your SMTP quota.
+max_frequency = "60s"
+
+# The template that carries {{ .Token }}. Without this the stock template sends a
+# link and no code, and signup is dead in the native app — see the comment at the
+# top of the template for the full explanation.
+[auth.email.template.magic_link]
+subject = "your cartwise code"
+content_path = "./supabase/templates/magic_link.html"
+
+# ---------------------------------------------------------------------------
+# SMTP — REQUIRED before inviting TestFlight testers.
+#
+# Supabase's built-in sender is rate-limited to a handful of messages per hour
+# and is explicitly not for production. A TestFlight round will hit that ceiling,
+# and the failure looks exactly like a bug: the code simply never arrives.
+#
+# Fill this in once you have a provider account, then set SMTP_PASSWORD in your
+# environment. Resend's free tier (3k/month) is more than enough here; Postmark
+# and SendGrid work identically. Sending from a subdomain you control
+# (mail.yourdomain.com) needs SPF and DKIM records or the codes land in spam.
+#
+# [auth.email.smtp]
+# enabled = true
+# host = "smtp.resend.com"
+# port = 587
+# user = "resend"
+# pass = "env(SMTP_PASSWORD)"
+# admin_email = "hello@yourdomain.com"
+# sender_name = "CartWise"
+# ---------------------------------------------------------------------------

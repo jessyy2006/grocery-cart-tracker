@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { EmptyState } from "@/components/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useFinanceInsights, type Insight } from "@/hooks/useFinanceInsights";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageLoadGate } from "@/components/PageLoadGate";
@@ -466,8 +467,9 @@ export default function Finance() {
 
   const nearLimit = hasBudget && !over && pctUsed >= 85;
 
-  // Single rotating insight (standard view) — same priority, richer copy
-  const rotatingInsight: { title: string; body: string } | null = (() => {
+  // Locally computed insight. Always available, needs no network, and is the
+  // fallback whenever the AI call returns nothing.
+  const localInsight: Insight | null = (() => {
     if (over) {
       return {
         title: "Over budget",
@@ -501,6 +503,17 @@ export default function Finance() {
     }
     return null;
   })();
+
+  // Only ask once there is spending to describe; the function itself returns an
+  // empty list without trips, and a call that can only produce nothing is spend
+  // for no reason.
+  const { insights: aiInsights } = useFinanceInsights(derived.monthSpend > 0);
+
+  // AI insights when they exist, the local one otherwise. Never both — two
+  // sources of truth in one footnote reads as noise.
+  const insights: Insight[] =
+    aiInsights.length > 0 ? aiInsights : localInsight ? [localInsight] : [];
+  const rotatingInsight: Insight | null = insights[0] ?? null;
 
   return (
     <div className="page-gutter safe-top-page pb-12">
@@ -868,12 +881,17 @@ function FinanceCardView(props: any) {
       )}
 
       {/* E — INSIGHT FOOTNOTE */}
-      {rotatingInsight && (
+      {insights.length > 0 && (
         <section className="space-y-2 border-t border-[hsl(40_26%_86%)] pt-5">
           <div className="text-eyebrow">insights</div>
-          <p className="font-display text-[15px] italic leading-snug text-foreground">
-            {rotatingInsight.body}
-          </p>
+          {insights.map((insight, i) => (
+            <p
+              key={`${insight.title}-${i}`}
+              className="font-display text-[15px] italic leading-snug text-foreground"
+            >
+              {insight.body}
+            </p>
+          ))}
         </section>
       )}
 
