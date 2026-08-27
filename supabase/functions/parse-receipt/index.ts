@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.0";
 import { AIError, chatCompletion, GEMINI_MODELS } from "../_shared/ai.ts";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,6 +38,8 @@ Deno.serve(async (req) => {
     }
     // Soft size cap (~8MB base64)
     if (imageDataUrl.length > 12_000_000) return json({ error: "Image too large" }, 413);
+
+    await enforceRateLimit(supabase, "receipt", "parse-receipt");
 
     const systemPrompt = `You are an OCR parser for grocery store paper receipts. Extract structured JSON.
 

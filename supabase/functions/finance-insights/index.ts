@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.0";
 import { AIError, chatCompletion, GEMINI_MODELS } from "../_shared/ai.ts";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -78,6 +79,8 @@ Deno.serve(async (req) => {
         .slice(0, 8)
         .map(([name, v]) => ({ name, ...v })),
     };
+
+    await enforceRateLimit(supabase, "insights", "finance-insights");
 
     const aiData = await chatCompletion(
       {

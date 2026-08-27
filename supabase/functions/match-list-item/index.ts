@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.0";
 import { AIError, chatCompletion, GEMINI_MODELS } from "../_shared/ai.ts";
+import { enforceRateLimit } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,6 +38,8 @@ Deno.serve(async (req) => {
     if (!scannedName || listItems.length === 0) {
       return json({ matchId: null });
     }
+
+    await enforceRateLimit(supabase, "match", "match-list-item");
 
     const ids = listItems.map((i) => i.id);
 

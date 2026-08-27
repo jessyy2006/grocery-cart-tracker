@@ -13,7 +13,7 @@ care about, and the auth-user problem below stops being theoretical.
 
 | | Carries over | How |
 |---|---|---|
-| Schema | Yes | 16 migrations replay onto an empty project |
+| Schema | Yes | 17 migrations replay onto an empty project |
 | Storage bucket | Yes | now created by migration (see gap 1 below) |
 | Row data | Yes | CSV or `pg_dump` per table |
 | **Auth users** | **No** | see below — this is the hard part |
@@ -70,7 +70,7 @@ supabase link --project-ref <NEW_REF>
 supabase db push
 ```
 
-`db push` applies every file in `supabase/migrations/` in timestamp order. Expect 16.
+`db push` applies every file in `supabase/migrations/` in timestamp order. Expect 17.
 
 > Not yet verified by replay. Docker was not available on this machine, so the
 > migrations have only been checked statically (ordering, forward references, table
@@ -91,6 +91,13 @@ supabase functions deploy match-list-item
 
 ```bash
 supabase secrets set GEMINI_API_KEY=...
+```
+
+Optionally, to override the AI rate limits without a deploy (defaults in
+`supabase/functions/_shared/rateLimit.ts`):
+
+```bash
+supabase secrets set RATE_LIMIT_RECEIPT=30 RATE_LIMIT_MATCH=300 RATE_LIMIT_INSIGHTS=60
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected
@@ -132,13 +139,24 @@ In order, on a real device:
 
 1. Sign up with a new email → code arrives, six digits, lands on `/onboarding/budget`
 2. Create a list, run a trip, scan a receipt (exercises `parse-receipt` + `GEMINI_API_KEY`)
-3. Upload a profile photo (exercises the `avatars` bucket — the gap above)
-4. Open Finance (exercises `finance-insights`)
+3. Scan a barcode against an open list item (exercises `match-list-item`)
+4. Upload a profile photo (exercises the `avatars` bucket — the gap above)
 5. Delete the account from Profile → clean success
 6. Re-run 1 with the same email → proves deletion actually released it
 
-Step 5 is the one App Review tests, and step 3 is the one most likely to fail on a
+Step 5 is the one App Review tests, and step 4 is the one most likely to fail on a
 fresh project.
+
+`finance-insights` is deliberately not in this list: nothing in the app calls it (see
+below), so there is no UI path that would exercise it.
+
+### finance-insights has no caller
+
+The function is deployed and reachable by any authenticated user, but no client code
+invokes it — `Finance.tsx` renders its insights section from local computation. Either
+wire it up or stop deploying it; a reachable function that no one watches is the kind
+of thing that gets abused quietly, which is why it is rate limited despite being
+unused.
 
 ### 8. Decommission
 
