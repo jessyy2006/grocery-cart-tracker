@@ -11,8 +11,9 @@
   <style>
     body { margin: 0; }
     a { color: hsl(155 56% 15%); } a:hover { color: hsl(155 40% 28%); }
+    .screen, .screen * { box-sizing: border-box; }
     .screen {
-      width: 390px; height: 844px; box-sizing: border-box;
+      width: 390px; height: 844px;
       background: hsl(43 30% 95%); color: hsl(36 10% 10%);
       font-family: "Inter Tight", system-ui, sans-serif;
       display: flex; flex-direction: column; overflow: hidden;
@@ -22,27 +23,26 @@
       font-family: Fraunces, Georgia, serif; font-size: 30px; font-weight: 600;
       letter-spacing: -0.02em; text-align: center; margin: 4px 20px 0;
     }
-    /* The perspective lives on the stage so the rail recedes into it. */
     .stage {
       flex: 1 1 auto; position: relative; overflow: hidden;
       display: flex; align-items: center;
-      perspective: 900px; perspective-origin: 30% 50%;
+      perspective: 900px; perspective-origin: 26% 50%;
     }
     .rail { display: flex; align-items: center; padding-left: 16px; transform-style: preserve-3d; }
     .caption { font-size: 15px; color: hsl(35 7% 45%); text-align: center; margin: 0 24px; line-height: 1.45; }
-    .dots { display: flex; gap: 4px; justify-content: center; margin-top: 22px; }
+    .dots { display: flex; gap: 4px; justify-content: center; margin-top: 20px; }
     .dot { width: 6px; height: 6px; border-radius: 999px; background: hsl(40 26% 86%); }
     .dot.on { width: 20px; background: hsl(155 56% 15%); }
     .cta {
-      margin: 20px auto 24px; background: hsl(155 56% 15%); color: hsl(43 30% 95%);
+      margin: 18px auto 22px; background: hsl(155 56% 15%); color: hsl(43 30% 95%);
       font-family: "JetBrains Mono", monospace; font-size: 14px;
       padding: 14px 40px; border-radius: 4px; text-align: center;
     }
     .live {
-      width: 226px; flex: 0 0 auto; background: hsl(43 35% 97%);
+      width: 196px; height: 326px; flex: 0 0 auto; background: hsl(43 35% 97%);
       border: 1px solid hsl(40 26% 86%); border-radius: 6px; padding: 16px;
       box-shadow: 0 1px 0 hsl(36 10% 10% / 0.04), 0 20px 38px -22px hsl(36 10% 10% / 0.5);
-      position: relative; z-index: 5;
+      position: relative; z-index: 9;
     }
     .eyebrow {
       font-family: "JetBrains Mono", monospace; font-size: 9px; font-weight: 500;
@@ -50,18 +50,21 @@
     }
     .row {
       display: flex; justify-content: space-between; align-items: baseline;
-      padding: 7px 0; border-bottom: 1px solid hsl(40 26% 86% / 0.7);
+      padding: 9px 0; border-bottom: 1px solid hsl(40 26% 86% / 0.7);
     }
     .row span:first-child { font-size: 13px; }
     .row span:last-child {
       font-family: "JetBrains Mono", monospace; font-size: 8px;
       letter-spacing: 0.1em; text-transform: uppercase; color: hsl(35 7% 45%);
     }
-    /* Turned away from the viewer on a receding plane. */
+    /* POSITIVE rotateY with a left-edge origin swings the far edge AWAY from
+       the viewer. Negative values tip it forward and the perspective magnifies
+       it — cards flare at you instead of receding, which is the opposite of
+       the gallery read. */
     .plate {
       flex: 0 0 auto; background: hsl(43 35% 97%); border: 1px solid hsl(40 26% 86%);
-      border-radius: 6px; padding: 12px; box-sizing: border-box;
-      transform-origin: left center; box-shadow: -8px 0 18px -10px hsl(36 10% 10% / 0.4);
+      border-radius: 6px; padding: 12px;
+      transform-origin: left center; box-shadow: -9px 0 20px -11px hsl(36 10% 10% / 0.45);
     }
     .cap {
       font-family: "JetBrains Mono", monospace; letter-spacing: 0.12em;
@@ -81,36 +84,38 @@
   <div class="stage">
     <div class="rail">
       <div class="live">
-        <div class="eyebrow" style="margin-bottom: 10px;">today's list</div>
+        <div class="eyebrow" style="margin-bottom: 12px;">today's list</div>
         <div class="row"><span>bananas</span><span>produce</span></div>
         <div class="row"><span>1% milk</span><span>dairy</span></div>
         <div class="row"><span>sourdough</span><span>bakery</span></div>
-        <div class="row" style="border-bottom: none;"><span>chicken breast</span><span>meat</span></div>
+        <div class="row"><span>chicken breast</span><span>meat</span></div>
+        <div class="row" style="border-bottom: none;"><span>greek yogurt</span><span>dairy</span></div>
       </div>
 
-      <div class="plate" style="width: 160px; height: 210px; margin-left: 22px; transform: rotateY(-38deg); opacity: 0.66; filter: blur(0.8px);">
+      <!-- Rotation shrinks a plate's VISUAL width to w x cos(angle), but its
+           layout box stays full width — so the negative margins here are set
+           against the visual widths (150x cos40 = 115, 145x cos48 = 97,
+           140x cos54 = 82, 136x cos58 = 72), not the declared ones. -->
+      <div class="plate" style="width: 150px; height: 268px; margin-left: 16px; z-index: 4; transform: rotateY(40deg); opacity: 0.66; filter: blur(0.8px);">
         <div class="cap" style="font-size: 7px;">running total</div>
-        <div style="font-family: Fraunces, serif; font-size: 22px; margin-top: 7px;">$24.75</div>
-        <div style="display: flex; flex-direction: column; gap: 9px; margin-top: 14px;">
+        <div style="font-family: Fraunces, serif; font-size: 21px; margin-top: 8px;">$24.75</div>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
           <div class="bar" style="height: 8px; width: 84%;"></div>
           <div class="bar" style="height: 8px; width: 68%;"></div>
           <div class="bar" style="height: 8px; width: 90%;"></div>
         </div>
       </div>
 
-      <div class="plate" style="width: 150px; height: 196px; margin-left: -66px; transform: rotateY(-46deg); opacity: 0.44; filter: blur(1.8px);">
-        <div class="cap" style="font-size: 6.5px;">scan as you go</div>
-        <div class="bar" style="height: 40px; margin-top: 9px;"></div>
+      <div class="plate" style="width: 145px; height: 246px; margin-left: -116px; z-index: 3; transform: rotateY(48deg); opacity: 0.44; filter: blur(1.8px);">
+        <div class="cap" style="font-size: 6.5px;">scan</div>
       </div>
 
-      <div class="plate" style="width: 140px; height: 182px; margin-left: -70px; transform: rotateY(-52deg); opacity: 0.27; filter: blur(2.8px);">
-        <div class="cap" style="font-size: 6px;">every trip</div>
-        <div class="bar" style="height: 7px; width: 68%; margin-top: 9px;"></div>
+      <div class="plate" style="width: 140px; height: 226px; margin-left: -116px; z-index: 2; transform: rotateY(54deg); opacity: 0.27; filter: blur(2.8px);">
+        <div class="cap" style="font-size: 6px;">trips</div>
       </div>
 
-      <div class="plate" style="width: 132px; height: 170px; margin-left: -74px; transform: rotateY(-56deg); opacity: 0.15; filter: blur(3.8px);">
+      <div class="plate" style="width: 136px; height: 208px; margin-left: -118px; z-index: 1; transform: rotateY(58deg); opacity: 0.15; filter: blur(3.8px);">
         <div class="cap" style="font-size: 5.5px;">habits</div>
-        <div class="bar" style="height: 7px; width: 58%; margin-top: 9px;"></div>
       </div>
     </div>
   </div>
